@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Header } from "./components/Header";
 import { TabBar } from "./components/TabBar";
 import { TorrentList } from "./components/TorrentList";
@@ -115,7 +115,16 @@ export function App() {
           {terminalOpen && !selectedTorrent && <Terminal />}
         </main>
       </div>
-      <StatusBar />
+      <StatusBar
+        downloadSpeed="8.2 MB/s"
+        uploadSpeed="3.7 MB/s"
+        ratio={2.45}
+        freeSpace="1.2 TB free"
+        cpuUsage="12%"
+        memoryUsage="2.8 GB"
+        torrentCount={5}
+        activeCount={2}
+      />
       {settingsOpen && <Settings onClose={() => setSettingsOpen(false)} />}
       {addTorrentOpen && (
         <AddTorrent onClose={() => setAddTorrentOpen(false)} />

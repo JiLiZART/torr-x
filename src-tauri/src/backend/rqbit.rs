@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 // We'll use bt_client crate for actual BitTorrent implementation
-pub struct InternalBitTorrent {
+pub struct RQBitTorrent {
     torrents: Arc<Mutex<HashMap<String, TorrentHandle>>>,
     download_dir: String,
 }
@@ -16,7 +16,7 @@ struct TorrentHandle {
     // Will contain actual torrent session handle
 }
 
-impl InternalBitTorrent {
+impl RQBitTorrent {
     pub fn new(download_dir: String) -> Self {
         Self {
             torrents: Arc::new(Mutex::new(HashMap::new())),
@@ -26,7 +26,7 @@ impl InternalBitTorrent {
 }
 
 #[async_trait::async_trait]
-impl TorrentBackend for InternalBitTorrent {
+impl TorrentBackend for RQBitTorrent {
     async fn add_torrent(&self, magnet_or_url: &str) -> Result<String, Box<dyn Error>> {
         // TODO: Implement using bt_client or similar
         // 1. Parse magnet link or torrent file

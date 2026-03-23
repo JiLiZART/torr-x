@@ -1,35 +1,59 @@
-import React from 'react';
-import { ArrowDown, ArrowUp, HardDrive, Cpu } from 'lucide-react';
-export function StatusBar() {
-  return <div className="border-t border-green-900/30 bg-gray-950 py-1 px-4 text-xs text-green-600 flex items-center justify-between">
+import { ArrowDown, ArrowUp, HardDrive, Cpu } from "lucide-react";
+
+export interface StatusBarProps {
+  downloadSpeed: string;
+  uploadSpeed: string;
+  ratio: number;
+  freeSpace: string;
+  cpuUsage: string;
+  memoryUsage: string;
+  torrentCount: number;
+  activeCount: number;
+}
+
+export function StatusBar({
+  downloadSpeed,
+  uploadSpeed,
+  ratio,
+  freeSpace,
+  cpuUsage,
+  memoryUsage,
+  torrentCount,
+  activeCount,
+}: StatusBarProps) {
+  return (
+    <div className="border-t border-green-900/30 bg-gray-950 py-1 px-4 text-xs text-green-600 flex items-center justify-between">
       <div className="flex items-center space-x-4">
         <div className="flex items-center">
           <ArrowDown size={12} className="mr-1 text-green-500" />
-          <span>8.2 MB/s</span>
+          <span>{downloadSpeed}</span>
         </div>
         <div className="flex items-center">
           <ArrowUp size={12} className="mr-1 text-green-500" />
-          <span>3.7 MB/s</span>
+          <span>{uploadSpeed}</span>
         </div>
         <div>
-          <span>Ratio: 2.45</span>
+          <span>Ratio: {ratio.toFixed(2)}</span>
         </div>
       </div>
       <div className="flex items-center space-x-4">
         <div className="flex items-center">
           <HardDrive size={12} className="mr-1 text-green-500" />
-          <span>1.2 TB free</span>
+          <span>{freeSpace}</span>
         </div>
         <div className="flex items-center">
           <Cpu size={12} className="mr-1 text-green-500" />
-          <span>CPU: 12%</span>
+          <span>CPU: {cpuUsage}</span>
         </div>
         <div>
-          <span>MEM: 2.8 GB</span>
+          <span>MEM: {memoryUsage}</span>
         </div>
         <div>
-          <span>5 torrents • 2 active</span>
+          <span>
+            {torrentCount} torrents • {activeCount} active
+          </span>
         </div>
       </div>
-    </div>;
+    </div>
+  );
 }
