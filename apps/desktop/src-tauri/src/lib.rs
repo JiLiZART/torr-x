@@ -2,6 +2,8 @@
 //! one already listening on the configured port), shows its web UI in a window
 //! and lives in the tray.
 
+mod watch;
+
 use std::net::{IpAddr, Ipv4Addr};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
@@ -10,6 +12,7 @@ use std::time::Duration;
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{AppHandle, Manager, RunEvent, WebviewUrl, WebviewWindowBuilder, WindowEvent};
+use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
 use tauri_plugin_opener::OpenerExt;
 use torrentx_server::config::Config;
@@ -45,7 +48,7 @@ async fn probe(base: &str) -> Probe {
 }
 
 /// Resolves which URL the window should load, starting the server if needed.
-/// Err is a user-facing message.
+/// Err is a user-facing message. Also starts notification/autostart watching.
 async fn connect(app: &AppHandle, config_path: &Path) -> Result<(String, String), String> {
     let config = Config::load_or_create(config_path)?;
     // A wildcard bind is reachable on loopback; a specific IP only on itself.
@@ -69,6 +72,7 @@ async fn connect(app: &AppHandle, config_path: &Path) -> Result<(String, String)
     match probe(&base).await {
         Probe::TorrentX => {
             tracing::info!("attaching to TorrentX server at {base}");
+            watch::follow_remote(app.clone(), config_path.to_path_buf(), base.clone());
             Ok((base.clone(), base))
         }
         Probe::Foreign => Err(port_taken()),
@@ -88,20 +92,28 @@ async fn connect(app: &AppHandle, config_path: &Path) -> Result<(String, String)
             } else {
                 base.clone()
             };
+            let info = server.info();
             *app.state::<Server>().0.lock().unwrap() = Some(server);
+            watch::apply_autostart(app, &config.preferences);
+            watch::follow_server(app.clone(), info);
             Ok((base, window_url))
         }
     }
 }
 
-fn open_window(app: &AppHandle, url: &str) -> tauri::Result<()> {
+/// Frameless: the web UI header draws the window controls and drag area.
+fn open_window(app: &AppHandle, url: &str, visible: bool) -> tauri::Result<()> {
     #[cfg(debug_assertions)]
     let url = std::env::var("TORRENTX_UI_DEV_URL").unwrap_or_else(|_| url.to_string());
     let url = url.parse().expect("server URL is valid");
     WebviewWindowBuilder::new(app, WINDOW, WebviewUrl::External(url))
         .title("TorrentX")
+        .decorations(false)
+        .shadow(true)
+        .resizable(true)
         .inner_size(1100.0, 720.0)
-        .min_inner_size(640.0, 400.0)
+        .min_inner_size(900.0, 600.0)
+        .visible(visible)
         .build()?;
     Ok(())
 }
@@ -124,16 +136,47 @@ fn toggle_window(app: &AppHandle) {
     }
 }
 
-/// Stops the in-process server (engine persists state), then exits.
+/// Asks first when downloads would stop (preference), then quits.
 fn quit(app: &AppHandle) {
-    let server = app.state::<Server>().0.lock().unwrap().take();
+    let info = app
+        .state::<Server>()
+        .0
+        .lock()
+        .unwrap()
+        .as_ref()
+        .map(|s| s.info());
     let app = app.clone();
     tauri::async_runtime::spawn(async move {
-        if let Some(server) = server {
-            server.shutdown().await;
+        let downloading = match &info {
+            Some(i) if i.preferences().await.confirm_exit_while_downloading => i.downloading().await,
+            _ => 0,
+        };
+        if downloading == 0 {
+            return shutdown_and_exit(app).await;
         }
-        app.exit(0);
+        let handle = app.clone();
+        app.dialog()
+            .message(format!(
+                "{downloading} torrent(s) are downloading. Quitting TorrentX stops them."
+            ))
+            .title("Quit TorrentX?")
+            .kind(MessageDialogKind::Warning)
+            .buttons(MessageDialogButtons::OkCancelCustom("Quit".into(), "Cancel".into()))
+            .show(move |ok| {
+                if ok {
+                    tauri::async_runtime::spawn(shutdown_and_exit(handle));
+                }
+            });
     });
+}
+
+/// Stops the in-process server (engine persists state), then exits.
+async fn shutdown_and_exit(app: AppHandle) {
+    let server = app.state::<Server>().0.lock().unwrap().take();
+    if let Some(server) = server {
+        server.shutdown().await;
+    }
+    app.exit(0);
 }
 
 fn build_tray(app: &AppHandle) -> tauri::Result<()> {
@@ -208,6 +251,8 @@ pub fn run() {
         }))
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, None))
         .manage(Server(Mutex::new(None)))
         .setup(|app| {
             let handle = app.handle().clone();
@@ -216,8 +261,10 @@ pub fn run() {
                 match connect(&handle, &config_path).await {
                     Ok((base, window_url)) => {
                         handle.manage(UiUrl(base));
-                        let ready =
-                            build_tray(&handle).and_then(|_| open_window(&handle, &window_url));
+                        let visible = !Config::load_or_create(&config_path)
+                            .is_ok_and(|c| c.preferences.start_minimized);
+                        let ready = build_tray(&handle)
+                            .and_then(|_| open_window(&handle, &window_url, visible));
                         if let Err(e) = ready {
                             fail(
                                 &handle,

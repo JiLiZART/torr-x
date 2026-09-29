@@ -26,21 +26,13 @@ fn state_with(
 ) -> Arc<AppState> {
     let config_path = dir.join("config.toml");
     config.save(&config_path).unwrap();
-    Arc::new(AppState {
-        engine: RwLock::new(engine),
-        config: RwLock::new(config),
-        config_path,
-        data_dir: dir.join("data"),
-        addr,
-        sessions: auth::Sessions::default(),
-        settings_lock: Mutex::new(()),
-    })
+    Arc::new(AppState::new(config, config_path, dir.join("data"), engine, addr).unwrap())
 }
 
 fn test_config(dir: &std::path::Path) -> Config {
     let mut c = Config::default();
     c.engine.rqbit.download_dir = dir.join("dl");
-    c.engine.transmission.url = "http://127.0.0.1:1/transmission/rpc".into();
+    c.engine.transmission.port = 1;
     c
 }
 
@@ -199,7 +191,7 @@ async fn settings_put_validation_and_restart_flag() {
 
     let mut bad = current.clone();
     bad["engine"]["kind"] = json!("transmission");
-    bad["engine"]["transmission"]["url"] = json!("");
+    bad["engine"]["transmission"]["host"] = json!("");
     let (status, _, body) = call(&s, json_req(Method::PUT, "/api/v1/settings", &bad)).await;
     assert_eq!(status, StatusCode::BAD_REQUEST);
     assert_eq!(body["error"]["kind"], "invalid_input");
@@ -384,6 +376,151 @@ async fn guards() {
         .body(Body::empty())
         .unwrap();
     assert_eq!(call(&open, r).await.0, StatusCode::OK);
+}
+
+#[tokio::test]
+async fn settings_sections_round_trip() {
+    let (s, _) = state("sections");
+    let (_, _, mut settings) = get(&s, "/api/v1/settings").await;
+    assert_eq!(settings["preferences"]["language"], "en");
+    assert_eq!(settings["network"]["maxUploadKBps"], 0);
+    assert_eq!(settings["advanced"]["diskCacheMB"], 0);
+    assert_eq!(settings["engine"]["transmission"]["path"], "/transmission/rpc");
+
+    // Invalid enum value → invalid_input, nothing saved.
+    let mut bad = settings.clone();
+    bad["preferences"]["language"] = json!("xx");
+    let (status, _, body) = call(&s, json_req(Method::PUT, "/api/v1/settings", &bad)).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+    assert_eq!(body["error"]["kind"], "invalid_input");
+
+    // Proxy password is write-only and kept when omitted.
+    settings["network"]["proxy"] = json!({
+        "type": "socks5", "host": "proxy.lan", "port": 1080,
+        "authRequired": true, "username": "u", "password": "pw"
+    });
+    settings["preferences"]["theme"] = json!("dark-blue");
+    settings["network"]["maxDownloadKBps"] = json!(100);
+    let (status, _, body) = call(&s, json_req(Method::PUT, "/api/v1/settings", &settings)).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(body["settings"]["network"]["proxy"]["hasPassword"], true);
+    assert!(!body.to_string().contains("\"pw\""));
+    let mut again = body["settings"].clone();
+    again["network"]["proxy"].as_object_mut().unwrap().remove("hasPassword");
+    let (status, _, _) = call(&s, json_req(Method::PUT, "/api/v1/settings", &again)).await;
+    assert_eq!(status, StatusCode::OK);
+    let saved = Config::load_or_create(&s.config_path).unwrap();
+    assert_eq!(saved.network.proxy.password, "pw");
+    assert_eq!(saved.network.max_download_kbps, 100);
+    assert_eq!(saved.preferences.theme, config::Theme::DarkBlue);
+}
+
+#[tokio::test]
+async fn tabs_endpoints() {
+    let (s, _) = state("tabs");
+    let (status, _, body) =
+        call(&s, json_req(Method::POST, "/api/v1/tabs", &json!({ "name": "   " }))).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+    assert_eq!(body["error"]["kind"], "invalid_input");
+
+    let (status, _, tab) =
+        call(&s, json_req(Method::POST, "/api/v1/tabs", &json!({ "name": "Linux" }))).await;
+    assert_eq!(status, StatusCode::CREATED);
+    let tab_id = tab["id"].as_str().unwrap().to_string();
+
+    let id = "ab".repeat(20);
+    let set = |t: Value| json_req(Method::PUT, &format!("/api/v1/torrents/{id}/tab"), &json!({ "tabId": t }));
+    assert_eq!(call(&s, set(json!(tab_id))).await.0, StatusCode::NO_CONTENT);
+    assert_eq!(call(&s, set(json!("nope"))).await.0, StatusCode::NOT_FOUND);
+    let (_, _, tabs) = get(&s, "/api/v1/tabs").await;
+    assert_eq!(tabs, json!([{ "id": tab_id, "name": "Linux", "torrentIds": [id] }]));
+
+    let (status, _, renamed) = call(
+        &s,
+        json_req(Method::PATCH, &format!("/api/v1/tabs/{tab_id}"), &json!({ "name": "Distros" })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(renamed["name"], "Distros");
+
+    let del = |t: &str| req(Method::DELETE, &format!("/api/v1/tabs/{t}")).body(Body::empty()).unwrap();
+    assert_eq!(call(&s, del(&tab_id)).await.0, StatusCode::NO_CONTENT);
+    assert_eq!(call(&s, del(&tab_id)).await.0, StatusCode::NOT_FOUND);
+    assert_eq!(get(&s, "/api/v1/tabs").await.2, json!([]));
+}
+
+#[tokio::test]
+async fn stats_without_engine() {
+    let (s, _) = state("stats");
+    let (status, _, body) = get(&s, "/api/v1/stats").await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["torrents"], 0);
+    assert_eq!(body["ratio"], Value::Null);
+    assert!(body["diskFree"].as_u64().unwrap() > 0, "{body}");
+    assert!(body["diskTotal"].as_u64().unwrap() >= body["diskFree"].as_u64().unwrap());
+    assert!(body["memoryBytes"].as_u64().unwrap() > 0, "{body}");
+    assert!(body["cpuPercent"].is_number());
+    // Capabilities need an engine.
+    assert_eq!(get(&s, "/api/v1/capabilities").await.0, StatusCode::SERVICE_UNAVAILABLE);
+}
+
+#[tokio::test]
+async fn reveal_is_loopback_only() {
+    let (s, _) = state("reveal");
+    let uri = format!("/api/v1/torrents/{ZERO_ID}/reveal");
+    let with_peer = |ip: &str| {
+        let mut r = req(Method::POST, &uri).body(Body::empty()).unwrap();
+        let peer: SocketAddr = format!("{ip}:5555").parse().unwrap();
+        r.extensions_mut().insert(axum::extract::ConnectInfo(peer));
+        r
+    };
+    let (status, _, body) = call(&s, with_peer("192.168.1.20")).await;
+    assert_eq!(status, StatusCode::FORBIDDEN);
+    assert_eq!(body["error"]["kind"], "forbidden");
+    // Unknown peer is treated as remote.
+    let r = req(Method::POST, &uri).body(Body::empty()).unwrap();
+    assert_eq!(call(&s, r).await.0, StatusCode::FORBIDDEN);
+    // Loopback reaches the engine (503 here: no engine).
+    assert_eq!(call(&s, with_peer("127.0.0.1")).await.0, StatusCode::SERVICE_UNAVAILABLE);
+}
+
+#[tokio::test]
+async fn new_mutations_are_guarded() {
+    let (s, _) = state("guards2");
+    let token_free = [
+        (Method::POST, format!("/api/v1/torrents/{ZERO_ID}/verify")),
+        (Method::POST, format!("/api/v1/torrents/{ZERO_ID}/reveal")),
+        (Method::PUT, format!("/api/v1/torrents/{ZERO_ID}/files")),
+        (Method::PUT, format!("/api/v1/torrents/{ZERO_ID}/tab")),
+        (Method::PATCH, "/api/v1/tabs/t1".to_string()),
+        (Method::POST, "/api/v1/tabs".to_string()),
+        (Method::POST, "/api/v1/torrents/preview".to_string()),
+        (Method::POST, "/api/v1/transmission/test".to_string()),
+    ];
+    for (m, uri) in token_free {
+        let r = req(m.clone(), &uri)
+            .header(header::ORIGIN, "https://evil.example")
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(Body::from("{}"))
+            .unwrap();
+        assert_eq!(call(&s, r).await.0, StatusCode::FORBIDDEN, "{m} {uri}");
+    }
+    // Auth applies to the new routes too.
+    s.config.write().await.auth = config::AuthConfig {
+        enabled: true,
+        username: "a".into(),
+        password_hash: auth::hash_password("b"),
+    };
+    for uri in ["/api/v1/tabs", "/api/v1/stats", "/api/v1/capabilities"] {
+        assert_eq!(get(&s, uri).await.0, StatusCode::UNAUTHORIZED, "{uri}");
+    }
+}
+
+#[test]
+fn unsupported_maps_to_501() {
+    let e = api::ApiError::from(torrentx_core::EngineError::unsupported("rqbit", "x"));
+    let r = axum::response::IntoResponse::into_response(e);
+    assert_eq!(r.status(), StatusCode::NOT_IMPLEMENTED);
 }
 
 #[tokio::test]

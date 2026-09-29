@@ -1,0 +1,53 @@
+/* RGB triples consumed by the Tailwind preset (tx-base, tx-surface-*, tx-accent-*). */
+:root,
+:root[data-theme="hacker"] {
+  color-scheme: dark;
+  --tx-base: 0 0 0;
+  --tx-surface-950: 3 7 18;
+  --tx-surface-900: 17 24 39;
+  --tx-surface-800: 31 41 55;
+  --tx-surface-700: 55 65 81;
+  --tx-accent-100: 220 252 231;
+  --tx-accent-300: 134 239 172;
+  --tx-accent-400: 74 222 128;
+  --tx-accent-500: 34 197 94;
+  --tx-accent-600: 22 163 74;
+  --tx-accent-700: 21 128 61;
+  --tx-accent-800: 22 101 52;
+  --tx-accent-900: 20 83 45;
+}
+
+:root[data-theme="dark-blue"] {
+  color-scheme: dark;
+  --tx-base: 2 6 23;
+  --tx-surface-950: 15 23 42;
+  --tx-surface-900: 30 41 59;
+  --tx-surface-800: 51 65 85;
+  --tx-surface-700: 71 85 105;
+  --tx-accent-100: 219 234 254;
+  --tx-accent-300: 147 197 253;
+  --tx-accent-400: 96 165 250;
+  --tx-accent-500: 59 130 246;
+  --tx-accent-600: 37 99 235;
+  --tx-accent-700: 29 78 216;
+  --tx-accent-800: 30 64 175;
+  --tx-accent-900: 30 58 138;
+}
+
+/* Light inverts the ramp: "bright" accent shades are the dark text colors. */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --tx-base: 255 255 255;
+  --tx-surface-950: 249 250 251;
+  --tx-surface-900: 243 244 246;
+  --tx-surface-800: 229 231 235;
+  --tx-surface-700: 209 213 219;
+  --tx-accent-100: 240 253 244;
+  --tx-accent-300: 2 44 34;
+  --tx-accent-400: 6 78 59;
+  --tx-accent-500: 4 120 87;
+  --tx-accent-600: 75 85 99;
+  --tx-accent-700: 5 150 105;
+  --tx-accent-800: 4 120 87;
+  --tx-accent-900: 167 243 208;
+}

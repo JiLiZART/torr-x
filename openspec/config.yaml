@@ -1,5 +1,28 @@
 schema: spec-driven
 
+context: |
+  Domain: TorrentX, a single-user torrent client. Rust server (engine + HTTP API /api/v1 + embedded
+  React UI) runs headless (torrentx-server, systemd) or in-process in a Tauri 2 tray app.
+  Stack: React 19 + TS + Tailwind 3 + Vite 7 (packages/ui components, apps/web shell); axum 0.8, rust-embed, argon2 (crates/torrentx-server);
+  engines librqbit 9 or Transmission RPC; pnpm workspace + single Cargo workspace.
+  Invariants:
+    - UI gets all data and actions from the HTTP API (same build in browser and desktop window).
+      Tauri IPC is allowed only in desktop mode, only for window controls (hide/minimize/maximize/drag),
+      loaded only when a Tauri runtime is detected.
+    - Torrent id = lowercase hex info-hash.
+    - Engine dispatch is an enum, not a trait object; both engines return torrentx_core types.
+    - Shared model changes must update Rust model, packages/api-client types, and the
+      crates/torrentx-core/tests/fixtures/torrent.json drift fixture together.
+    - Security guard (Host allowlist on loopback, Origin check on mutating requests) applies even with auth off.
+  UI look: green-on-black terminal aesthetic, monospace, minimal shadows.
+  See CLAUDE.md for layout, commands and code conventions.
+
+rules:
+  specs:
+    - Describe behavior observable via the HTTP API, UI, or CLI, not internal structure
+  tasks:
+    - Include a verification step (cargo test, pnpm lint/typecheck, or a manual check) per task group
+
 # Project context (optional)
 # This is shown to AI when creating artifacts.
 # Add your tech stack, conventions, style guides, domain knowledge, etc.

@@ -9,10 +9,11 @@
     "dev:server": "cargo run -p torrentx-server --",
     "dev:desktop": "pnpm --filter @torrentx/desktop tauri dev",
     "build:web": "pnpm --filter @torrentx/web build",
-    "build:server": "pnpm build:web && cargo build --release -p torrentx-server",
-    "build:desktop": "pnpm build:web && pnpm --filter @torrentx/desktop tauri build",
-    "lint": "eslint apps/web/src packages/*/src --ext .ts,.tsx --max-warnings 0",
-    "typecheck": "pnpm -r typecheck"
+    "build:server": "pnpm build:web && ./scripts/fetch-geoip.sh && cargo build --release -p torrentx-server --features geoip",
+    "build:desktop": "pnpm build:web && ./scripts/fetch-geoip.sh && pnpm --filter @torrentx/desktop tauri build --features geoip",
+    "lint": "node packages/ui/scripts/check-i18n.mjs && eslint apps/web/src packages/*/src --ext .ts,.tsx --max-warnings 0",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm --filter @torrentx/ui test"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "8.46.2",

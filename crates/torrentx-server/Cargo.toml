@@ -26,7 +26,15 @@ tokio = { workspace = true }
 toml = "1"
 tracing = { workspace = true }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+sysinfo = { version = "0.39.6", default-features = false, features = ["system", "disk"] }
+maxminddb = "0.32.0"
+open = "5.4.4"
+percent-encoding = "2.3.2"
 
 [dev-dependencies]
 http-body-util = "0.1"
 tower = { version = "0.5", features = ["util"] }
+
+[features]
+# Embed the DB-IP country database (run scripts/fetch-geoip.sh first).
+geoip = []

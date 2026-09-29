@@ -23,3 +23,10 @@ reqwest = { workspace = true }
 serde_json = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tauri-plugin-autostart = "2"
+tauri-plugin-notification = "2"
+tokio.workspace = true
+
+[features]
+# Embed the GeoIP database (see scripts/fetch-geoip.sh).
+geoip = ["torrentx-server/geoip"]

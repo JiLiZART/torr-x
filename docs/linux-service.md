@@ -72,12 +72,68 @@ kind = "rqbit"            # or "transmission"
 download_dir = "/var/lib/torrentx/Downloads/TorrentX"
 
 [engine.transmission]
-url = "http://127.0.0.1:9091/transmission/rpc"
+host = "127.0.0.1"
+port = 9091
+path = "/transmission/rpc"
+https = false
 username = ""
 password = ""
+
+# The sections below are edited from the web UI; all keys are optional.
+[network]
+maxConnectionsPerTorrent = 0   # 0 = engine default
+maxUploadKBps = 0              # 0 = unlimited
+maxDownloadKBps = 0
+listenPort = 0                 # 0 = engine default
+upnp = true
+proxy = { type = "none", host = "", port = 1080, authRequired = false, username = "", password = "" }
+
+[downloads]
+defaultSavePath = ""           # "" = the engine's own download directory
+createSubfolder = true
+moveCompletedEnabled = false
+moveCompletedPath = ""
+maxActiveDownloads = 0         # 0 = unlimited
+maxActiveTorrents = 0
+startAutomatically = true
+defaultPriority = "normal"
+seedAutomatically = true
+minRatio = 0.0                 # 0 = no limit
+minSeedingMinutes = 0
+
+[advanced]
+diskCacheMB = 0
+dht = true
+pex = true
+lpd = true
+sequentialDownload = false     # other toggles exist but no engine supports them yet
+
+[preferences]                  # UI and desktop-app preferences
+language = "en"                # en fr de es ru zh
+theme = "hacker"               # hacker dark-blue light
 ```
 
 CLI flags `--bind` and `--port` override the file for a single run.
+
+Configs from before the split Transmission fields (`url = "..."`) are migrated on
+first start; the original is kept as `config.v1.bak` next to `config.toml`.
+
+Server state (user tabs, rename overrides, seeding bookkeeping) lives in
+`state.json` in the data directory (`/var/lib/torrentx` for the service).
+
+### Not available on a headless server
+
+- **Show in file manager** only works for a browser on the same machine as the
+  server, and needs a desktop session there. Remote browsers get `403`.
+- **Start with system / start minimized / quit confirmation** are desktop-app
+  settings; the service is started by systemd instead.
+
+### Peer countries
+
+Release builds (`pnpm build:server`) embed DB-IP's free "IP to Country Lite"
+database, licensed CC BY 4.0 (https://db-ip.com). For other builds, run
+`scripts/fetch-geoip.sh` or place `dbip-country-lite.mmdb` in the data directory;
+without it the country column stays empty.
 
 ## Scripting
 
