@@ -1,0 +1,29 @@
+[workspace]
+resolver = "3"
+members = ["crates/*", "apps/desktop/src-tauri"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+
+[workspace.dependencies]
+torrentx-core = { path = "crates/torrentx-core" }
+torrentx-rqbit = { path = "crates/torrentx-rqbit" }
+torrentx-transmission = { path = "crates/torrentx-transmission" }
+torrentx-server = { path = "crates/torrentx-server" }
+
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+tokio = { version = "1", features = ["full"] }
+tracing = "0.1"
+reqwest = { version = "0.13", default-features = false, features = ["json", "rustls"] }
+base64 = "0.23"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true

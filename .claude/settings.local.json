@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(gsd:do)",
+      "Bash(wc -l .planning/codebase/*.md)"
+    ]
+  }
+}

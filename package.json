@@ -1,38 +1,25 @@
 {
-  "name": "torrentx-app",
+  "name": "torrentx",
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "packageManager": "pnpm@11.0.9",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview",
-    "tauri": "tauri"
-  },
-  "dependencies": {
-    "react": "19.2.0",
-    "react-dom": "19.2.0",
-    "@tauri-apps/api": "^2",
-    "@tauri-apps/plugin-opener": "^2",
-    "lucide-react": "0.522.0",
-    "clsx": "2.1.1",
-    "tailwind-merge": "3.3.1"
+    "dev:web": "pnpm --filter @torrentx/web dev",
+    "dev:server": "cargo run -p torrentx-server --",
+    "dev:desktop": "pnpm --filter @torrentx/desktop tauri dev",
+    "build:web": "pnpm --filter @torrentx/web build",
+    "build:server": "pnpm build:web && cargo build --release -p torrentx-server",
+    "build:desktop": "pnpm build:web && pnpm --filter @torrentx/desktop tauri build",
+    "lint": "eslint apps/web/src packages/*/src --ext .ts,.tsx --max-warnings 0",
+    "typecheck": "pnpm -r typecheck"
   },
   "devDependencies": {
-    "@types/react": "19.2.2",
-    "@types/react-dom": "19.2.2",
-    "@vitejs/plugin-react": "5.1.0",
-    "typescript": "5.9.3",
-    "vite": "7.1.12",
-    "@tauri-apps/cli": "^2",
-    "@types/node": "^20.11.18",
     "@typescript-eslint/eslint-plugin": "8.46.2",
     "@typescript-eslint/parser": "8.46.2",
-    "eslint": "^8.50.0",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-react-refresh": "^0.4.1",
-    "tailwindcss": "3.4.17",
-    "autoprefixer": "latest",
-    "postcss": "latest"
+    "eslint": "^8.57.1",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "eslint-plugin-react-refresh": "^0.4.20",
+    "typescript": "5.9.3"
   }
 }

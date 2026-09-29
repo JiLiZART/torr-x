@@ -1,0 +1,28 @@
+[Unit]
+Description=TorrentX headless torrent server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=torrentx
+Group=torrentx
+# HOME decides where engine state lives (~/.local/share/torrentx).
+Environment=HOME=/var/lib/torrentx
+ExecStart=/usr/local/bin/torrentx-server --config /etc/torrentx/config.toml
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=15
+
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+ReadWritePaths=/var/lib/torrentx /etc/torrentx
+
+[Install]
+WantedBy=multi-user.target

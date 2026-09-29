@@ -1,0 +1,22 @@
+{
+  "id": "dd8255ecdc7ca55fb0bbf81323d87062db1f6d1c",
+  "name": "Big Buck Bunny",
+  "size": 276445467,
+  "progress": 0.5,
+  "downloadRate": 1048576,
+  "uploadRate": 2048,
+  "peers": 12,
+  "seeds": 8,
+  "status": "downloading",
+  "error": null,
+  "etaSecs": 131,
+  "addedAt": 1767225600,
+  "savePath": "/home/user/Downloads/TorrentX",
+  "files": [
+    {
+      "path": "Big Buck Bunny/Big Buck Bunny.mp4",
+      "size": 276134947,
+      "progress": 0.5
+    }
+  ]
+}

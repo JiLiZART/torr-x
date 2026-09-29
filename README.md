@@ -1,7 +1,63 @@
-# Tauri + React + Typescript
+# TorrentX
 
-This template should help get you started developing with Tauri, React and Typescript in Vite.
+A torrent client with a terminal-style web UI. One server, two ways to run it:
 
-## Recommended IDE Setup
+- **Desktop app** (macOS / Windows / Linux): a tray app. It runs the TorrentX server
+  inside its own process and shows the web UI in a window. Click the tray icon to
+  show or hide it, or open `http://localhost:9977` in any browser.
+- **Headless server** (`torrentx-server`): a single binary for a Linux box. It runs
+  as a systemd service; you manage it from a browser or over the HTTP API.
+  See [docs/linux-service.md](docs/linux-service.md).
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+Engines: the built-in **rqbit** engine (no external daemon), or an existing
+**Transmission** daemon over RPC. You pick one in Settings.
+
+## Quick start
+
+```bash
+pnpm install
+
+pnpm dev:desktop        # desktop app (in-process server + tray + window)
+pnpm dev:server         # headless server on http://127.0.0.1:9977
+pnpm dev:web            # Vite dev UI on :1420, proxies /api to the server above
+```
+
+If a TorrentX server is already running on the configured port (e.g. the
+system service), the desktop app attaches to it instead of starting its own.
+
+## Configuration
+
+A single TOML file, created with defaults on first start:
+
+| Platform | Path |
+| --- | --- |
+| macOS | `~/Library/Application Support/torrentx/config.toml` |
+| Linux | `~/.config/torrentx/config.toml` (service: `/etc/torrentx/config.toml`) |
+| Windows | `%APPDATA%\torrentx\config.toml` |
+
+By default the server binds to `127.0.0.1:9977` with no authentication. You
+can enable a username/password and change the bind address in **Settings**.
+Even without auth, the server rejects requests with a foreign `Host` header
+(DNS rebinding) and cross-site writes (CSRF).
+
+## Build
+
+```bash
+pnpm build:server       # target/release/torrentx-server (UI embedded)
+pnpm build:desktop      # Tauri bundle
+pnpm lint
+cargo test --workspace
+```
+
+## Layout
+
+```
+apps/web                React UI (served by the server)
+apps/desktop            Tauri shell (tray + window)
+crates/torrentx-core    shared torrent model
+crates/torrentx-rqbit   librqbit engine
+crates/torrentx-transmission  Transmission RPC engine
+crates/torrentx-server  HTTP API + UI hosting (lib + torrentx-server bin)
+packages/api-client     typed TS client for /api/v1
+packaging/systemd       systemd unit
+```
