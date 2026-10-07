@@ -1,17 +1,18 @@
 import type { DateFormat, Status, Torrent } from "@torrentx/api-client";
 
 const UNITS = ["B", "KB", "MB", "GB", "TB"];
+const NBSP = "\u00a0";
 
+/** Number and unit joined by NBSP so the value never wraps. */
 export function bytes(n: number): string {
   let i = 0;
   while (n >= 1024 && i < UNITS.length - 1) {
     n /= 1024;
     i++;
   }
-  return `${n.toFixed(i === 0 ? 0 : 1)} ${UNITS[i]}`;
+  return `${n.toFixed(i === 0 ? 0 : 1)}${NBSP}${UNITS[i]}`;
 }
 
-const NBSP = "\u00a0";
 const RATE_WIDTH = 10;
 
 /**
@@ -26,7 +27,7 @@ export function rate(n: number): string {
     i++;
   }
   const num = n.toFixed(i === 0 ? 0 : 1).padStart(5, NBSP);
-  return `${num} ${UNITS[i].padEnd(2, NBSP)}/s`;
+  return `${num}${NBSP}${UNITS[i].padEnd(2, NBSP)}/s`;
 }
 
 export function percent(p: number): string {

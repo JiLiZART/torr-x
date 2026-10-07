@@ -2,9 +2,10 @@ import { useMemo, useState } from "react";
 import { AlertTriangle, ChevronUp, ChevronDown } from "lucide-react";
 import type { Tab, Torrent } from "@torrentx/api-client";
 import { useUi } from "../lib/context";
+import { useActivity } from "../lib/hooks";
+import { COLUMNS, type SortColumn } from "../lib/columns";
 import { TorrentItem, type TorrentAction } from "./TorrentItem";
 
-type SortColumn = "name" | "size" | "progress" | "seeds" | "peers" | "download" | "upload" | "eta";
 type SortDirection = "asc" | "desc";
 
 interface TorrentListProps {
@@ -20,16 +21,6 @@ interface TorrentListProps {
   onOpenSettings: () => void;
 }
 
-const COLUMNS: { id: SortColumn; width: string }[] = [
-  { id: "name", width: "flex-1 px-2 text-left" },
-  { id: "size", width: "w-20 text-right px-2" },
-  { id: "progress", width: "w-24 text-right px-2" },
-  { id: "seeds", width: "w-20 text-right px-2" },
-  { id: "peers", width: "w-20 text-right px-2" },
-  { id: "download", width: "w-24 text-right px-2" },
-  { id: "upload", width: "w-24 text-right px-2" },
-  { id: "eta", width: "w-20 text-right px-2" },
-];
 
 /** Unknown ETA (paused, complete, stalled) is null and always sorts last. */
 const etaKey = (t: Torrent) =>
@@ -66,6 +57,7 @@ export function TorrentList({
 }: TorrentListProps) {
   const { t } = useUi();
   const [draggingTorrentId, setDraggingTorrentId] = useState<string | null>(null);
+  const activity = useActivity(torrents);
   const [sortColumn, setSortColumn] = useState<SortColumn>("name");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
@@ -111,14 +103,14 @@ export function TorrentList({
         </div>
       )}
       <div className="px-4 py-2 border-b border-tx-accent-900/30 bg-tx-surface-950 flex text-xs text-tx-accent-600 font-semibold">
-        {COLUMNS.map((c) => (
+        {(Object.keys(COLUMNS) as SortColumn[]).map((id) => (
           <button
-            key={c.id}
-            onClick={() => handleSort(c.id)}
-            className={`${c.width} hover:text-tx-accent-400 transition-colors`}
+            key={id}
+            onClick={() => handleSort(id)}
+            className={`${COLUMNS[id]} hover:text-tx-accent-400 transition-colors`}
           >
-            {t(`list.col.${c.id}`)}{" "}
-            {sortColumn === c.id &&
+            {t(`list.col.${id}`)}{" "}
+            {sortColumn === id &&
               (sortDirection === "asc" ? (
                 <ChevronUp size={14} className="inline ml-1" />
               ) : (
@@ -140,6 +132,7 @@ export function TorrentList({
             tabs={tabs}
             onMoveToTab={(tabId) => onMoveToTab(torrent, tabId)}
             onAction={(action) => onAction(torrent, action)}
+            samples={activity.get(torrent.id)}
           />
         ))}
         {visible.length === 0 && (

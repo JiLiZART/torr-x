@@ -11,3 +11,18 @@ body,
   margin: 0;
   background: rgb(var(--tx-base));
 }
+
+/* Desktop window (transparent on macOS/Linux): the page rounds itself; square while maximized. */
+html[data-desktop],
+html[data-desktop] body {
+  background: transparent;
+}
+
+html[data-desktop] #root {
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+html[data-desktop][data-maximized] #root {
+  border-radius: 0;
+}

@@ -102,19 +102,23 @@ async fn connect(app: &AppHandle, config_path: &Path) -> Result<(String, String)
 }
 
 /// Frameless: the web UI header draws the window controls and drag area.
+/// Transparent on macOS/Linux so the page can round its corners; Windows 11 rounds
+/// undecorated windows itself and transparency there drops the shadow.
 fn open_window(app: &AppHandle, url: &str, visible: bool) -> tauri::Result<()> {
     #[cfg(debug_assertions)]
     let url = std::env::var("TORRENTX_UI_DEV_URL").unwrap_or_else(|_| url.to_string());
     let url = url.parse().expect("server URL is valid");
-    WebviewWindowBuilder::new(app, WINDOW, WebviewUrl::External(url))
+    let builder = WebviewWindowBuilder::new(app, WINDOW, WebviewUrl::External(url))
         .title("TorrentX")
         .decorations(false)
         .shadow(true)
         .resizable(true)
         .inner_size(1100.0, 720.0)
         .min_inner_size(900.0, 600.0)
-        .visible(visible)
-        .build()?;
+        .visible(visible);
+    #[cfg(not(windows))]
+    let builder = builder.transparent(true);
+    builder.build()?;
     Ok(())
 }
 

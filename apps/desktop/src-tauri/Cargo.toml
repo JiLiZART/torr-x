@@ -15,7 +15,8 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 torrentx-server = { workspace = true }
-tauri = { version = "2", features = ["tray-icon"] }
+# macos-private-api: transparent window for rounded corners (rules out the Mac App Store).
+tauri = { version = "2", features = ["tray-icon", "macos-private-api"] }
 tauri-plugin-dialog = "2"
 tauri-plugin-opener = "2"
 tauri-plugin-single-instance = "2"

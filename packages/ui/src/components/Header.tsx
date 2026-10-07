@@ -1,7 +1,7 @@
 import { Search, Plus, Terminal, Settings, Wifi, LogOut } from "lucide-react";
 import { useUi } from "../lib/context";
 import { rate } from "../lib/format";
-import { closeWindow, minimizeWindow, toggleMaximizeWindow } from "../lib/window";
+import { closeWindow, isTauri, minimizeWindow, toggleMaximizeWindow } from "../lib/window";
 
 interface HeaderProps {
   toggleTerminal: () => void;
@@ -31,12 +31,14 @@ export function Header({
     <header data-tauri-drag-region className="border-b border-tx-accent-900/30 bg-tx-surface-950 px-4 py-3">
       <div data-tauri-drag-region className="flex items-center justify-between">
         <div data-tauri-drag-region className="flex items-center space-x-2">
-          <div className="flex space-x-1.5">
-            <button aria-label={t("window.close")} onClick={closeWindow} className="w-3 h-3 bg-red-500 rounded-full" />
-            <button aria-label={t("window.minimize")} onClick={minimizeWindow} className="w-3 h-3 bg-yellow-500 rounded-full" />
-            <button aria-label={t("window.maximize")} onClick={toggleMaximizeWindow} className="w-3 h-3 bg-green-500 rounded-full" />
-          </div>
-          <h1 data-tauri-drag-region className="text-tx-accent-400 font-bold ml-4 tracking-tight">
+          {isTauri() && (
+            <div className="flex space-x-1.5 mr-4">
+              <button aria-label={t("window.close")} onClick={closeWindow} className="w-3 h-3 bg-red-500 rounded-full" />
+              <button aria-label={t("window.minimize")} onClick={minimizeWindow} className="w-3 h-3 bg-yellow-500 rounded-full" />
+              <button aria-label={t("window.maximize")} onClick={toggleMaximizeWindow} className="w-3 h-3 bg-green-500 rounded-full" />
+            </div>
+          )}
+          <h1 data-tauri-drag-region className="text-tx-accent-400 font-bold tracking-tight">
             TorrentX
           </h1>
         </div>

@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import type { Tab, Torrent } from "@torrentx/api-client";
 import { useUi } from "../lib/context";
+import { graphPaths, isActive, type Sample } from "../lib/activity";
+import { COLUMNS } from "../lib/columns";
 import { bytes, eta, percent, rate, statusColor } from "../lib/format";
 import { TORRENT_DRAG_TYPE } from "./TabBar";
 
@@ -40,6 +42,8 @@ interface TorrentProps {
   tabs: Tab[];
   onMoveToTab: (tabId: string | null) => void;
   onAction: (action: TorrentAction) => void;
+  /** Recent activity; drawn behind the row while downloading or seeding. */
+  samples?: Sample[];
 }
 
 const itemClass = "w-full px-3 py-2 text-left text-sm flex items-center disabled:opacity-40 disabled:cursor-not-allowed";
@@ -83,6 +87,7 @@ export function TorrentItem({
   tabs,
   onMoveToTab,
   onAction,
+  samples,
 }: TorrentProps) {
   const { t, gate } = useUi();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -116,25 +121,38 @@ export function TorrentItem({
 
   const isPaused = torrent.status === "paused";
   const color = statusColor(torrent.status);
+  const graph = isActive(torrent) && samples && samples.length >= 2 ? graphPaths(samples) : null;
 
   return (
     <div
       draggable
       onDragStart={handleDragStart}
       onDragEnd={onDragEnd}
-      className={`px-4 py-3 transition-colors duration-200 cursor-pointer ${isSelected ? "bg-tx-accent-900/20 hover:bg-tx-accent-900/30" : "hover:bg-tx-surface-900/70"} ${isDragging ? "opacity-50" : ""} group relative`}
+      className={`h-14 px-4 flex items-center isolate transition-colors duration-200 cursor-pointer ${isSelected ? "bg-tx-accent-900/20 hover:bg-tx-accent-900/30" : "hover:bg-tx-surface-900/70"} ${isDragging ? "opacity-50" : ""} group relative`}
       onClick={onClick}
-      title={torrent.error ?? undefined}
+      title={torrent.error ? `${torrent.name}\n${torrent.error}` : torrent.name}
     >
-      <div className="flex items-center text-sm text-tx-accent-400">
-        <div className="flex-1 px-2 truncate">
+      {graph && (
+        <svg
+          className="absolute inset-0 -z-10 w-full h-full pointer-events-none"
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          aria-hidden
+        >
+          <path d={graph.down} className="fill-tx-accent-500/10" />
+          <path d={graph.disk} className="fill-none stroke-tx-accent-600/40" strokeDasharray="3 2" vectorEffect="non-scaling-stroke" />
+          <path d={graph.up} className="fill-none stroke-tx-accent-700/60" vectorEffect="non-scaling-stroke" />
+        </svg>
+      )}
+      <div className="flex flex-1 min-w-0 items-center text-sm text-tx-accent-400">
+        <div className={COLUMNS.name}>
           <div className="flex items-center">
             <div className={`w-2 h-2 rounded-full mr-2 shrink-0 ${color}`}></div>
-            <span className="truncate">{torrent.name}</span>
+            <span className="line-clamp-2 break-all">{torrent.name}</span>
           </div>
         </div>
-        <div className="w-20 text-right px-2">{bytes(torrent.size)}</div>
-        <div className="w-24 text-right px-2">
+        <div className={COLUMNS.size}>{bytes(torrent.size)}</div>
+        <div className={COLUMNS.progress}>
           <div className="w-full bg-tx-surface-800 rounded-full h-1.5">
             <div
               className={`h-1.5 rounded-full ${color} transition-all duration-300`}
@@ -143,11 +161,11 @@ export function TorrentItem({
           </div>
           <span className="text-xs mt-1 inline-block">{percent(torrent.progress)}</span>
         </div>
-        <div className="w-20 text-right px-2">{torrent.seeds}</div>
-        <div className="w-20 text-right px-2">{torrent.peers}</div>
-        <div className="w-24 text-right px-2">{rate(torrent.downloadRate)}</div>
-        <div className="w-24 text-right px-2">{rate(torrent.uploadRate)}</div>
-        <div className="w-20 text-right px-2">{isPaused ? t("status.paused") : eta(torrent)}</div>
+        <div className={COLUMNS.seeds}>{torrent.seeds}</div>
+        <div className={COLUMNS.peers}>{torrent.peers}</div>
+        <div className={COLUMNS.download}>{rate(torrent.downloadRate)}</div>
+        <div className={COLUMNS.upload}>{rate(torrent.uploadRate)}</div>
+        <div className={COLUMNS.eta}>{isPaused ? t("status.paused") : eta(torrent)}</div>
         <div
           className={`${menuOpen ? "flex" : "hidden group-hover:flex"} items-center space-x-1 ml-2 absolute right-4 bg-tx-surface-950/80 px-2 py-1 rounded-md shadow-lg backdrop-blur-sm transition-opacity duration-200`}
           onClick={(e) => e.stopPropagation()}

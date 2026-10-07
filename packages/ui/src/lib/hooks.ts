@@ -1,5 +1,6 @@
-import { useCallback, useRef, useState } from "react";
-import { api, ApiError, type EngineKind } from "@torrentx/api-client";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { api, ApiError, type EngineKind, type Torrent } from "@torrentx/api-client";
+import { pushSample, type History } from "./activity";
 import { usePoll } from "./usePoll";
 
 interface PollOptions {
@@ -55,4 +56,11 @@ export function useDetails(id: string, want: { peers: boolean; pieces: boolean }
     peers: usePolled(peers, 2000, { key: id, enabled: want.peers }),
     pieces: usePolled(pieces, 3000, { key: id, enabled: want.pieces }),
   };
+}
+
+/** Per-torrent activity history, one sample per list refresh (browser memory only). */
+export function useActivity(torrents: Torrent[]): History {
+  const [history, setHistory] = useState<History>(() => new Map());
+  useEffect(() => setHistory((h) => pushSample(h, torrents, Date.now())), [torrents]);
+  return history;
 }

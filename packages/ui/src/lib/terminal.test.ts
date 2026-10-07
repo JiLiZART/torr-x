@@ -34,7 +34,7 @@ test("list and status", async () => {
   const { d } = deps();
   const list = (await run("list", d)).lines;
   assert.ok(list.some((l) => l === "abc123 | ubuntu.iso | downloading | 50%"));
-  assert.deepEqual((await run("status", d)).lines, [
+  assert.deepEqual((await run("status", d)).lines.map((l) => l.replace(/\u00a0/g, " ")), [
     "Download: 2.0 KB/s | Upload: 0 B/s",
     "Active: 1 | Total: 2",
     "Ratio: 1.50",

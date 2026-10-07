@@ -56,9 +56,11 @@ openspec/                   specs and change proposals
 - **Security**: `auth::guard` enforces a Host allowlist when bound to loopback (anti DNS-rebinding) and rejects
   POST/PUT/DELETE whose `Origin` ≠ Host (anti CSRF), even with auth off. No CORS headers. Auth (off by default)
   = session cookie (`tx_session`, in-memory) or HTTP Basic. Passwords never returned by `GET /settings`.
-- **Desktop**: frameless window (`decorations(false)`); the UI header dots call `@tauri-apps/api/window`
-  only when `window.__TAURI_INTERNALS__` exists, and `capabilities/window.json` grants just window ops to
-  the loopback server origin. Autostart, start minimized, quit confirmation and native notifications follow
+- **Desktop**: frameless window (`decorations(false)`); the UI header dots render and call `@tauri-apps/api/window`
+  only when `window.__TAURI_INTERNALS__` exists, and `capabilities/window.json` grants just window ops (plus
+  is-maximized/fullscreen and resize events) to the loopback server origin. Rounded corners: the window is
+  transparent on macOS/Linux (`macos-private-api` feature, `macOSPrivateApi`), `initDesktopChrome()` sets
+  `html[data-desktop]` / `[data-maximized]` and `apps/web/src/index.css` rounds `#root`; Windows 11 rounds natively. Autostart, start minimized, quit confirmation and native notifications follow
   `preferences` via `ServerHandle::info()` events (in-process) or polling (attached). On launch it probes `GET /api/v1/health` on the configured port → attach if TorrentX, else start
   the server in-process (`torrentx_server::start`); foreign process → error dialog. With auth on, the window is
   logged in via a one-time `ServerHandle::issue_handoff_token()` → `/api/v1/auth/handoff`. Closing the window

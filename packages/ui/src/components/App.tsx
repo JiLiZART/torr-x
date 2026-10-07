@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type DragEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type DragEvent } from "react";
 import { Edit3, FolderInput, X } from "lucide-react";
 import { api, ApiError, type Health, type Torrent } from "@torrentx/api-client";
 import { DEFAULT_PREFS, makeUi, UiContext } from "../lib/context";
@@ -7,6 +7,7 @@ import { useBrowserNotifications } from "../lib/notify";
 import { useApplyPrefs } from "../lib/theme";
 import { useUpdateCheck } from "../lib/updates";
 import { usePoll } from "../lib/usePoll";
+import { initDesktopChrome } from "../lib/window";
 import { Header } from "./Header";
 import { TabBar, type TabView } from "./TabBar";
 import { TorrentList } from "./TorrentList";
@@ -75,6 +76,7 @@ export function App() {
   const ui = useMemo(() => makeUi(prefs, caps.data), [prefs, caps.data]);
   const { t } = ui;
   useApplyPrefs(prefs);
+  useEffect(() => initDesktopChrome(), []);
   useBrowserNotifications(torrents.data, prefs.notifications, t);
   const updates = useUpdateCheck(prefs.checkForUpdates && !needsLogin, health?.version);
 
