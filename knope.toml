@@ -1,6 +1,9 @@
-# Releases are driven by Knope Bot: change files in .changeset/ accumulate on main,
-# the bot keeps a `knope/release` PR open, and merging it tags vX.Y.Z and creates the GitHub release.
-# Binaries are attached by .github/workflows/release.yml.
+# Release flow (Knope CLI in GitHub Actions, no bot):
+# - change files in .changeset/ accumulate on main (`knope document-change` creates one);
+# - .github/workflows/prepare-release.yml runs `knope prepare-release` on every push to main and keeps a
+#   `release` → `main` PR with the next version and changelog;
+# - merging it runs .github/workflows/release.yml: build binaries into artifacts/, then `knope release`
+#   tags vX.Y.Z and publishes the GitHub release with the changelog entry and the assets.
 [package]
 versioned_files = [
   "Cargo.toml",
@@ -17,6 +20,48 @@ versioned_files = [
   "apps/desktop/src-tauri/tauri.conf.json",
 ]
 changelog = "CHANGELOG.md"
+assets = "artifacts/*"
 
-[bot.releases]
-enabled = true
+[[workflows]]
+name = "document-change"
+
+[[workflows.steps]]
+type = "CreateChangeFile"
+
+[[workflows]]
+name = "prepare-release"
+
+[[workflows.steps]]
+type = "Command"
+command = "git switch -C release"
+
+[[workflows.steps]]
+type = "PrepareRelease"
+
+[[workflows.steps]]
+type = "Command"
+command = "git commit -m \"chore: prepare release $version\""
+
+[[workflows.steps]]
+type = "Command"
+command = "git push --force --set-upstream origin release"
+
+[[workflows.steps]]
+type = "CreatePullRequest"
+base = "main"
+
+[workflows.steps.title]
+template = "chore: prepare release $version"
+
+[workflows.steps.body]
+template = "Merging this PR builds the binaries and publishes release $version.\n\n$changelog"
+
+[[workflows]]
+name = "release"
+
+[[workflows.steps]]
+type = "Release"
+
+[github]
+owner = "JiLiZART"
+repo = "torr-x"

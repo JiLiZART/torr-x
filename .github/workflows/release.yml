@@ -1,6 +1,6 @@
-# Knope Bot creates tag vX.Y.Z and the GitHub release when its `knope/release` PR is merged;
-# this workflow builds the binaries from that commit and attaches them.
-# Run manually with a tag to (re)build and fill in missing assets.
+# Merging the `release` PR (opened by prepare-release.yml) builds the binaries, then `knope release`
+# tags vX.Y.Z and publishes the GitHub release (changelog entry as notes) with artifacts/* attached.
+# Run manually with an existing tag to rebuild and replace that release's assets.
 name: Release
 
 on:
@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Existing release tag to (re)build, e.g. v0.2.0
+        description: Existing release tag to rebuild, e.g. v0.1.1
         required: true
 
 permissions:
@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   version:
-    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.merged == true && github.head_ref == 'knope/release' && github.event.pull_request.head.repo.full_name == github.repository)
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.merged == true && github.head_ref == 'release' && github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.v.outputs.version }}
@@ -52,25 +52,31 @@ jobs:
     permissions:
       contents: write
     env:
+      GITHUB_TOKEN: ${{ github.token }}
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
       TAG: v${{ needs.version.outputs.version }}
     steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.version.outputs.ref }}
+          fetch-depth: 0
       - uses: actions/download-artifact@v4
         with:
-          path: out
+          path: artifacts
           merge-multiple: true
       - name: Checksums
-        working-directory: out
+        working-directory: artifacts
         run: sha256sum -- * > SHA256SUMS.txt && cat SHA256SUMS.txt
-      - name: Wait for the release created by Knope Bot
+      - uses: knope-dev/action@v2.1.2
+        with:
+          version: 0.23.0
+      # New release: Knope creates it as a draft, uploads artifacts/*, then publishes.
+      # Re-run of an existing release: replace its assets.
+      - name: Publish
         run: |
-          for _ in $(seq 60); do
-            gh release view "$TAG" > /dev/null 2>&1 && exit 0
-            sleep 10
-          done
-          echo "release $TAG not found after 10 minutes" >&2
-          exit 1
-      # --clobber keeps re-runs idempotent.
-      - name: Upload assets
-        run: gh release upload "$TAG" out/* --clobber
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release upload "$TAG" artifacts/* --clobber
+          else
+            knope release --verbose
+          fi

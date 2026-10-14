@@ -7,9 +7,9 @@
 - Release builds already have scripts: `pnpm build:server` / `pnpm build:desktop` = `build:web` +
   `scripts/fetch-geoip.sh` + cargo/tauri build with `--features geoip`. The UI must be built before cargo
   (rust-embed). Tauri `bundle.targets = "all"`.
-- Knope Bot (GitHub App) does the changeset part without any workflow: PR check, `knope/release` PR, and on merge the
-  tag + GitHub release. It only needs `knope.toml`. Binaries are the repo's job: the tutorial triggers a workflow on
-  `pull_request: closed` for head ref `knope/release`.
+- The Knope Bot GitHub App can't be installed on this repo, so the same flow runs with the Knope CLI (0.23.0) in
+  GitHub Actions, following Knope's "Preview releases with pull requests" recipe. The repo is public; Actions'
+  default token is read-only and "Allow GitHub Actions to create pull requests" is off.
 
 ## Goals / Non-Goals
 
@@ -21,29 +21,18 @@ Linux arm64 desktop builds, macOS/Windows server binaries, release-time e2e test
 
 ## Decisions
 
-1. **Knope Bot, not the Knope CLI in Actions.** Follows the requested tutorial; no token/PR-creation plumbing in
-   workflows. `knope.toml`:
-   ```toml
-   [package]
-   versioned_files = [
-     "Cargo.toml",
-     { path = "Cargo.lock", dependency = "torrentx-core" },   # one entry per workspace crate (5)
-     "package.json", "apps/web/package.json", "apps/desktop/package.json",
-     "packages/ui/package.json", "packages/api-client/package.json",
-     "apps/desktop/src-tauri/tauri.conf.json",
-   ]
-   changelog = "CHANGELOG.md"
-
-   [bot.releases]
-   enabled = true
-   ```
-   Change files live in `.changeset/*.md` (Knope's format: front matter `default: minor|patch|major`, then a heading
-   and body). The bot's "Add change file" buttons create them; locally `knope document-change` works too (optional).
-   *Alt:* Knope CLI + `prepare-release` workflow — gives build-before-release ordering but re-implements what the bot
-   does and needs a PAT so the release PR triggers CI. *Alt:* `@changesets/cli` — JS-only versioning, would not bump
+1. **Knope CLI in Actions instead of Knope Bot** (bot can't be installed). `knope.toml` declares the package
+   (`versioned_files`: root `Cargo.toml`, `Cargo.lock` × 5 workspace crates, 5 `package.json`, `tauri.conf.json`;
+   `changelog = "CHANGELOG.md"`; `assets = "artifacts/*"`), `[github] owner/repo`, and three workflows:
+   `document-change` (CreateChangeFile, for contributors), `prepare-release` (switch to `release`, PrepareRelease,
+   commit `chore: prepare release $version`, force-push, CreatePullRequest to `main` with `$changelog` as body) and
+   `release` (Release). Change files: `.changeset/*.md` with `default: minor|patch|major` front matter.
+   *Alt:* Knope Bot — preferred originally, unavailable. *Alt:* `@changesets/cli` — JS-only versioning, would not bump
    `Cargo.toml`/`tauri.conf.json`.
 2. **Workflows**
-   - `ci.yml` — `pull_request` + `push: main`. Jobs: `js` (pnpm install --frozen-lockfile, lint, typecheck, test) and
+   - `ci.yml` — `pull_request` + `push: main`. Jobs: `changes` (PRs only; replaces the bot's check: `knope --validate`,
+     then pass if the PR adds a `.changeset/*.md`, every commit subject is a conventional commit, or the head is
+     `release`), `js` (pnpm install --frozen-lockfile, lint, typecheck, test) and
      `rust` (ubuntu-22.04 + Tauri Linux deps, `pnpm build:web` so rust-embed has the real UI, `cargo test --workspace`).
      `concurrency: ci-${{ github.ref }}`, cancel in progress.
    - `build.yml` — `workflow_call` with input `label` (version like `0.2.0`, or `nightly`). Matrix:
@@ -64,20 +53,24 @@ Linux arm64 desktop builds, macOS/Windows server binaries, release-time e2e test
      --cleanup-tag -y || true`, `git push -f` tag `nightly` to `github.sha`, `gh release create nightly --prerelease
      --latest=false --title "Nightly" --notes "Built from <sha>…"` with all assets. Delete+create (not edit) so stale
      assets never linger.
-   - `release.yml` — `pull_request: closed` on `main` with `if: merged && head_ref == 'knope/release'`, plus
-     `workflow_dispatch` with input `tag` for re-runs. `version` job reads `workspace.package.version` from the merge
-     commit's `Cargo.toml` → tag `v<version>`. Calls `build.yml` with `label: <version>`. `publish` waits (poll
-     `gh release view v<version>`, up to 10 min) for the bot's release, then `gh release upload --clobber` assets +
-     `SHA256SUMS.txt` (clobber makes re-runs idempotent).
+   - `prepare-release.yml` — `push: main` (skipped when the head commit is `chore: prepare release`), concurrency
+     with cancel. A shell gate checks for `.changeset/*.md` or releasing commits (`feat`/`fix`/`!`) since the last
+     `v*` tag (a Knope dry run with nothing to release fails with a misleading error, so it can't be the gate), then
+     runs `knope prepare-release`. Token: `secrets.RELEASE_TOKEN || github.token`.
+   - `release.yml` — `pull_request: closed` on `main` with `if: merged && head_ref == 'release'` (same-repo only),
+     plus `workflow_dispatch` with input `tag` for re-runs. `version` job reads `workspace.package.version` from the
+     merge commit's `Cargo.toml`. Calls `build.yml` with `label: <version>`. `publish` downloads into `artifacts/`,
+     adds `SHA256SUMS.txt`, then `knope release` (draft → upload assets → publish, notes from the changelog section,
+     tag `v<version>`). If the release already exists (re-run), `gh release upload --clobber` instead.
    - Permissions: `contents: read` by default; `contents: write` only on the publish jobs.
-3. **Trigger on PR merge, not `on: release`.** Per the tutorial, the release event misses bot-created/draft cases;
-   the `knope/release` head ref is stable. Building from the merge commit equals building the tagged commit because
-   the bot tags that commit.
+3. **Build before release.** The release is created only after all binaries built, so the page never appears
+   without assets; a failed build leaves no release and the PR merge can be retried via `workflow_dispatch` only once
+   a tag exists — otherwise re-run the failed workflow run.
 4. **Nightly keeps the base version inside binaries** (e.g. health reports `0.2.0`) and only file names say
    `nightly`. Injecting `0.2.0-nightly.N` would break MSI (WiX needs numeric versions). Release notes carry the SHA.
 5. **Unsigned builds**: macOS users must right-click → Open (or `xattr -d com.apple.quarantine`); documented in the
    release notes footer via README. Signing later = secrets + `APPLE_*`/`TAURI_SIGNING_*` env in `build.yml` only.
-6. **Bootstrap**: tag the current `main` commit `v0.1.0` before enabling the bot. Without a tag Knope reads the
+6. **Bootstrap**: tag the current `main` commit `v0.1.0` before the first release. Without a tag Knope reads the
    whole history and lists every old `feat:` commit in the first changelog. The PR adding `knope.toml` uses `ci:`
    commits plus one change file (`minor`: "First public release with downloadable binaries"). Knope follows
    pre-1.0 semver (minor → patch bump), so the first release PR proposes 0.1.1 (verified with
@@ -85,22 +78,23 @@ Linux arm64 desktop builds, macOS/Windows server binaries, release-time e2e test
 
 ## Risks / Trade-offs
 
-- [Release page exists ~20–40 min before its binaries] → Notes are complete immediately; publish job fails loudly;
-  `workflow_dispatch` re-run fills gaps.
+- [Release PR is opened with `GITHUB_TOKEN`, so CI doesn't run on it and required checks would block it] → Add a
+  fine-grained PAT (contents + pull requests: write) as `RELEASE_TOKEN`, or merge with admin bypass; the PR only
+  bumps versions and the changelog.
+- [Actions can't open PRs by default] → Enable "Allow GitHub Actions to create and approve pull requests"
+  (repo settings → Actions) once.
 - [`ubuntu-22.04-arm` runners free only for public repos] → If the repo is private, swap that matrix entry to
   `cross build --target aarch64-unknown-linux-gnu` (server only, no GUI deps).
 - [Nightly on every push burns runner minutes (5 builds, macOS universal is slowest)] → cancel-in-progress; add
   `paths-ignore: ["openspec/**", "**/*.md"]`.
 - [GeoIP download from db-ip.com per job can fail/ratelimit] → Script already falls back to last month; failure fails
   only that job; rerun.
-- [Release PR merges don't trigger CI on the bot's own commits?] → Knope Bot is a GitHub App, so its pushes do
-  trigger workflows (unlike `GITHUB_TOKEN` pushes). Verify on the first release PR.
 - [`cargo test` server test that starts a real rqbit engine] → Fine on clean runners; mark `#[ignore]` only if it
   flakes in CI.
 
 ## Migration Plan
 
 1. Merge `ci.yml` first (PR with `ci:` commits) and make it a required check.
-2. Install Knope Bot on the repo, merge `knope.toml` + build/nightly/release workflows + first change file.
+2. Enable Actions PR creation (and optionally add `RELEASE_TOKEN`), merge `knope.toml` + workflows + first change file.
 3. Verify a nightly appears, then merge the first release PR → `v0.1.1` with binaries.
-Rollback: delete workflows / uninstall the bot; tags and releases can stay.
+Rollback: delete the workflows; tags and releases can stay.

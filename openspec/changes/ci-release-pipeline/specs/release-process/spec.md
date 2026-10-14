@@ -18,11 +18,11 @@ Every pull request to `main` and every push to `main` SHALL run the JS lint, typ
 - **THEN** the CI check succeeds
 
 ### Requirement: Documented changes
-Every pull request to `main` SHALL be documented either by at least one change file in `.changeset/` declaring the release type (major, minor or patch) and a user-facing description, or only by conventional commits; a pull request with neither SHALL fail the "Require changes to be documented" check. One user-facing feature or fix SHALL be described by one change file.
+Every pull request to `main` SHALL be documented either by at least one change file in `.changeset/` declaring the release type (major, minor or patch) and a user-facing description, or only by conventional commits; a pull request with neither SHALL fail the change-documentation check. One user-facing feature or fix SHALL be described by one change file.
 
 #### Scenario: Feature PR without change file
 - **WHEN** a pull request with a non-conventional commit message and no change file is opened
-- **THEN** the documentation check fails and offers to add a change file
+- **THEN** the documentation check fails and tells the author how to add a change file
 
 #### Scenario: Tooling-only PR
 - **WHEN** a pull request contains only `ci:` or `docs:` conventional commits

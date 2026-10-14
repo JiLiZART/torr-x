@@ -76,9 +76,10 @@ default: minor   # major | minor | patch
 Optional details.
 ```
 
-Knope Bot can add it for you from the failing "Require changes to be documented" check (or run `knope document-change`).
-Tooling-only changes can skip it by using conventional commits such as `ci:` or `docs:`. Merged change files collect on
-`main`; Knope Bot keeps a release PR open, and merging it publishes the versioned release with changelog and binaries.
+Create it with `knope document-change` ([install Knope](https://knope.tech/installation/)) or by hand. The CI `changes`
+check fails without one, unless every commit is a conventional commit such as `ci:` or `docs:`. Merged change files
+collect on `main`; a workflow keeps a `release` PR open with the next version and changelog, and merging it builds the
+binaries and publishes the versioned release.
 
 ## Layout
 

@@ -13,6 +13,36 @@ permissions:
   contents: read
 
 jobs:
+  # Replaces Knope Bot's "Require changes to be documented": a PR needs a change file in .changeset/
+  # (`knope document-change`) unless every commit is a conventional commit.
+  changes:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: knope-dev/action@v2.1.2
+        with:
+          version: 0.23.0
+      - run: knope --validate
+      - name: Change file or conventional commits
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          if [ "$HEAD_REF" = "release" ]; then exit 0; fi
+          if git diff --name-only --diff-filter=A "$BASE...$HEAD" -- .changeset | grep -q '\.md$'; then
+            echo "Documented by a change file."; exit 0
+          fi
+          bad=$(git log --no-merges --format=%s "$BASE..$HEAD" \
+            | grep -Ev '^(feat|fix|docs|ci|chore|build|test|refactor|perf|style)(\(.+\))?!?: ' || true)
+          if [ -z "$bad" ]; then echo "Documented by conventional commits."; exit 0; fi
+          echo "::error::Add a change file (run \`knope document-change\`) or use conventional commit messages. Not conventional:"
+          echo "$bad"
+          exit 1
+
   js:
     runs-on: ubuntu-latest
     steps:
