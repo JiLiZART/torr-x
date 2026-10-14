@@ -1,13 +1,13 @@
 ## 1. CI pipeline
 
-- [ ] 1.1 Add `.github/workflows/ci.yml` (`pull_request` + `push: main`, concurrency per ref): `js` job (pnpm install --frozen-lockfile, `pnpm lint`, `pnpm typecheck`, `pnpm test`) and `rust` job (ubuntu-22.04, Tauri Linux deps, `pnpm build:web`, `cargo test --workspace`, rust-cache); verify with `actionlint` locally and a green run on a test PR
+- [x] 1.1 Add `.github/workflows/ci.yml` (`pull_request` + `push: main`, concurrency per ref): `js` job (pnpm install --frozen-lockfile, `pnpm lint`, `pnpm typecheck`, `pnpm test`) and `rust` job (ubuntu-22.04, Tauri Linux deps, `pnpm build:web`, `cargo test --workspace`, rust-cache); verify with `actionlint` locally and a green run on a test PR
 - [ ] 1.2 Verify a deliberately failing lint on a throwaway branch makes the `js` job fail, then delete the branch
 
 ## 2. Knope changesets
 
 - [x] 2.1 Add `knope.toml` (versioned files: root `Cargo.toml`, `Cargo.lock` × 5 workspace crates, 5 `package.json`, `tauri.conf.json`; `changelog = "CHANGELOG.md"`; `[bot.releases] enabled = true`); verify with `knope --validate` (or `npx knope --validate`) locally
 - [x] 2.2 Add `.changeset/first-public-release.md` (`default: minor`) describing the first release with binaries; verify `knope release --dry-run` (with a local `v0.1.0` tag) shows 0.1.1, every versioned file bumped and only this entry in the changelog
-- [ ] 2.3 Push the baseline tag `v0.1.0` on the current `main` commit so release notes start after it; verify `git ls-remote --tags origin v0.1.0`
+- [x] 2.3 Push the baseline tag `v0.1.0` on the current `main` commit so release notes start after it; verify `git ls-remote --tags origin v0.1.0`
 - [ ] 2.4 (Repo admin, manual) Install the Knope Bot GitHub App on `JiLiZART/torr-x`; verify the "Require changes to be documented" check appears on the PR from 2.1/2.2 and a `knope/release` PR opens after merge
 
 ## 3. Build and release workflows
