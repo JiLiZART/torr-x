@@ -1,0 +1,22 @@
+# Releases are driven by Knope Bot: change files in .changeset/ accumulate on main,
+# the bot keeps a `knope/release` PR open, and merging it tags vX.Y.Z and creates the GitHub release.
+# Binaries are attached by .github/workflows/release.yml.
+[package]
+versioned_files = [
+  "Cargo.toml",
+  { path = "Cargo.lock", dependency = "torrentx-core" },
+  { path = "Cargo.lock", dependency = "torrentx-rqbit" },
+  { path = "Cargo.lock", dependency = "torrentx-transmission" },
+  { path = "Cargo.lock", dependency = "torrentx-server" },
+  { path = "Cargo.lock", dependency = "torrentx-desktop" },
+  "package.json",
+  "apps/web/package.json",
+  "apps/desktop/package.json",
+  "packages/ui/package.json",
+  "packages/api-client/package.json",
+  "apps/desktop/src-tauri/tauri.conf.json",
+]
+changelog = "CHANGELOG.md"
+
+[bot.releases]
+enabled = true

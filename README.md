@@ -12,6 +12,19 @@ A torrent client with a terminal-style web UI. One server, two ways to run it:
 Engines: the built-in **rqbit** engine (no external daemon), or an existing
 **Transmission** daemon over RPC. You pick one in Settings.
 
+## Download
+
+Grab a build from [Releases](https://github.com/JiLiZART/torr-x/releases):
+
+- `torrentx-server-<version>-linux-{x86_64,aarch64}.tar.gz`: headless server, systemd unit and install guide
+- `TorrentX_<version>_universal.dmg` (macOS), `_x64_en-US.msi` / `_x64-setup.exe` (Windows),
+  `_amd64.AppImage` / `_amd64.deb` (Linux): desktop app
+- `SHA256SUMS.txt`: verify with `sha256sum -c SHA256SUMS.txt`
+
+Builds are not code-signed yet. On macOS, right-click the app and choose **Open** the first time (or run
+`xattr -d com.apple.quarantine /Applications/TorrentX.app`); on Windows, choose **More info → Run anyway**.
+The [`nightly`](https://github.com/JiLiZART/torr-x/releases/tag/nightly) pre-release is rebuilt from every push to `main`.
+
 ## Quick start
 
 ```bash
@@ -48,6 +61,24 @@ pnpm build:desktop      # Tauri bundle
 pnpm lint
 cargo test --workspace
 ```
+
+## Contributing and releases
+
+Each user-facing pull request adds one change file to `.changeset/` describing the change for the release notes:
+
+```markdown
+---
+default: minor   # major | minor | patch
+---
+
+# Short user-facing title
+
+Optional details.
+```
+
+Knope Bot can add it for you from the failing "Require changes to be documented" check (or run `knope document-change`).
+Tooling-only changes can skip it by using conventional commits such as `ci:` or `docs:`. Merged change files collect on
+`main`; Knope Bot keeps a release PR open, and merging it publishes the versioned release with changelog and binaries.
 
 ## Layout
 

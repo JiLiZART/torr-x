@@ -1,0 +1,76 @@
+# Knope Bot creates tag vX.Y.Z and the GitHub release when its `knope/release` PR is merged;
+# this workflow builds the binaries from that commit and attaches them.
+# Run manually with a tag to (re)build and fill in missing assets.
+name: Release
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to (re)build, e.g. v0.2.0
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.merged == true && github.head_ref == 'knope/release' && github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      ref: ${{ steps.v.outputs.ref }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.event.pull_request.merge_commit_sha }}
+      - id: v
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          version=$(sed -n '/^\[workspace\.package\]/,/^\[/ s/^version = "\(.*\)"/\1/p' Cargo.toml)
+          if [ -z "$version" ]; then echo "no workspace version in Cargo.toml" >&2; exit 1; fi
+          if [ -n "$TAG" ] && [ "$TAG" != "v$version" ]; then
+            echo "tag $TAG does not match Cargo.toml version $version" >&2; exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "ref=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: version
+    uses: ./.github/workflows/build.yml
+    with:
+      label: ${{ needs.version.outputs.version }}
+      ref: ${{ needs.version.outputs.ref }}
+
+  publish:
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: v${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
+      - name: Checksums
+        working-directory: out
+        run: sha256sum -- * > SHA256SUMS.txt && cat SHA256SUMS.txt
+      - name: Wait for the release created by Knope Bot
+        run: |
+          for _ in $(seq 60); do
+            gh release view "$TAG" > /dev/null 2>&1 && exit 0
+            sleep 10
+          done
+          echo "release $TAG not found after 10 minutes" >&2
+          exit 1
+      # --clobber keeps re-runs idempotent.
+      - name: Upload assets
+        run: gh release upload "$TAG" out/* --clobber

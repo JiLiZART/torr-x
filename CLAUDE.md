@@ -100,10 +100,21 @@ TORRENTX_TEST_TRANSMISSION=http://127.0.0.1:9091/transmission/rpc \
 - Tests: Rust `cargo test --workspace` (API tests via tower `oneshot`); JS only for pure logic via
   `node --experimental-strip-types --test` (no framework).
 
+## CI and Releases
+
+- `.github/workflows/ci.yml`: lint, typecheck, JS tests, `cargo test --workspace` on every PR and push to `main`.
+- Every user-facing PR adds one change file in `.changeset/` (Knope format: `default: minor|patch|major` front matter,
+  `# Title`, body); tooling-only PRs may use `ci:`/`docs:`/`chore:` commits instead. Knope Bot enforces this.
+- Knope Bot keeps a `knope/release` PR open; merging it bumps all versions (`knope.toml` `versioned_files`), writes
+  `CHANGELOG.md`, tags `vX.Y.Z` and creates the GitHub release. `release.yml` then builds (`build.yml`) and attaches
+  binaries + `SHA256SUMS.txt`; re-run it via workflow_dispatch with the tag to fill in missing assets.
+- `nightly.yml`: every push to `main` replaces the `nightly` pre-release with fresh binaries.
+- Below 1.0, Knope bumps the patch for `minor` change files and the minor for `major` ones.
+
 ## Known Gaps
 
 - No list virtualization — fine for hundreds of torrents, revisit at thousands.
-- No CI pipeline.
+- Release binaries are unsigned (macOS Gatekeeper / Windows SmartScreen warn on first launch).
 - Features no engine offers stay disabled: OS cache, super seeding, anonymous mode, WebSocket trackers,
   HTTP/SOCKS4 proxy.
 - Attached desktop app (server started elsewhere) cannot notify when auth is on (no login for polling).
