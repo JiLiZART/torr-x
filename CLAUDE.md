@@ -100,10 +100,23 @@ TORRENTX_TEST_TRANSMISSION=http://127.0.0.1:9091/transmission/rpc \
 - Tests: Rust `cargo test --workspace` (API tests via tower `oneshot`); JS only for pure logic via
   `node --experimental-strip-types --test` (no framework).
 
+## CI and Releases
+
+- `.github/workflows/ci.yml`: lint, typecheck, JS tests, `cargo test --workspace` on every PR and push to `main`.
+- Every user-facing PR adds one change file in `.changeset/` (Knope format: `default: minor|patch|major` front matter,
+  `# Title`, body; `knope document-change`); tooling-only PRs may use conventional commits instead. The CI `changes`
+  job enforces this (Knope CLI 0.23 in Actions; the Knope Bot app is not used).
+- `prepare-release.yml` runs `knope prepare-release` on pushes to `main` and keeps a `release` → `main` PR with all
+  versions bumped (`knope.toml` `versioned_files`) and `CHANGELOG.md`. Merging it runs `release.yml`: `build.yml`
+  binaries → `artifacts/` + `SHA256SUMS.txt` → `knope release` tags `vX.Y.Z` and publishes the release. Re-run via
+  workflow_dispatch with the tag to replace assets.
+- `nightly.yml`: every push to `main` replaces the `nightly` pre-release with fresh binaries.
+- Below 1.0, Knope bumps the patch for `minor` change files and the minor for `major` ones.
+
 ## Known Gaps
 
 - No list virtualization — fine for hundreds of torrents, revisit at thousands.
-- No CI pipeline.
+- Release binaries are unsigned (macOS Gatekeeper / Windows SmartScreen warn on first launch).
 - Features no engine offers stay disabled: OS cache, super seeding, anonymous mode, WebSocket trackers,
   HTTP/SOCKS4 proxy.
 - Attached desktop app (server started elsewhere) cannot notify when auth is on (no login for polling).

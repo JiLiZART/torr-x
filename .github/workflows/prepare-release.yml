@@ -1,0 +1,51 @@
+# Keeps a `release` → `main` PR open with the next version and changelog (Knope CLI, see knope.toml).
+name: Prepare release
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: prepare-release
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  prepare-release:
+    # Merging the release PR pushes to main too; release.yml handles that.
+    if: "!contains(github.event.head_commit.message, 'chore: prepare release')"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      # Optional PAT: PRs opened with the default token don't trigger CI on the release PR.
+      GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_TOKEN || github.token }}
+      - name: Anything to release?
+        id: pending
+        run: |
+          last=$(git describe --tags --abbrev=0 --match 'v[0-9]*')
+          if ls .changeset/*.md > /dev/null 2>&1 \
+            || git log --format=%s "$last..HEAD" | grep -Eq '^(feat|fix)(\(.+\))?!?: |^[a-z]+(\(.+\))?!: '; then
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Nothing to release since $last"
+          fi
+      - name: Configure Git
+        if: steps.pending.outputs.release
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - uses: knope-dev/action@v2.1.2
+        if: steps.pending.outputs.release
+        with:
+          version: 0.23.0
+      - if: steps.pending.outputs.release
+        run: knope prepare-release --verbose
