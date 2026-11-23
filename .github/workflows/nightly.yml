@@ -1,0 +1,52 @@
+# Rolling pre-release: every push to main rebuilds the binaries and replaces the `nightly` release.
+name: Nightly
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "openspec/**"
+      - ".changeset/**"
+      - "**/*.md"
+
+concurrency:
+  group: nightly
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    uses: ./.github/workflows/build.yml
+    with:
+      label: nightly
+      ref: ${{ github.sha }}
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      SHA: ${{ github.sha }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
+      - name: Checksums
+        working-directory: out
+        run: sha256sum -- * > SHA256SUMS.txt && cat SHA256SUMS.txt
+      # Delete + create (not edit) so stale assets never linger and the tag moves to this commit.
+      - name: Replace nightly release
+        run: |
+          gh release delete nightly --cleanup-tag --yes || true
+          gh release create nightly out/* \
+            --target "$SHA" \
+            --prerelease \
+            --latest=false \
+            --title "Nightly" \
+            --notes "Rolling build of \`main\` at ${SHA}. Unstable; unsigned. Prefer the latest versioned release."

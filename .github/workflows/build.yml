@@ -1,0 +1,120 @@
+# Reusable: builds every release binary for one commit and uploads them as workflow artifacts.
+# Used by nightly.yml (label "nightly") and release.yml (label = version).
+name: Build
+
+on:
+  workflow_call:
+    inputs:
+      label:
+        description: Name used in asset file names (a version like 0.2.0, or "nightly")
+        required: true
+        type: string
+      ref:
+        description: Commit to build
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  LABEL: ${{ inputs.label }}
+
+jobs:
+  server:
+    name: server (linux ${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # 22.04 keeps the glibc floor at 2.35.
+          - { runner: ubuntu-22.04, arch: x86_64 }
+          - { runner: ubuntu-22.04-arm, arch: aarch64 }
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: server-${{ matrix.arch }}
+      - run: pnpm build:server
+      - name: Package
+        run: |
+          name="torrentx-server-${LABEL}-linux-${{ matrix.arch }}"
+          mkdir -p "pkg/$name" out
+          cp target/release/torrentx-server packaging/systemd/torrentx.service docs/linux-service.md "pkg/$name/"
+          tar -C pkg -czf "out/$name.tar.gz" "$name"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: server-${{ matrix.arch }}
+          path: out/*
+          if-no-files-found: error
+
+  desktop:
+    name: desktop (${{ matrix.name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macos
+            runner: macos-latest
+            args: --target universal-apple-darwin
+            rust-targets: aarch64-apple-darwin,x86_64-apple-darwin
+            bundle: target/universal-apple-darwin/release/bundle
+          - name: windows
+            runner: windows-latest
+            bundle: target/release/bundle
+          - name: linux
+            runner: ubuntu-22.04
+            bundle: target/release/bundle
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - name: Install Tauri system dependencies
+        if: matrix.name == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libxdo-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-targets }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: desktop-${{ matrix.name }}
+      # Same steps as `pnpm build:desktop`, spelled out so the shell script also runs on Windows.
+      - run: pnpm build:web
+      - run: bash scripts/fetch-geoip.sh
+      - run: pnpm --filter @torrentx/desktop tauri build --features geoip ${{ matrix.args }}
+      - name: Collect installers
+        shell: bash
+        env:
+          BUNDLE: ${{ matrix.bundle }}
+        run: |
+          shopt -s nullglob
+          version=$(jq -r .version apps/desktop/src-tauri/tauri.conf.json)
+          mkdir -p out
+          for f in "$BUNDLE"/dmg/*.dmg "$BUNDLE"/msi/*.msi "$BUNDLE"/nsis/*.exe "$BUNDLE"/appimage/*.AppImage "$BUNDLE"/deb/*.deb; do
+            cp "$f" "out/$(basename "$f" | sed "s/_${version}_/_${LABEL}_/")"
+          done
+          ls -l out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ matrix.name }}
+          path: out/*
+          if-no-files-found: error

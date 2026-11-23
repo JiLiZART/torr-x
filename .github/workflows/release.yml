@@ -1,0 +1,82 @@
+# Merging the `release` PR (opened by prepare-release.yml) builds the binaries, then `knope release`
+# tags vX.Y.Z and publishes the GitHub release (changelog entry as notes) with artifacts/* attached.
+# Run manually with an existing tag to rebuild and replace that release's assets.
+name: Release
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to rebuild, e.g. v0.1.1
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.merged == true && github.head_ref == 'release' && github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      ref: ${{ steps.v.outputs.ref }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.event.pull_request.merge_commit_sha }}
+      - id: v
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          version=$(sed -n '/^\[workspace\.package\]/,/^\[/ s/^version = "\(.*\)"/\1/p' Cargo.toml)
+          if [ -z "$version" ]; then echo "no workspace version in Cargo.toml" >&2; exit 1; fi
+          if [ -n "$TAG" ] && [ "$TAG" != "v$version" ]; then
+            echo "tag $TAG does not match Cargo.toml version $version" >&2; exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "ref=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: version
+    uses: ./.github/workflows/build.yml
+    with:
+      label: ${{ needs.version.outputs.version }}
+      ref: ${{ needs.version.outputs.ref }}
+
+  publish:
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: v${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.version.outputs.ref }}
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - name: Checksums
+        working-directory: artifacts
+        run: sha256sum -- * > SHA256SUMS.txt && cat SHA256SUMS.txt
+      - uses: knope-dev/action@v2.1.2
+        with:
+          version: 0.23.0
+      # New release: Knope creates it as a draft, uploads artifacts/*, then publishes.
+      # Re-run of an existing release: replace its assets.
+      - name: Publish
+        run: |
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release upload "$TAG" artifacts/* --clobber
+          else
+            knope release --verbose
+          fi
