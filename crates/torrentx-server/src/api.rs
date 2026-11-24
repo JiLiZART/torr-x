@@ -443,12 +443,19 @@ async fn file_path(state: &AppState, id: &str, index: u32, local: bool) -> ApiRe
         .iter()
         .find(|f| f.index == index)
         .ok_or_else(|| ApiError::not_found(format!("torrent has no file {index}")))?;
-    let path = PathBuf::from(&d.torrent.save_path).join(&file.path);
-    // Paths come from torrent metadata: refuse anything that climbs out of the save path.
-    if file.path.split(['/', '\\']).any(|part| part == "..") {
+    if !stays_inside(&file.path) {
         return Err(ApiError::invalid("file path leaves the download folder"));
     }
-    Ok(path)
+    Ok(PathBuf::from(&d.torrent.save_path).join(&file.path))
+}
+
+/// Paths come from torrent metadata: only plain names may follow the save path. An absolute
+/// path or a drive prefix would replace it in `join`, and `..` would climb out of it.
+fn stays_inside(relative: &str) -> bool {
+    !relative.is_empty()
+        && std::path::Path::new(relative)
+            .components()
+            .all(|c| matches!(c, std::path::Component::Normal(_)))
 }
 
 async fn open_file(
@@ -900,4 +907,20 @@ async fn test_transmission(
         .ping()
         .await?;
     Ok(StatusCode::NO_CONTENT)
+}
+
+#[cfg(test)]
+mod path_tests {
+    use super::stays_inside;
+
+    #[test]
+    fn only_plain_relative_paths_stay_inside() {
+        assert!(stays_inside("Show/S01E04.mkv"));
+        assert!(stays_inside("file.iso"));
+        assert!(!stays_inside("../etc/passwd"));
+        assert!(!stays_inside("Show/../../x"));
+        assert!(!stays_inside("/etc/passwd"));
+        assert!(!stays_inside("./x"));
+        assert!(!stays_inside(""));
+    }
 }
