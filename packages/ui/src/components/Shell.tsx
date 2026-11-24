@@ -1,4 +1,5 @@
 import type { DragEvent, ReactNode } from "react";
+import { WindowDots } from "./Sidebar";
 
 interface ShellProps {
   /** Null while collapsed. */
@@ -13,7 +14,8 @@ interface ShellProps {
 /** Browser-style frame: sidebar on the left; top bar, content and status bar stacked beside it. */
 export function Shell({ sidebar, top, status, children, onDragOver, onDrop }: ShellProps) {
   return (
-    <div className="flex h-full w-full bg-tx-base font-mono text-tx-accent-500" onDragOver={onDragOver} onDrop={onDrop}>
+    <div className="relative flex h-full w-full bg-ui-bg font-ui text-ui-text" onDragOver={onDragOver} onDrop={onDrop}>
+      <WindowDots />
       {sidebar}
       <div className="flex min-w-0 flex-1 flex-col">
         {top}

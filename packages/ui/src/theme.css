@@ -1,4 +1,6 @@
-/* RGB triples consumed by the Tailwind preset (tx-base, tx-surface-*, tx-accent-*). */
+/* RGB triples consumed by the Tailwind preset. tx-* is the legacy ramp (dialogs, details, terminal);
+   ui-* is the canvas palette (pen/untitled.pen variables) used by the shell, filter bar and list.
+   dark-blue inherits the dark ui-* neutrals from :root and only swaps the accent. */
 :root,
 :root[data-theme="hacker"] {
   color-scheme: dark;
@@ -15,6 +17,27 @@
   --tx-accent-700: 21 128 61;
   --tx-accent-800: 22 101 52;
   --tx-accent-900: 20 83 45;
+  --ui-bg: 14 17 16;
+  --ui-chrome: 20 24 23;
+  --ui-chrome-2: 26 32 30;
+  --ui-surface: 21 26 24;
+  --ui-surface-2: 28 35 33;
+  --ui-surface-3: 36 45 41;
+  --ui-border: 35 43 40;
+  --ui-border-strong: 54 66 61;
+  --ui-text: 230 239 233;
+  --ui-text-2: 147 166 156;
+  --ui-text-3: 93 109 101;
+  --ui-accent: 63 224 127;
+  --ui-accent-soft: 21 50 31;
+  --ui-accent-line: 42 94 60;
+  --ui-amber: 227 179 65;
+  --ui-amber-soft: 51 40 15;
+  --ui-cyan: 69 200 216;
+  --ui-cyan-soft: 14 44 49;
+  --ui-red: 255 110 96;
+  --ui-red-soft: 51 23 21;
+  --ui-violet: 176 124 240;
 }
 
 :root[data-theme="dark-blue"] {
@@ -32,6 +55,9 @@
   --tx-accent-700: 29 78 216;
   --tx-accent-800: 30 64 175;
   --tx-accent-900: 30 58 138;
+  --ui-accent: 96 165 250;
+  --ui-accent-soft: 23 37 84;
+  --ui-accent-line: 30 64 175;
 }
 
 /* Light inverts the ramp: "bright" accent shades are the dark text colors. */
@@ -50,4 +76,25 @@
   --tx-accent-700: 5 150 105;
   --tx-accent-800: 4 120 87;
   --tx-accent-900: 167 243 208;
+  --ui-bg: 242 244 243;
+  --ui-chrome: 232 235 233;
+  --ui-chrome-2: 223 227 225;
+  --ui-surface: 255 255 255;
+  --ui-surface-2: 241 244 242;
+  --ui-surface-3: 228 233 230;
+  --ui-border: 220 225 222;
+  --ui-border-strong: 191 199 194;
+  --ui-text: 15 20 19;
+  --ui-text-2: 88 99 94;
+  --ui-text-3: 139 149 143;
+  --ui-accent: 11 143 67;
+  --ui-accent-soft: 220 243 227;
+  --ui-accent-line: 158 215 179;
+  --ui-amber: 138 96 0;
+  --ui-amber-soft: 251 239 210;
+  --ui-cyan: 11 115 131;
+  --ui-cyan-soft: 214 241 245;
+  --ui-red: 194 45 30;
+  --ui-red-soft: 251 226 223;
+  --ui-violet: 107 54 174;
 }

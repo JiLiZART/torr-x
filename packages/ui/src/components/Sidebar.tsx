@@ -9,17 +9,27 @@ import { closeWindow, isTauri, minimizeWindow, toggleMaximizeWindow } from "../l
 
 const TAB_DRAG_TYPE = "application/x-torrentx-tab";
 
-/** Desktop window only: close (hide to tray), minimize, maximize. */
+/**
+ * Desktop window only: close (hide to tray), minimize, maximize. Rendered once by the Shell, pinned to
+ * the window corner so it never moves when the sidebar collapses; the sidebar head and the top bar
+ * reserve its width with `WindowDotsSpace`. The dot colors are the OS's, not the theme's.
+ */
 export function WindowDots() {
   const { t } = useUi();
   if (!isTauri()) return null;
+  const dot = "h-[11px] w-[11px] rounded-full";
   return (
-    <div className="flex items-center space-x-1.5">
-      <button aria-label={t("window.close")} onClick={closeWindow} className="h-3 w-3 rounded-full bg-red-500" />
-      <button aria-label={t("window.minimize")} onClick={minimizeWindow} className="h-3 w-3 rounded-full bg-yellow-500" />
-      <button aria-label={t("window.maximize")} onClick={toggleMaximizeWindow} className="h-3 w-3 rounded-full bg-green-500" />
+    <div className="absolute left-[14px] top-[21px] z-50 flex h-[12px] items-center gap-[7px]">
+      <button aria-label={t("window.close")} onClick={closeWindow} className={`${dot} bg-[#FF5F57]`} />
+      <button aria-label={t("window.minimize")} onClick={minimizeWindow} className={`${dot} bg-[#FEBC2E]`} />
+      <button aria-label={t("window.maximize")} onClick={toggleMaximizeWindow} className={`${dot} bg-[#28C840]`} />
     </div>
   );
+}
+
+/** Empty, draggable room for the pinned window dots (3 × 11px + 2 × 7px). */
+export function WindowDotsSpace() {
+  return isTauri() ? <span data-tauri-drag-region className="w-[47px] shrink-0 self-stretch" /> : null;
 }
 
 interface TabActions {
@@ -40,9 +50,9 @@ interface SidebarTabProps extends TabActions {
   onMenu: (open: boolean) => void;
 }
 
-const menuItem = "block w-full px-3 py-1.5 text-left text-xs text-tx-accent-400 hover:bg-tx-accent-900/20";
+const menuItem = "block w-full px-[10px] py-[6px] text-left text-[12px] text-ui-text-2 hover:bg-ui-surface-2 hover:text-ui-text";
 const inlineInput =
-  "w-full min-w-0 rounded border border-tx-accent-900/50 bg-tx-surface-900 px-1.5 py-0.5 text-sm text-tx-accent-400 focus:outline-none focus:ring-1 focus:ring-tx-accent-700";
+  "w-full min-w-0 rounded-[8px] border border-ui-accent-line bg-ui-surface px-[9px] py-[6px] text-[13px] font-medium text-ui-text placeholder-ui-text-3 focus:outline-none";
 
 function SidebarTab({ tab, active, count, error, lensCount, menuOpen, onMenu, onActivate, onPatch, onDelete }: SidebarTabProps) {
   const { t } = useUi();
@@ -86,12 +96,14 @@ function SidebarTab({ tab, active, count, error, lensCount, menuOpen, onMenu, on
 
   if (confirming) {
     return (
-      <div className="flex items-center gap-2 rounded-md bg-red-950/40 px-2 py-1.5 text-xs text-red-300">
+      <div className="flex items-center gap-[8px] rounded-[8px] border border-ui-red bg-ui-red-soft px-[9px] py-[7px] text-[12px] text-ui-red">
         <span className="min-w-0 flex-1 truncate">{t("tabs.confirmDelete", { name: label })}</span>
-        <button className="underline" onClick={() => onDelete(tab.id)} autoFocus>
+        <button className="font-semibold underline" onClick={() => onDelete(tab.id)} autoFocus>
           {t("tabs.delete")}
         </button>
-        <button onClick={() => setConfirming(false)}>{t("common.cancel")}</button>
+        <button className="text-ui-text-2" onClick={() => setConfirming(false)}>
+          {t("common.cancel")}
+        </button>
       </div>
     );
   }
@@ -113,6 +125,12 @@ function SidebarTab({ tab, active, count, error, lensCount, menuOpen, onMenu, on
       />
     );
   }
+  // Variants of the canvas `Tab` component: plain, active, active with a lens.
+  const frame = active
+    ? `bg-ui-surface ${lensCount !== null ? "border-ui-accent-line" : "border-ui-border"}`
+    : "border-transparent hover:bg-ui-surface-2";
+  const iconColor = error ? "text-ui-red" : active || tab.pinned ? "text-ui-accent" : "text-ui-text-3";
+  const Icon = error ? AlertTriangle : tab.pinned ? Pin : Hash;
   return (
     <div
       draggable
@@ -127,43 +145,39 @@ function SidebarTab({ tab, active, count, error, lensCount, menuOpen, onMenu, on
       }}
       onDragLeave={() => setDropTarget(false)}
       onDrop={handleDrop}
-      className={`group relative flex items-center rounded-md border text-sm ${active ? "border-tx-accent-900/50 bg-tx-accent-900/20 text-tx-accent-300" : "border-transparent text-tx-accent-500 hover:bg-tx-surface-900"} ${dropTarget ? "ring-1 ring-tx-accent-500" : ""}`}
+      className={`group relative flex w-full items-center rounded-[8px] border ${frame} ${dropTarget ? "!border-ui-accent" : ""}`}
     >
       <button
-        className="flex min-w-0 flex-1 items-center gap-2 px-2 py-1.5 text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-tx-accent-500 rounded-md"
+        className="flex min-w-0 flex-1 items-center gap-[8px] rounded-[8px] px-[9px] py-[7px] text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-ui-accent"
         aria-current={active ? "page" : undefined}
         title={error ?? (tab.name ? tab.query : undefined)}
         onClick={() => onActivate(tab.id)}
         onDoubleClick={() => edit("name")}
         onKeyDown={handleKeyDown}
       >
-        {error ? (
-          <AlertTriangle size={13} className="shrink-0 text-red-400" />
-        ) : tab.pinned ? (
-          <Pin size={13} className="shrink-0 text-tx-accent-600" />
-        ) : (
-          <Hash size={13} className="shrink-0 text-tx-accent-700" />
-        )}
-        <span className="min-w-0 flex-1 truncate">{label}</span>
+        <Icon size={14} className={`shrink-0 ${iconColor}`} />
+        <span className={`min-w-0 flex-1 truncate text-[13px] font-medium ${tab.name ? "" : "font-code text-[12px]"} ${active || tab.pinned ? "text-ui-text" : "text-ui-text-2"}`}>
+          {label}
+        </span>
+        <span className={`font-code text-[11px] tabular-nums ${error ? "text-ui-red" : "text-ui-text-3"}`}>{error ? "!" : count}</span>
         {lensCount !== null && (
-          <span className="flex items-center gap-0.5 rounded-full bg-tx-accent-900/40 px-1.5 text-[10px] text-tx-accent-400" title={t("tabs.lensBadge", { n: lensCount })}>
+          <span className="flex items-center gap-[3px] rounded-full bg-ui-accent-soft px-[5px] py-[2px] font-code text-[10px] font-medium text-ui-accent" title={t("tabs.lensBadge", { n: lensCount })}>
             <Funnel size={9} /> {lensCount}
           </span>
         )}
-        <span className="text-xs tabular-nums text-tx-accent-700">{error ? "!" : count}</span>
       </button>
       <button
         aria-label={t("tabs.menu")}
         aria-expanded={menuOpen}
         onClick={() => onMenu(!menuOpen)}
-        className={`px-1 text-tx-accent-600 hover:text-tx-accent-400 ${menuOpen ? "" : "opacity-0 focus:opacity-100 group-hover:opacity-100"}`}
+        className={`pr-[6px] text-ui-text-3 hover:text-ui-text ${menuOpen ? "" : "hidden focus:block group-hover:block"}`}
       >
         <Ellipsis size={14} />
       </button>
       {menuOpen && (
         <>
           <button className="fixed inset-0 z-40 cursor-default" aria-label={t("common.close")} onClick={() => onMenu(false)} />
-          <div className="absolute right-0 top-full z-50 mt-1 w-40 rounded-md border border-tx-accent-900/50 bg-tx-surface-950 py-1 shadow-xl">
+          <div className="absolute right-0 top-full z-50 mt-[4px] w-[160px] overflow-hidden rounded-[10px] border border-ui-border-strong bg-ui-surface py-[4px] shadow-xl">
             <button className={menuItem} onClick={() => edit("name")}>
               {t("tabs.rename")}
             </button>
@@ -180,7 +194,7 @@ function SidebarTab({ tab, active, count, error, lensCount, menuOpen, onMenu, on
               {t("tabs.group")}
             </button>
             {tab.id !== ALL_TAB && (
-              <button className={`${menuItem} text-red-400`} onClick={remove}>
+              <button className={`${menuItem} !text-ui-red`} onClick={remove}>
                 {t("tabs.delete")}
               </button>
             )}
@@ -208,8 +222,9 @@ interface SidebarProps extends TabActions {
   onCollapse: () => void;
 }
 
-const sectionLabel = "px-2 pb-1 pt-3 text-[10px] font-semibold tracking-wider text-tx-accent-700";
-const footButton = "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs";
+const sectionLabel = "px-[8px] pb-[4px] pt-[10px] font-code text-[9px] tracking-[1.2px] text-ui-text-3";
+const footButton = "flex w-full items-center gap-[7px] rounded-[9px] border px-[9px] py-[8px] text-[12px] font-medium";
+const key = "font-code text-[10px] font-normal";
 
 export function Sidebar({ tabs, activeId, counts, errors, lensCount, stats, onCreate, onTrigger, onSaveLens, onCollapse, ...actions }: SidebarProps) {
   const { t } = useUi();
@@ -235,21 +250,22 @@ export function Sidebar({ tabs, activeId, counts, errors, lensCount, stats, onCr
     setClosedGroups((closed) => (closed.includes(name) ? closed.filter((g) => g !== name) : [...closed, name]));
 
   return (
-    <aside className="flex w-60 shrink-0 flex-col border-r border-tx-accent-900/30 bg-tx-surface-950 px-2 py-3">
+    <aside className="flex w-[248px] shrink-0 flex-col gap-[8px] border-r border-ui-border bg-ui-chrome px-[10px] py-[12px]">
       {/* Empty areas drag the window; Tauri toggles maximize on double-click of a drag region. */}
-      <div data-tauri-drag-region className="flex h-5 items-center justify-between px-1">
-        <WindowDots />
+      {/* Same height as the top bar, so the pinned dots sit on one line in both layouts. */}
+      <div data-tauri-drag-region className="-mx-[10px] -mt-[12px] flex h-[54px] shrink-0 items-center gap-[7px] px-[14px]">
+        <WindowDotsSpace />
         <span data-tauri-drag-region className="flex-1 self-stretch" />
-        <button onClick={onCollapse} title={t("sidebar.collapse")} className="text-tx-accent-700 hover:text-tx-accent-400">
+        <button onClick={onCollapse} title={t("sidebar.collapse")} className="text-ui-text-3 hover:text-ui-text">
           <PanelLeftClose size={15} />
         </button>
       </div>
-      <button onClick={onTrigger} className="mt-3 flex items-center gap-2 rounded-md bg-tx-surface-900 px-2 py-2 text-xs text-tx-accent-700 hover:text-tx-accent-500">
-        <Search size={13} />
-        <span className="flex-1 text-left">{t("sidebar.trigger")}</span>
-        <kbd>⌘T</kbd>
+      <button onClick={onTrigger} className="flex items-center gap-[8px] rounded-[10px] border border-ui-border bg-ui-surface-2 px-[10px] py-[9px] text-ui-text-3 hover:border-ui-border-strong">
+        <Search size={14} />
+        <span className="flex-1 text-left text-[12px]">{t("sidebar.trigger")}</span>
+        <kbd className={key}>⌘T</kbd>
       </button>
-      <nav className="mt-1 flex-1 space-y-0.5 overflow-y-auto" aria-label={t("sidebar.tabs")}>
+      <nav className="-mx-[2px] flex min-h-0 flex-1 flex-col gap-[4px] overflow-y-auto px-[2px]" aria-label={t("sidebar.tabs")}>
         <div className={sectionLabel}>{t("sidebar.pinned")}</div>
         {render(pinned)}
         <div className={sectionLabel}>{t("sidebar.smart")}</div>
@@ -257,50 +273,50 @@ export function Sidebar({ tabs, activeId, counts, errors, lensCount, stats, onCr
         {groups.map((group) => {
           const open = !closedGroups.includes(group.name);
           return (
-            <div key={group.name}>
-              <button onClick={() => toggleGroup(group.name)} aria-expanded={open} className="flex w-full items-center gap-1.5 px-2 pb-1 pt-2 text-[10px] font-semibold tracking-wider text-tx-accent-700 hover:text-tx-accent-500">
+            <div key={group.name} className="flex flex-col gap-[2px]">
+              <button onClick={() => toggleGroup(group.name)} aria-expanded={open} className="flex w-full items-center gap-[6px] px-[8px] pb-[4px] pt-[8px] font-code text-[9px] tracking-[1.2px] text-ui-text-3 hover:text-ui-text-2">
                 {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                 <span className="flex-1 text-left">{group.name}</span>
               </button>
-              {open && <div className="space-y-0.5 pl-2.5">{render(group.tabs)}</div>}
+              {open && <div className="flex flex-col gap-[2px] border-l border-ui-border pl-[10px]">{render(group.tabs)}</div>}
             </div>
           );
         })}
         {adhoc.length > 0 && <div className={sectionLabel}>{t("sidebar.adhoc")}</div>}
         {render(adhoc)}
       </nav>
-      <div className="space-y-1 pt-2">
-        <button onClick={onCreate} className={`${footButton} text-tx-accent-500 hover:bg-tx-surface-900`}>
-          <Plus size={13} />
+      <div className="flex flex-col gap-[6px]">
+        <button onClick={onCreate} className={`${footButton} border-dashed border-ui-border text-ui-text-2 hover:border-ui-border-strong`}>
+          <Plus size={13} className="text-ui-text-3" />
           <span className="flex-1 text-left">{t("sidebar.newTab")}</span>
-          <kbd className="text-tx-accent-700">⌘⇧T</kbd>
+          <kbd className={`${key} text-ui-text-3`}>⌘⇧T</kbd>
         </button>
         {onSaveLens && (
-          <button onClick={onSaveLens} className={`${footButton} bg-tx-accent-900/30 text-tx-accent-400 hover:bg-tx-accent-900/50`}>
+          <button onClick={onSaveLens} className={`${footButton} border-ui-accent-line bg-ui-accent-soft text-ui-accent`}>
             <Save size={13} />
             <span className="flex-1 text-left">{t("sidebar.saveLens")}</span>
-            <kbd className="text-tx-accent-600">⌘S</kbd>
+            <kbd className={`${key} text-ui-accent-line`}>⌘S</kbd>
           </button>
         )}
-        <div
-          className="flex gap-3 px-2 pt-2 text-[11px] text-tx-accent-500"
-          title={
-            stats
-              ? [
-                  t("status.ratio", { ratio: stats.ratio == null ? "-" : stats.ratio.toFixed(2) }),
-                  t("status.cpu", { cpu: Math.round(stats.cpuPercent) }),
-                  t("status.mem", { mem: bytes(stats.memoryBytes) }),
-                ].join(" · ")
-              : undefined
-          }
-        >
-          <span className="flex flex-1 items-center gap-1">
-            <ArrowDown size={11} className="text-tx-accent-400" /> {stats ? rate(stats.downloadRate).trim() : "-"}
-          </span>
-          <span className="flex flex-1 items-center gap-1">
-            <ArrowUp size={11} className="text-tx-accent-700" /> {stats ? rate(stats.uploadRate).trim() : "-"}
-          </span>
-        </div>
+      </div>
+      <div
+        className="flex items-center gap-[10px] px-[8px] pb-[2px] pt-[10px] font-code text-[10px] text-ui-text-2"
+        title={
+          stats
+            ? [
+                t("status.ratio", { ratio: stats.ratio == null ? "-" : stats.ratio.toFixed(2) }),
+                t("status.cpu", { cpu: Math.round(stats.cpuPercent) }),
+                t("status.mem", { mem: bytes(stats.memoryBytes) }),
+              ].join(" · ")
+            : undefined
+        }
+      >
+        <span className="flex flex-1 items-center gap-[4px]">
+          <ArrowDown size={11} className="text-ui-accent" /> {stats?.downloadRate ? rate(stats.downloadRate).trim() : "—"}
+        </span>
+        <span className="flex flex-1 items-center gap-[4px]">
+          <ArrowUp size={11} className="text-ui-cyan" /> {stats?.uploadRate ? rate(stats.uploadRate).trim() : "—"}
+        </span>
       </div>
     </aside>
   );

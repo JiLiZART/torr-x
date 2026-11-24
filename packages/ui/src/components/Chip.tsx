@@ -1,5 +1,5 @@
 import type { DragEvent, KeyboardEvent, MouseEvent } from "react";
-import { ArrowDownUp, X } from "lucide-react";
+import { ArrowDownUp, Braces, Hash, X } from "lucide-react";
 import type { Chip as QueryChip } from "@torrentx/query";
 import { useUi } from "../lib/context";
 
@@ -15,12 +15,14 @@ interface ChipProps {
   onDrop?: (e: DragEvent) => void;
 }
 
+// Variants of the canvas `Chip` component: [container, key color].
 const STYLE = {
-  default: "bg-tx-surface-900 border-tx-accent-900/40 text-tx-accent-500",
-  active: "bg-tx-accent-900/30 border-tx-accent-800 text-tx-accent-400",
-  sort: "bg-tx-surface-800 border-tx-accent-700 border-dashed text-tx-accent-300",
-  dragging: "bg-tx-surface-800 border-tx-accent-600 text-tx-accent-400 opacity-50",
+  default: ["bg-ui-surface-2 border-ui-border text-ui-text", "text-ui-text-3"],
+  active: ["bg-ui-accent-soft border-ui-accent-line text-ui-accent", "text-ui-accent"],
+  sort: ["bg-ui-cyan-soft border-ui-cyan text-ui-cyan", "text-ui-cyan"],
+  dragging: ["bg-ui-surface-3 border-ui-border-strong text-ui-text", "text-ui-text-2"],
 };
+const LEAD = { filter: Hash, sort: ArrowDownUp, group: Braces };
 
 const chipSibling = (from: Element, step: "previousElementSibling" | "nextElementSibling") => {
   let el = from[step];
@@ -31,7 +33,8 @@ const chipSibling = (from: Element, step: "previousElementSibling" | "nextElemen
 /** One query predicate, rendered the same wherever a query is shown. */
 export function Chip({ chip, status = "active", onRemove, onNegate, onDragStart, onDragEnd, onDrop }: ChipProps) {
   const { t } = useUi();
-  const style = status === "dragging" ? STYLE.dragging : chip.kind === "sort" ? STYLE.sort : STYLE[status];
+  const [box, keyColor] = status === "dragging" ? STYLE.dragging : chip.kind === "sort" ? STYLE.sort : STYLE[status];
+  const Lead = LEAD[chip.kind];
   const interactive = !!onRemove;
 
   const handleClick = (e: MouseEvent) => {
@@ -61,11 +64,11 @@ export function Chip({ chip, status = "active", onRemove, onNegate, onDragStart,
       onClick={interactive ? handleClick : undefined}
       onKeyDown={interactive ? handleKeyDown : undefined}
       title={interactive && chip.kind === "filter" ? t("filter.chipHint") : undefined}
-      className={`group/chip inline-flex items-center gap-1 whitespace-nowrap rounded-md border px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-tx-accent-500 ${style}`}
+      className={`inline-flex items-center gap-[6px] whitespace-nowrap rounded-[8px] border px-[8px] py-[5px] font-code text-[11px] leading-none focus:outline-none focus-visible:ring-1 focus-visible:ring-ui-accent ${box}`}
     >
-      {chip.kind === "sort" && <ArrowDownUp size={11} aria-hidden />}
-      {chip.key && <span className="opacity-60">{chip.negated ? `!${chip.key}:` : `${chip.key}:`}</span>}
-      <span>{chip.value}</span>
+      <Lead size={12} className={keyColor} aria-hidden />
+      {chip.key && <span className={keyColor}>{chip.negated ? `!${chip.key}:` : `${chip.key}:`}</span>}
+      <span className="font-medium">{chip.value}</span>
       {onRemove && (
         <button
           type="button"
@@ -75,7 +78,7 @@ export function Chip({ chip, status = "active", onRemove, onNegate, onDragStart,
             e.stopPropagation();
             onRemove();
           }}
-          className="opacity-50 hover:opacity-100 group-hover/chip:opacity-100"
+          className={`${keyColor} hover:text-ui-text`}
         >
           <X size={11} />
         </button>

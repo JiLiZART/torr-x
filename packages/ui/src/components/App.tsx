@@ -58,6 +58,7 @@ export function App() {
   const [undo, setUndo] = useState<Lens[]>([]);
   const [snapshots, setSnapshots] = useState<Record<string, Lens>>({});
   const [saveOpen, setSaveOpen] = useState(false);
+  const [builderOpen, setBuilderOpen] = useState(false);
   const [saved, setSaved] = useState<{ tab: Tab; from: string; lens: Lens } | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [compact, setCompact] = useState(() => localStorage.getItem(DENSITY_KEY) === "compact");
@@ -135,6 +136,7 @@ export function App() {
     return list.filter((row) => nodes.every((node) => evaluate(node, row, now))).sort(compare(order));
   }, [list, tabAst, fuzzy, lensAst, order]);
   const lensCount = hasLens(lens) ? predicateCount(lens.query) : null;
+  const inTab = (activeTab && counts[activeTab.id]) ?? list.length;
   const tabLabel = (tab: Tab) => tab.name || tab.query || t("tabs.untitled");
   const values = useMemo(
     () => ({
@@ -172,6 +174,7 @@ export function App() {
     setLensState(next);
     setUndo([]);
     setSaveOpen(false);
+    setBuilderOpen(false);
   }, [tabId]);
 
   // An address naming a tab that no longer exists opens All and says why.
@@ -266,6 +269,8 @@ export function App() {
       const typing = e.target instanceof HTMLElement && e.target.matches("input, textarea, select");
       if (e.ctrlKey && e.key === "`") setTerminalOpen((open) => !open);
       else if (mod && e.shiftKey && key === "t") void createTab();
+      else if (mod && e.shiftKey && key === "k") setLens(NO_LENS);
+      else if (mod && key === "f" && !typing) setBuilderOpen(true);
       else if (mod && key === "t") setAdd({});
       else if (mod && key === "s") setSaveOpen(hasLens(lens));
       else if (mod && key === "z" && !typing) undoLens();
@@ -333,7 +338,7 @@ export function App() {
 
   const selected = list.find((x) => x.id === selectedId) ?? null;
 
-  const banner = "flex items-center gap-3 px-4 py-2 bg-tx-accent-900/40 border-b border-tx-accent-900/50 text-sm text-tx-accent-300";
+  const banner = "flex shrink-0 items-center gap-[10px] border-b border-ui-border bg-ui-accent-soft px-[16px] py-[8px] text-[12px] text-ui-accent";
 
   return (
     <UiContext.Provider value={ui}>
@@ -378,6 +383,7 @@ export function App() {
         status={
           <StatusBar
             shown={visible.length}
+            inTab={inTab}
             total={list.length}
             lensActive={hasLens(lens)}
             engine={health?.engine}
@@ -394,7 +400,11 @@ export function App() {
           onFuzzy={(text) => setLensState((current) => ({ ...current, fuzzy: text }))}
           snapshot={!hasLens(lens) ? (snapshots[tabId] ?? null) : null}
           onRestore={restoreLens}
+          tabName={activeTab ? tabLabel(activeTab) : ""}
+          all={list}
           values={values}
+          builderOpen={builderOpen}
+          onBuilder={setBuilderOpen}
           save={saveDraft}
           onSaveOpen={() => setSaveOpen(true)}
           onSaveConfirm={(name) => void confirmSave(name)}
@@ -409,7 +419,7 @@ export function App() {
                 {t("update.link")}
               </a>
             </span>
-            <button onClick={updates.dismiss} aria-label={t("common.dismiss")} className="hover:text-tx-accent-100">
+            <button onClick={updates.dismiss} aria-label={t("common.dismiss")} className="hover:text-ui-text">
               <X size={14} />
             </button>
           </div>
@@ -417,7 +427,7 @@ export function App() {
         {saved && (
           <div className={banner} role="status">
             <span className="flex-1 break-all">{t("save.done", { tab: tabLabel(saved.tab) })}</span>
-            <button onClick={() => void undoSave()} className="underline hover:text-tx-accent-100">
+            <button onClick={() => void undoSave()} className="underline hover:text-ui-text">
               {t("save.undo")}
             </button>
           </div>
@@ -425,18 +435,25 @@ export function App() {
         {notice && (
           <div className={banner}>
             <span className="flex-1 break-all">{notice}</span>
-            <button onClick={() => setNotice(null)} className="hover:text-tx-accent-100">
+            <button onClick={() => setNotice(null)} className="hover:text-ui-text">
               {t("common.dismiss")}
             </button>
           </div>
         )}
-        <main className="flex-1 overflow-hidden flex flex-col">
+        <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <TorrentList
             torrents={visible}
             all={list}
             tabAst={tabAst}
             tabError={tabParsed.error}
             tabQuery={activeTab?.query ?? ""}
+            tabName={activeTab ? tabLabel(activeTab) : ""}
+            onOpenBuilder={() => setBuilderOpen(true)}
+            onSearchAll={() => {
+              // Same lens, whole library: the All tab.
+              onSwitch.current = { snapshot: true, next: lens };
+              navigate(ALL_TAB);
+            }}
             fuzzy={fuzzy}
             lensAst={lensAst}
             lens={lens}

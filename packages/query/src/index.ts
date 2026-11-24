@@ -145,7 +145,8 @@ function read(field: Field, row: Row): string | number | string[] | null {
   }
 }
 
-function isState(row: Row, state: string): boolean {
+/** True when the torrent is in `state`, including the derived `active` and `stalled`. */
+export function isState(row: Row, state: string): boolean {
   const moving = row.downloadRate > 0 || row.uploadRate > 0;
   if (state === "active") return (row.status === "downloading" || row.status === "seeding") && moving;
   if (state === "stalled") {

@@ -1,4 +1,5 @@
 import type { DateFormat, Status, Torrent } from "@torrentx/api-client";
+import { isState } from "@torrentx/query";
 
 const UNITS = ["B", "KB", "MB", "GB", "TB"];
 const NBSP = "\u00a0";
@@ -115,18 +116,31 @@ export function statusColor(status: Status): string {
   }
 }
 
-/** State word (badge) colors; pairs with `statusColor` for the dot and the bar. */
-export function statusBadge(status: Status): string {
-  switch (status) {
-    case "downloading":
-      return "bg-blue-500/15 text-blue-500";
-    case "seeding":
-      return "bg-green-500/15 text-green-500";
-    case "paused":
-      return "bg-yellow-500/15 text-yellow-500";
-    case "error":
-      return "bg-red-500/15 text-red-500";
-    default:
-      return "bg-tx-surface-800 text-tx-accent-600";
-  }
+/** Compact age for "added 3d ago": minutes, hours, days (under two weeks), weeks, years. */
+export function age(unixSecs: number, now = Date.now() / 1000): string {
+  const secs = Math.max(now - unixSecs, 0);
+  if (secs < 3600) return `${Math.floor(secs / 60)}m`;
+  if (secs < 86400) return `${Math.floor(secs / 3600)}h`;
+  if (secs < 14 * 86400) return `${Math.floor(secs / 86400)}d`;
+  if (secs < 365 * 86400) return `${Math.floor(secs / (7 * 86400))}w`;
+  return `${Math.floor(secs / (365 * 86400))}y`;
 }
+
+/** What the list shows as a torrent's state: its status, or `stalled` for a download going nowhere. */
+export type RowState = Status | "stalled";
+
+/** The state a row shows: a download going nowhere reads as stalled. */
+export function rowState(torrent: Torrent): RowState {
+  return isState(torrent, "stalled") ? "stalled" : torrent.status;
+}
+
+/** The one mapping from a state to its dot/bar and badge colors. */
+export const STATE_STYLE: Record<RowState, { dot: string; badge: string }> = {
+  downloading: { dot: "bg-ui-accent", badge: "bg-ui-accent-soft text-ui-accent" },
+  seeding: { dot: "bg-ui-cyan", badge: "bg-ui-cyan-soft text-ui-cyan" },
+  stalled: { dot: "bg-ui-amber", badge: "bg-ui-amber-soft text-ui-amber" },
+  checking: { dot: "bg-ui-violet", badge: "bg-ui-surface-2 text-ui-violet" },
+  paused: { dot: "bg-ui-text-2", badge: "bg-ui-surface-2 text-ui-text-2" },
+  queued: { dot: "bg-ui-text-3", badge: "bg-ui-surface-2 text-ui-text-3" },
+  error: { dot: "bg-ui-red", badge: "bg-ui-red-soft text-ui-red" },
+};

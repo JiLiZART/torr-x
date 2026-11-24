@@ -31,7 +31,9 @@ const items = (text: string): Node[] => {
   const ast = parse(text).ast;
   return ast ? topItems(ast) : [];
 };
-const join = (nodes: Node[]) => format({ type: "and", items: nodes });
+// Canonical lens shape: filters in the user's order, sort chip(s) last.
+const join = (nodes: Node[]) =>
+  format({ type: "and", items: [...nodes.filter((n) => n.type !== "sort"), ...nodes.filter((n) => n.type === "sort")] });
 const quote = (value: string) => (/[\s()]/.test(value) ? `"${value}"` : value);
 
 export function fuzzyNode(fuzzy: string): Node | null {
@@ -74,9 +76,7 @@ export function combine(tab: Node, lens: Lens): string {
   const fuzzy = fuzzyNode(lens.fuzzy);
   const lensSorts = own.some((item) => item.type === "sort");
   const base = topItems(tab).filter((item) => !(lensSorts && item.type === "sort"));
-  const all = [...base, ...(fuzzy ? [fuzzy] : []), ...own];
-  // Canonical shape: filters first, sort last.
-  return join([...all.filter((item) => item.type !== "sort"), ...all.filter((item) => item.type === "sort")]);
+  return join([...base, ...(fuzzy ? [fuzzy] : []), ...own]);
 }
 
 /** Canonical text, or the text itself when it does not parse. */

@@ -53,6 +53,7 @@ test("chip edits keep the lens canonical", () => {
   assert.equal(moveChip(LENS, 0, 2), "tag:4k size:>4GB state:active sort:ratio desc");
   assert.equal(addChips("a OR b", "tag:x"), "(name:*a* OR name:*b*) tag:x");
   assert.equal(addChips("", "tag:x"), "tag:x");
+  assert.equal(addChips("tag:4k sort:ratio desc", "size:>4GB"), "tag:4k size:>4GB sort:ratio desc", "sort stays last");
 });
 
 test("header click equals typing the sort chip", () => {
