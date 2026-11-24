@@ -1,6 +1,4 @@
-// Theme tokens: colors come from CSS variables set per <html data-theme> in src/theme.css.
-const v = (name) => `rgb(var(--tx-${name}) / <alpha-value>)`;
-const scale = (prefix, keys) => Object.fromEntries(keys.map((k) => [k, v(`${prefix}-${k}`)]));
+// Theme tokens: colors come from CSS variables set per <html data-theme / data-accent> in src/theme.css.
 
 // The canvas palette; values per theme live in src/theme.css.
 const UI = [
@@ -31,11 +29,6 @@ export default {
   theme: {
     extend: {
       colors: {
-        tx: {
-          base: v("base"),
-          surface: scale("surface", [700, 800, 900, 950]),
-          accent: scale("accent", [100, 300, 400, 500, 600, 700, 800, 900]),
-        },
         ui: Object.fromEntries(UI.map((name) => [name, `rgb(var(--ui-${name}) / <alpha-value>)`])),
       },
       fontFamily: {

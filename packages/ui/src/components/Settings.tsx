@@ -23,7 +23,8 @@ import {
   type Priority,
   type ProxyKind,
   type Settings as SettingsData,
-  type Theme,
+  type Accent,
+  type Mode,
   type DateFormat,
 } from "@torrentx/api-client";
 import { useUi } from "../lib/context";
@@ -53,16 +54,13 @@ const SECTIONS: { id: Section; icon: ReactNode }[] = [
 ];
 
 const field =
-  "bg-tx-surface-900 border border-tx-accent-900/50 rounded text-sm text-tx-accent-400 focus:outline-none focus:ring-1 focus:ring-tx-accent-700 disabled:opacity-50";
+  "bg-ui-surface-2 border border-ui-border rounded text-sm text-ui-text focus:outline-none focus:ring-1 focus:ring-ui-accent-line disabled:opacity-50";
 const smallButton =
-  "flex items-center text-xs bg-tx-accent-900/30 hover:bg-tx-accent-900/50 text-tx-accent-400 py-1.5 px-3 rounded-md transition-colors disabled:opacity-50";
-const heading = "text-xs font-semibold text-tx-accent-700 uppercase tracking-wider mb-3";
+  "flex items-center text-xs bg-ui-accent-soft hover:bg-ui-accent-line/50 text-ui-text py-1.5 px-3 rounded-md transition-colors disabled:opacity-50";
+const heading = "text-xs font-semibold text-ui-text-3 uppercase tracking-wider mb-3";
 
-const THEMES: { id: Theme; box: string; text: string }[] = [
-  { id: "hacker", box: "bg-black", text: "text-green-500" },
-  { id: "dark-blue", box: "bg-slate-900", text: "text-blue-400" },
-  { id: "light", box: "bg-gray-100", text: "text-gray-800" },
-];
+const MODES: Mode[] = ["system", "light", "dark"];
+const ACCENTS: Accent[] = ["green", "cyan", "amber", "violet"];
 
 export function Settings({ onClose, onSaved, onError, engineError, version, checkUpdates }: SettingsProps) {
   const { t, gate } = useUi();
@@ -163,9 +161,9 @@ export function Settings({ onClose, onSaved, onError, engineError, version, chec
 
   const describe = (description?: string, hint?: string, badge?: string) => (
     <>
-      {description && <p className="text-xs text-tx-accent-700 mt-0.5">{description}</p>}
-      {badge && <p className="text-xs text-yellow-500/80 mt-0.5">{badge}</p>}
-      {hint && <p className="text-xs text-yellow-500/80 mt-0.5">{hint}</p>}
+      {description && <p className="text-xs text-ui-text-3 mt-0.5">{description}</p>}
+      {badge && <p className="text-xs text-ui-amber mt-0.5">{badge}</p>}
+      {hint && <p className="text-xs text-ui-amber mt-0.5">{hint}</p>}
     </>
   );
 
@@ -175,13 +173,13 @@ export function Settings({ onClose, onSaved, onError, engineError, version, chec
     label: string,
     opts: { description?: string; hint?: string; badge?: string } = {},
   ) => (
-    <div className="flex items-center justify-between py-3 border-b border-tx-accent-900/20" title={opts.hint}>
+    <div className="flex items-center justify-between py-3 border-b border-ui-border" title={opts.hint}>
       <div className={opts.hint ? "opacity-60" : ""}>
-        <h4 className="text-sm text-tx-accent-400">{label}</h4>
+        <h4 className="text-sm text-ui-text">{label}</h4>
         {describe(opts.description, opts.hint, opts.badge)}
       </div>
       <button
-        className="text-tx-accent-500 focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed"
+        className="text-ui-accent focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed"
         onClick={() => onChange(!isEnabled)}
         disabled={!!opts.hint}
         role="switch"
@@ -189,9 +187,9 @@ export function Settings({ onClose, onSaved, onError, engineError, version, chec
         aria-label={label}
       >
         {isEnabled ? (
-          <ToggleRight size={20} className="text-tx-accent-500" />
+          <ToggleRight size={20} className="text-ui-accent" />
         ) : (
-          <ToggleLeft size={20} className="text-tx-accent-700" />
+          <ToggleLeft size={20} className="text-ui-text-3" />
         )}
       </button>
     </div>
@@ -203,9 +201,9 @@ export function Settings({ onClose, onSaved, onError, engineError, version, chec
     onChange: (value: number) => void,
     opts: { min: number; max: number; unit?: string; description?: string; hint?: string; step?: number },
   ) => (
-    <div className="flex items-center justify-between py-3 border-b border-tx-accent-900/20" title={opts.hint}>
+    <div className="flex items-center justify-between py-3 border-b border-ui-border" title={opts.hint}>
       <div className={opts.hint ? "opacity-60" : ""}>
-        <h4 className="text-sm text-tx-accent-400">{label}</h4>
+        <h4 className="text-sm text-ui-text">{label}</h4>
         {describe(opts.description, opts.hint)}
       </div>
       <div className="flex items-center">
@@ -222,7 +220,7 @@ export function Settings({ onClose, onSaved, onError, engineError, version, chec
           min={opts.min}
           max={opts.max}
         />
-        {opts.unit && <span className="ml-2 text-sm text-tx-accent-500">{opts.unit}</span>}
+        {opts.unit && <span className="ml-2 text-sm text-ui-accent">{opts.unit}</span>}
       </div>
     </div>
   );
@@ -233,9 +231,9 @@ export function Settings({ onClose, onSaved, onError, engineError, version, chec
     onChange: (value: string) => void,
     opts: { placeholder?: string; description?: string; type?: string; hint?: string } = {},
   ) => (
-    <div className="py-3 border-b border-tx-accent-900/20" title={opts.hint}>
+    <div className="py-3 border-b border-ui-border" title={opts.hint}>
       <div className={`mb-2 ${opts.hint ? "opacity-60" : ""}`}>
-        <h4 className="text-sm text-tx-accent-400">{label}</h4>
+        <h4 className="text-sm text-ui-text">{label}</h4>
         {describe(opts.description, opts.hint)}
       </div>
       <input
@@ -256,9 +254,9 @@ export function Settings({ onClose, onSaved, onError, engineError, version, chec
     options: { value: V; label: string; hint?: string }[],
     opts: { description?: string; hint?: string } = {},
   ) => (
-    <div className="py-3 border-b border-tx-accent-900/20" title={opts.hint}>
+    <div className="py-3 border-b border-ui-border" title={opts.hint}>
       <div className={`mb-2 ${opts.hint ? "opacity-60" : ""}`}>
-        <h4 className="text-sm text-tx-accent-400">{label}</h4>
+        <h4 className="text-sm text-ui-text">{label}</h4>
         {describe(opts.description, opts.hint)}
       </div>
       <select
@@ -304,7 +302,7 @@ export function Settings({ onClose, onSaved, onError, engineError, version, chec
                 {t("settings.general.checkNow")}
               </button>
               {updateStatus && (
-                <div className="ml-3 text-xs text-tx-accent-500 flex items-center">
+                <div className="ml-3 text-xs text-ui-accent flex items-center">
                   <Check size={12} className="mr-1.5" />
                   {updateStatus}
                 </div>
@@ -371,7 +369,7 @@ export function Settings({ onClose, onSaved, onError, engineError, version, chec
         return (
           <div className="space-y-2">
             <h3 className={heading}>{t("settings.remote.title")}</h3>
-            <p className="text-xs text-tx-accent-600 mb-4">{t("settings.remote.desc")}</p>
+            <p className="text-xs text-ui-text-2 mb-4">{t("settings.remote.desc")}</p>
             {renderTextInput(t("settings.remote.host"), tr.host, (v) => update((x) => void (x.engine.transmission.host = v)), { placeholder: "localhost", description: t("settings.remote.hostDesc") })}
             {renderNumberInput(t("settings.remote.port"), tr.port, (v) => update((x) => void (x.engine.transmission.port = v)), { min: 1, max: 65535, description: t("settings.remote.portDesc") })}
             {renderTextInput(t("settings.remote.path"), tr.path, (v) => update((x) => void (x.engine.transmission.path = v)), { placeholder: "/transmission/rpc" })}
@@ -389,27 +387,27 @@ export function Settings({ onClose, onSaved, onError, engineError, version, chec
                 {t("settings.remote.test")}
               </button>
               {testStatus && (
-                <span className={`ml-3 text-xs break-all ${testStatus.ok ? "text-tx-accent-500" : "text-red-400"}`}>
+                <span className={`ml-3 text-xs break-all ${testStatus.ok ? "text-ui-accent" : "text-ui-red"}`}>
                   {testStatus.text}
                 </span>
               )}
             </div>
-            <div className="mt-6 bg-tx-surface-900/50 border border-tx-accent-900/30 rounded-md p-3">
-              <h4 className="text-xs font-semibold text-tx-accent-700 uppercase tracking-wider mb-2">
+            <div className="mt-6 bg-ui-surface-2 border border-ui-border rounded-md p-3">
+              <h4 className="text-xs font-semibold text-ui-text-3 uppercase tracking-wider mb-2">
                 {t("settings.remote.details")}
               </h4>
-              <div className="space-y-1 text-xs text-tx-accent-500">
+              <div className="space-y-1 text-xs text-ui-accent">
                 <div className="flex justify-between gap-4">
-                  <span className="text-tx-accent-700">URL:</span>
+                  <span className="text-ui-text-3">URL:</span>
                   <span className="font-mono break-all">{rpcUrl}</span>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <span className="text-tx-accent-700">{t("settings.remote.authLabel")}</span>
+                  <span className="text-ui-text-3">{t("settings.remote.authLabel")}</span>
                   <span>{remoteAuth ? t("settings.enabled") : t("settings.disabled")}</span>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <span className="text-tx-accent-700">{t("settings.remote.status")}</span>
-                  <span className={s.engine.kind === "transmission" && engineError ? "text-red-400 break-all" : ""}>
+                  <span className="text-ui-text-3">{t("settings.remote.status")}</span>
+                  <span className={s.engine.kind === "transmission" && engineError ? "text-ui-red break-all" : ""}>
                     {s.engine.kind !== "transmission"
                       ? t("settings.remote.inactive")
                       : engineError ?? t("settings.remote.connected")}
@@ -423,21 +421,37 @@ export function Settings({ onClose, onSaved, onError, engineError, version, chec
       case "appearance":
         return (
           <div className="space-y-2">
-            <h3 className={heading}>{t("settings.appearance.theme")}</h3>
-            <div className="grid grid-cols-3 gap-3 mb-4">
-              {THEMES.map((th) => (
+            <h3 className={heading}>{t("settings.appearance.mode")}</h3>
+            <div className="mb-4 inline-flex rounded-[9px] border border-ui-border bg-ui-surface-2 p-[3px]" role="radiogroup" aria-label={t("settings.appearance.mode")}>
+              {MODES.map((mode) => (
                 <button
-                  key={th.id}
-                  onClick={() => update((x) => void (x.preferences.theme = th.id))}
-                  className={`p-1 rounded ${p.theme === th.id ? "border-2 border-tx-accent-500" : "border border-tx-accent-900/30"}`}
+                  key={mode}
+                  role="radio"
+                  aria-checked={p.appearance.mode === mode}
+                  onClick={() => update((x) => void (x.preferences.appearance = { ...x.preferences.appearance, mode }))}
+                  className={`rounded-[7px] px-[14px] py-[6px] text-[12px] ${p.appearance.mode === mode ? "bg-ui-surface text-ui-text shadow-sm" : "text-ui-text-2 hover:text-ui-text"}`}
                 >
-                  <div className={`${th.box} h-20 rounded flex items-center justify-center`}>
-                    <span className={`${th.text} text-xs`}>{t(`theme.${th.id}`)}</span>
-                  </div>
+                  {t(`appearance.mode.${mode}`)}
                 </button>
               ))}
             </div>
-            {renderToggle(p.useSystemTheme, (v) => update((x) => void (x.preferences.useSystemTheme = v)), t("settings.appearance.systemTheme"), { description: t("settings.appearance.systemThemeDesc") })}
+            <p className="-mt-2 mb-4 text-xs text-ui-text-3">{t("settings.appearance.modeDesc")}</p>
+            <h3 className={heading}>{t("settings.appearance.accent")}</h3>
+            <div className="mb-4 flex gap-[10px]" role="radiogroup" aria-label={t("settings.appearance.accent")}>
+              {ACCENTS.map((accent) => (
+                <button
+                  key={accent}
+                  role="radio"
+                  aria-checked={p.appearance.accent === accent}
+                  data-accent={accent}
+                  onClick={() => update((x) => void (x.preferences.appearance = { ...x.preferences.appearance, accent }))}
+                  className={`flex items-center gap-[8px] rounded-[9px] border px-[10px] py-[6px] text-[12px] ${p.appearance.accent === accent ? "border-ui-accent bg-ui-accent-soft text-ui-text" : "border-ui-border text-ui-text-2 hover:text-ui-text"}`}
+                >
+                  <span className="h-[12px] w-[12px] rounded-full bg-ui-accent" />
+                  {t(`appearance.accent.${accent}`)}
+                </button>
+              ))}
+            </div>
             <h3 className={`${heading} mt-6`}>{t("settings.appearance.display")}</h3>
             {renderToggle(p.showSpeedGraph, (v) => update((x) => void (x.preferences.showSpeedGraph = v)), t("settings.appearance.speedGraph"))}
             {renderToggle(p.showPieceMap, (v) => update((x) => void (x.preferences.showPieceMap = v)), t("settings.appearance.pieceMap"))}
@@ -457,8 +471,8 @@ export function Settings({ onClose, onSaved, onError, engineError, version, chec
       case "advanced":
         return (
           <div className="space-y-2">
-            <div className="bg-yellow-900/20 border-l-4 border-yellow-500 p-3 mb-4 rounded">
-              <p className="text-xs text-yellow-400">{t("settings.advanced.warning")}</p>
+            <div className="bg-ui-amber-soft border-l-4 border-ui-amber p-3 mb-4 rounded">
+              <p className="text-xs text-ui-amber">{t("settings.advanced.warning")}</p>
             </div>
             <h3 className={heading}>{t("settings.advanced.performance")}</h3>
             {renderNumberInput(t("settings.advanced.diskCache"), a.diskCacheMB, (v) => update((x) => void (x.advanced.diskCacheMB = v)), { min: 0, max: 16384, unit: "MB", description: t("settings.advanced.diskCacheDesc"), hint: gate("diskCache") })}
@@ -483,7 +497,7 @@ export function Settings({ onClose, onSaved, onError, engineError, version, chec
             {renderNumberInput(t("settings.server.port"), s.server.port, (v) => update((x) => void (x.server.port = v)), { min: 1, max: 65535 })}
             {renderTextInput(t("settings.server.allowedHosts"), hosts, setHosts, { placeholder: "nas.local", description: t("settings.server.allowedHostsDesc") })}
             {exposedWithoutAuth && (
-              <p className="flex items-start gap-2 text-xs text-yellow-400 bg-yellow-950/40 border border-yellow-900/60 rounded p-2 mt-2">
+              <p className="flex items-start gap-2 text-xs text-ui-amber bg-ui-amber-soft border border-ui-amber rounded p-2 mt-2">
                 <AlertTriangle size={14} className="shrink-0 mt-0.5" />
                 {t("settings.server.exposed")}
               </p>
@@ -508,28 +522,28 @@ export function Settings({ onClose, onSaved, onError, engineError, version, chec
   };
 
   return (
-    <div className="fixed inset-0 bg-tx-base/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-tx-surface-950 border border-tx-accent-900/50 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
-        <div className="flex justify-between items-center p-4 border-b border-tx-accent-900/30">
-          <h2 className="text-tx-accent-400 font-semibold flex items-center">
+    <div className="fixed inset-0 bg-ui-bg/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-ui-surface border border-ui-border rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+        <div className="flex justify-between items-center p-4 border-b border-ui-border">
+          <h2 className="text-ui-text font-semibold flex items-center">
             <Sliders size={16} className="mr-2" />
             {t("settings.title")}
           </h2>
           <button
             onClick={onClose}
             aria-label={t("common.close")}
-            className="text-tx-accent-500 hover:text-tx-accent-400 p-1 rounded-md hover:bg-tx-surface-900 transition-colors"
+            className="text-ui-accent hover:text-ui-text p-1 rounded-md hover:bg-ui-surface-2 transition-colors"
           >
             <X size={16} />
           </button>
         </div>
         <div className="flex flex-1 overflow-hidden">
-          <div className="w-48 border-r border-tx-accent-900/30 p-4 bg-tx-base/30">
+          <div className="w-48 border-r border-ui-border p-4 bg-ui-bg/30">
             {SECTIONS.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center px-3 py-2 mb-1 rounded-md text-sm ${activeTab === tab.id ? "bg-tx-accent-900/20 text-tx-accent-400" : "text-tx-accent-600 hover:bg-tx-surface-900 hover:text-tx-accent-500"}`}
+                className={`w-full flex items-center px-3 py-2 mb-1 rounded-md text-sm ${activeTab === tab.id ? "bg-ui-accent-soft text-ui-text" : "text-ui-text-2 hover:bg-ui-surface-2 hover:text-ui-accent"}`}
               >
                 <span className="mr-2">{tab.icon}</span>
                 <span>{t(`settings.section.${tab.id}`)}</span>
@@ -538,13 +552,13 @@ export function Settings({ onClose, onSaved, onError, engineError, version, chec
           </div>
           <div className="flex-1 p-4 overflow-y-auto">{renderTabContent()}</div>
         </div>
-        <div className="border-t border-tx-accent-900/30 p-4 bg-tx-base/30 flex items-center justify-between gap-3">
+        <div className="border-t border-ui-border p-4 bg-ui-bg/30 flex items-center justify-between gap-3">
           <div className="text-xs flex items-center min-w-0">
             {error ? (
-              <span className="text-red-400 break-all">{error}</span>
+              <span className="text-ui-red break-all">{error}</span>
             ) : (
               savedStatus && (
-                <span className="text-tx-accent-500 flex items-center">
+                <span className="text-ui-accent flex items-center">
                   <Check size={12} className="mr-1.5 shrink-0" />
                   {t(savedStatus)}
                 </span>
@@ -554,14 +568,14 @@ export function Settings({ onClose, onSaved, onError, engineError, version, chec
           <div className="flex space-x-3 shrink-0">
             <button
               onClick={onClose}
-              className="text-xs bg-tx-surface-800 hover:bg-tx-surface-700 text-tx-accent-400 py-1.5 px-4 rounded-md transition-colors"
+              className="text-xs bg-ui-surface-3 hover:bg-ui-border-strong text-ui-text py-1.5 px-4 rounded-md transition-colors"
             >
               {t("common.cancel")}
             </button>
             <button
               onClick={saveSettings}
               disabled={busy}
-              className="flex items-center text-xs bg-tx-accent-800 hover:bg-tx-accent-700 text-tx-accent-100 py-1.5 px-4 rounded-md transition-colors disabled:opacity-50"
+              className="flex items-center text-xs bg-ui-accent hover:opacity-90 text-ui-bg py-1.5 px-4 rounded-md transition-colors disabled:opacity-50"
             >
               <Save size={12} className="mr-1.5" />
               {t("settings.save")}

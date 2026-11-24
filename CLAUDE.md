@@ -35,7 +35,7 @@ packages/api-client         @torrentx/api-client: TS types + fetch wrapper (mirr
 packages/query              @torrentx/query: the query language, pure TS with no runtime deps (parse, evaluate,
                             compare, format, chips, complete, ParseError)
 packages/ui                 @torrentx/ui: shell (Sidebar, TopBar, FilterBar, StatusBar), list, dialogs, hooks,
-                            i18n, themes, Tailwind preset
+                            Spotlight palette + add flow, command registry/keymap, i18n, theme tokens, Tailwind preset
 vendor/torrent-client-magic-patterns  original design mock (reference only, not built)
 scripts/fetch-geoip.sh      downloads the DB-IP country DB embedded by `--features geoip`
 packaging/systemd           torrentx.service
@@ -110,13 +110,18 @@ TORRENTX_TEST_TRANSMISSION=http://127.0.0.1:9091/transmission/rpc \
 
 ## Conventions
 
-- Keep the terminal look: green on black, monospace, minimal shadows.
+- Keep the terminal look: monospace for query text, ids, paths and figures; minimal shadows; dark and light parity.
 - UI state: local React hooks; polling via `usePoll` (pauses when the tab is hidden).
 - Filtering and ordering go through `@torrentx/query` only; a column header edits the `sort:` chip.
 - Lint before commits: `pnpm lint`.
 - TS: double quotes, semicolons, named exports (`export function Foo`), component props as `interface FooProps`,
   event handlers `handleX`/`onX`. Types come from `@torrentx/api-client` — never redeclare model types in `packages/ui`.
-- UI strings go through `t()`; colors use theme tokens (`tx-*`), not literal green/gray classes.
+- UI strings go through `t()`; colors use theme tokens (`ui-*`, `packages/ui/src/theme.css`), never Tailwind palette
+  colors or hex (`pnpm lint` runs `check-colors.mjs`). `<html data-theme="dark|light" data-accent>` comes from
+  `preferences.appearance {mode: system|light|dark, accent}`; legacy `theme`/`useSystemTheme` convert on load.
+- Adding a torrent happens in the Spotlight panel (`AddFlow`): a magnet / `.torrent` URL in the input, the
+  "Add .torrent" button or ⌘O, or a file dropped on the window. There is no add dialog.
+- Every GUI command is registered in `lib/commands.ts` (tag its button with `data-command`); keys come from there.
 - Errors: API calls are awaited in `try/catch` and routed to one `handleError` in `packages/ui/src/components/App.tsx`.
 - Tests: Rust `cargo test --workspace` (API tests via tower `oneshot`); JS only for pure logic via
   `node --experimental-strip-types --test` (no framework).

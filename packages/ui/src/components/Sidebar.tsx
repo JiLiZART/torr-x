@@ -1,11 +1,17 @@
-import { useState, type DragEvent, type KeyboardEvent } from "react";
-import { AlertTriangle, ArrowDown, ArrowUp, ChevronDown, ChevronRight, Ellipsis, Funnel, Hash, PanelLeftClose, Pin, Plus, Save, Search } from "lucide-react";
+import { useEffect, useState, type DragEvent, type KeyboardEvent } from "react";
+import { AlertTriangle, ArrowDown, ArrowUp, ChevronDown, ChevronRight, Ellipsis, Funnel, Hash, Pin, Plus, Save, Search } from "lucide-react";
 import type { Stats, Tab, TabPatch } from "@torrentx/api-client";
 import { useUi } from "../lib/context";
 import { bytes, rate } from "../lib/format";
 import { sections } from "../lib/lens";
 import { ALL_TAB } from "../lib/route";
 import { closeWindow, isTauri, minimizeWindow, toggleMaximizeWindow } from "../lib/window";
+import { commandById } from "../lib/commands";
+import { usableKeys } from "../lib/keymap";
+import { KeyCaps } from "./KeyCaps";
+
+/** The first binding of a command that works here (browsers reserve ⌘T). */
+const bindingOf = (id: string) => usableKeys(commandById(id)?.keys ?? [], isTauri())[0] ?? "";
 
 const TAB_DRAG_TYPE = "application/x-torrentx-tab";
 
@@ -48,13 +54,15 @@ interface SidebarTabProps extends TabActions {
   lensCount: number | null;
   menuOpen: boolean;
   onMenu: (open: boolean) => void;
+  /** Bumped by the rename command (F2 anywhere) for the active tab. */
+  renameRequest: number;
 }
 
 const menuItem = "block w-full px-[10px] py-[6px] text-left text-[12px] text-ui-text-2 hover:bg-ui-surface-2 hover:text-ui-text";
 const inlineInput =
   "w-full min-w-0 rounded-[8px] border border-ui-accent-line bg-ui-surface px-[9px] py-[6px] text-[13px] font-medium text-ui-text placeholder-ui-text-3 focus:outline-none";
 
-function SidebarTab({ tab, active, count, error, lensCount, menuOpen, onMenu, onActivate, onPatch, onDelete }: SidebarTabProps) {
+function SidebarTab({ tab, active, count, error, lensCount, menuOpen, onMenu, renameRequest, onActivate, onPatch, onDelete }: SidebarTabProps) {
   const { t } = useUi();
   const [editing, setEditing] = useState<"name" | "group" | null>(null);
   const [value, setValue] = useState("");
@@ -67,6 +75,12 @@ function SidebarTab({ tab, active, count, error, lensCount, menuOpen, onMenu, on
     setValue(what === "name" ? tab.name : (tab.group ?? ""));
     setEditing(what);
   };
+  useEffect(() => {
+    if (renameRequest > 0) {
+      setValue(tab.name);
+      setEditing("name");
+    }
+  }, [renameRequest, tab.name]);
   const commit = () => {
     if (editing === "name" && value.trim() !== tab.name) onPatch(tab.id, { name: value.trim() });
     if (editing === "group" && value.trim() !== (tab.group ?? "")) onPatch(tab.id, { group: value.trim() || null });
@@ -78,13 +92,13 @@ function SidebarTab({ tab, active, count, error, lensCount, menuOpen, onMenu, on
     if (tab.query.trim().split(/\s+/).length > 1) setConfirming(true);
     else onDelete(tab.id);
   };
+  // F2 / Delete on a focused tab act on that tab, not the active one; the window keymap must not also fire.
   const handleKeyDown = (e: KeyboardEvent) => {
     if (e.key === "F2") edit("name");
     else if (e.key === "Delete" && tab.id !== ALL_TAB) remove();
-    else if (e.altKey && e.key === "ArrowUp") onPatch(tab.id, { order: Math.max(tab.order - 1, 0) });
-    else if (e.altKey && e.key === "ArrowDown") onPatch(tab.id, { order: tab.order + 1 });
     else return;
     e.preventDefault();
+    e.stopPropagation();
   };
   const handleDrop = (e: DragEvent) => {
     const id = e.dataTransfer.getData(TAB_DRAG_TYPE);
@@ -219,18 +233,20 @@ interface SidebarProps extends TabActions {
   onTrigger: () => void;
   /** Null when there is no lens to save. */
   onSaveLens: (() => void) | null;
-  onCollapse: () => void;
+  /** Rename the active tab in place; bumped per request. */
+  renameRequest: number;
 }
 
 const sectionLabel = "px-[8px] pb-[4px] pt-[10px] font-code text-[9px] tracking-[1.2px] text-ui-text-3";
 const footButton = "flex w-full items-center gap-[7px] rounded-[9px] border px-[9px] py-[8px] text-[12px] font-medium";
-const key = "font-code text-[10px] font-normal";
 
-export function Sidebar({ tabs, activeId, counts, errors, lensCount, stats, onCreate, onTrigger, onSaveLens, onCollapse, ...actions }: SidebarProps) {
+export function Sidebar({ tabs, activeId, counts, errors, lensCount, stats, onCreate, onTrigger, onSaveLens, renameRequest, ...actions }: SidebarProps) {
   const { t } = useUi();
   const [menuId, setMenuId] = useState<string | null>(null);
   const [closedGroups, setClosedGroups] = useState<string[]>([]);
   const { pinned, smart, groups, adhoc } = sections(tabs);
+  const paletteKey = bindingOf("palette.open");
+  const newTabKey = bindingOf("tab.new");
 
   const render = (list: Tab[]) =>
     list.map((tab) => (
@@ -243,6 +259,7 @@ export function Sidebar({ tabs, activeId, counts, errors, lensCount, stats, onCr
         lensCount={tab.id === activeId ? lensCount : null}
         menuOpen={menuId === tab.id}
         onMenu={(open) => setMenuId(open ? tab.id : null)}
+        renameRequest={tab.id === activeId ? renameRequest : 0}
         {...actions}
       />
     ));
@@ -256,14 +273,11 @@ export function Sidebar({ tabs, activeId, counts, errors, lensCount, stats, onCr
       <div data-tauri-drag-region className="-mx-[10px] -mt-[12px] flex h-[54px] shrink-0 items-center gap-[7px] px-[14px]">
         <WindowDotsSpace />
         <span data-tauri-drag-region className="flex-1 self-stretch" />
-        <button onClick={onCollapse} title={t("sidebar.collapse")} className="text-ui-text-3 hover:text-ui-text">
-          <PanelLeftClose size={15} />
-        </button>
       </div>
-      <button onClick={onTrigger} className="flex items-center gap-[8px] rounded-[10px] border border-ui-border bg-ui-surface-2 px-[10px] py-[9px] text-ui-text-3 hover:border-ui-border-strong">
+      <button data-command="palette.open" onClick={onTrigger} className="flex items-center gap-[8px] rounded-[10px] border border-ui-border bg-ui-surface-2 px-[10px] py-[9px] text-ui-text-3 hover:border-ui-border-strong">
         <Search size={14} />
         <span className="flex-1 text-left text-[12px]">{t("sidebar.trigger")}</span>
-        <kbd className={key}>⌘T</kbd>
+        <KeyCaps binding={paletteKey} tone="text-ui-text-3" />
       </button>
       <nav className="-mx-[2px] flex min-h-0 flex-1 flex-col gap-[4px] overflow-y-auto px-[2px]" aria-label={t("sidebar.tabs")}>
         <div className={sectionLabel}>{t("sidebar.pinned")}</div>
@@ -286,16 +300,16 @@ export function Sidebar({ tabs, activeId, counts, errors, lensCount, stats, onCr
         {render(adhoc)}
       </nav>
       <div className="flex flex-col gap-[6px]">
-        <button onClick={onCreate} className={`${footButton} border-dashed border-ui-border text-ui-text-2 hover:border-ui-border-strong`}>
+        <button data-command="tab.new" onClick={onCreate} className={`${footButton} border-dashed border-ui-border text-ui-text-2 hover:border-ui-border-strong`}>
           <Plus size={13} className="text-ui-text-3" />
           <span className="flex-1 text-left">{t("sidebar.newTab")}</span>
-          <kbd className={`${key} text-ui-text-3`}>⌘⇧T</kbd>
+          <KeyCaps binding={newTabKey} tone="text-ui-text-3" />
         </button>
         {onSaveLens && (
-          <button onClick={onSaveLens} className={`${footButton} border-ui-accent-line bg-ui-accent-soft text-ui-accent`}>
+          <button data-command="tab.save" onClick={onSaveLens} className={`${footButton} border-ui-accent-line bg-ui-accent-soft text-ui-accent`}>
             <Save size={13} />
             <span className="flex-1 text-left">{t("sidebar.saveLens")}</span>
-            <kbd className={`${key} text-ui-accent-line`}>⌘S</kbd>
+            <KeyCaps binding="Mod+S" tone="text-ui-accent-line" />
           </button>
         )}
       </div>

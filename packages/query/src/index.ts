@@ -23,6 +23,8 @@ export const FIELDS = {
   added: "date",
   done: "date",
   path: "text",
+  /** File extension, lowercase without the dot; set on file rows (add flow, file lists), absent on torrents. */
+  ext: "exact",
 } as const satisfies Record<string, Kind>;
 
 export type Field = keyof typeof FIELDS;
@@ -49,6 +51,8 @@ export interface Row {
   /** Unix seconds. */
   addedAt: number;
   savePath: string;
+  /** Files only: the extension. */
+  ext?: string;
 }
 
 export type Op = "=" | ">" | "<" | ">=" | "<=";
@@ -138,6 +142,8 @@ function read(field: Field, row: Row): string | number | string[] | null {
       return row.addedAt;
     case "path":
       return row.savePath;
+    case "ext":
+      return row.ext ?? null;
     // shortcut: the model has no category or completion date, so these never match; read them here once it does.
     case "category":
     case "done":

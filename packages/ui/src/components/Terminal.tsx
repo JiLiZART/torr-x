@@ -39,33 +39,33 @@ export function Terminal({ onClose, onChanged }: { onClose: () => void; onChange
   };
 
   return (
-    <div className="border-t border-tx-accent-900/30 bg-tx-base h-64 overflow-y-auto p-4 text-sm font-mono">
+    <div className="border-t border-ui-border bg-ui-bg h-64 overflow-y-auto p-4 text-sm font-mono">
       <div className="flex justify-between items-center mb-2">
-        <span className="text-tx-accent-500 font-semibold">{t("terminal.title")}</span>
-        <button className="text-tx-accent-500 hover:text-tx-accent-400" onClick={onClose} aria-label={t("common.close")}>
+        <span className="text-ui-accent font-semibold">{t("terminal.title")}</span>
+        <button className="text-ui-accent hover:text-ui-text" onClick={onClose} aria-label={t("common.close")}>
           <X size={16} />
         </button>
       </div>
-      <div className="text-tx-accent-500 space-y-1">
+      <div className="text-ui-accent space-y-1">
         {history.map((line, index) => (
           <div
             key={index}
-            className={`whitespace-pre-wrap ${line.startsWith(">") ? "text-tx-accent-400" : "text-tx-accent-600"}`}
+            className={`whitespace-pre-wrap ${line.startsWith(">") ? "text-ui-text" : "text-ui-text-2"}`}
           >
             {line}
           </div>
         ))}
         <div className="flex items-center">
-          <span className="text-tx-accent-400 mr-1">&gt;</span>
+          <span className="text-ui-text mr-1">&gt;</span>
           <input
             type="text"
             value={command}
             onChange={(e) => setCommand(e.target.value)}
             onKeyDown={handleCommand}
-            className="flex-1 bg-transparent border-none outline-none text-tx-accent-400 focus:ring-0"
+            className="flex-1 bg-transparent border-none outline-none text-ui-text focus:ring-0"
             autoFocus
           />
-          <span className="animate-caret-blink text-tx-accent-400">▋</span>
+          <span className="animate-caret-blink text-ui-text">▋</span>
         </div>
       </div>
       <div ref={terminalEndRef} />

@@ -1,4 +1,14 @@
-import { ChevronLeft, ChevronRight, Funnel, LogOut, PanelLeftOpen, Rows3, Settings, SquareTerminal } from "lucide-react";
+import {
+    ChevronLeft,
+    ChevronRight,
+    Funnel,
+    LogOut,
+    PanelLeftClose,
+    PanelLeftOpen,
+    Rows3,
+    Settings,
+    SquareTerminal
+} from "lucide-react";
 import { useUi } from "../lib/context";
 import { WindowDotsSpace } from "./Sidebar";
 
@@ -8,6 +18,7 @@ interface TopBarProps {
   lensCount: number | null;
   sidebarCollapsed: boolean;
   onExpandSidebar: () => void;
+  onCollapseSidebar: () => void;
   compact: boolean;
   onToggleDensity: () => void;
   terminalOpen: boolean;
@@ -23,23 +34,27 @@ const on = "border-ui-accent-line bg-ui-accent-soft text-ui-accent";
 
 // data-tauri-drag-region only applies to the element carrying it, so the empty areas are tagged
 // and the controls are not.
-export function TopBar({ title, lensCount, sidebarCollapsed, onExpandSidebar, compact, onToggleDensity, terminalOpen, onToggleTerminal, onOpenSettings, onLogout }: TopBarProps) {
+export function TopBar({ title, lensCount, sidebarCollapsed, onExpandSidebar, onCollapseSidebar, compact, onToggleDensity, terminalOpen, onToggleTerminal, onOpenSettings, onLogout }: TopBarProps) {
   const { t } = useUi();
   return (
     <header data-tauri-drag-region className="flex h-[54px] shrink-0 items-center gap-[10px] border-b border-ui-border px-[14px]">
-      {sidebarCollapsed && (
+      {sidebarCollapsed ? (
         <>
           <WindowDotsSpace />
-          <button className={nav} onClick={onExpandSidebar} title={t("sidebar.expand")}>
+          <button data-command="sidebar.toggle" className={nav} onClick={onExpandSidebar} title={t("sidebar.expand")}>
             <PanelLeftOpen size={16} />
           </button>
         </>
+      ) : (
+          <button data-command="sidebar.toggle" onClick={onCollapseSidebar} title={t("sidebar.collapse")} className="text-ui-text-3 hover:text-ui-text">
+              <PanelLeftClose size={15} />
+          </button>
       )}
       <div className="flex items-center gap-[2px]">
-        <button className={nav} onClick={() => window.history.back()} title={t("nav.back")}>
+        <button data-command="nav.back" className={nav} onClick={() => window.history.back()} title={t("nav.back")}>
           <ChevronLeft size={16} />
         </button>
-        <button className={nav} onClick={() => window.history.forward()} title={t("nav.forward")}>
+        <button data-command="nav.forward" className={nav} onClick={() => window.history.forward()} title={t("nav.forward")}>
           <ChevronRight size={16} />
         </button>
       </div>
@@ -57,17 +72,17 @@ export function TopBar({ title, lensCount, sidebarCollapsed, onExpandSidebar, co
       )}
       <span data-tauri-drag-region className="flex-1 self-stretch" />
       <div className="flex items-center gap-[4px]">
-        <button className={`${action} ${compact ? on : off}`} onClick={onToggleDensity} title={t("top.density")} aria-pressed={compact}>
+        <button data-command="density.toggle" className={`${action} ${compact ? on : off}`} onClick={onToggleDensity} title={t("top.density")} aria-pressed={compact}>
           <Rows3 size={16} />
         </button>
-        <button className={`${action} ${terminalOpen ? on : off}`} onClick={onToggleTerminal} title={t("header.terminal")} aria-pressed={terminalOpen}>
+        <button data-command="terminal.toggle" className={`${action} ${terminalOpen ? on : off}`} onClick={onToggleTerminal} title={t("header.terminal")} aria-pressed={terminalOpen}>
           <SquareTerminal size={16} />
         </button>
-        <button className={`${action} ${off}`} onClick={onOpenSettings} title={t("header.settings")}>
+        <button data-command="settings.open" className={`${action} ${off}`} onClick={onOpenSettings} title={t("header.settings")}>
           <Settings size={16} />
         </button>
         {onLogout && (
-          <button className="ml-[2px] flex h-[26px] w-[26px] items-center justify-center rounded-full bg-ui-surface-3 text-ui-text-2 hover:text-ui-text" onClick={onLogout} title={t("header.logout")}>
+          <button data-command="auth.logout" className="ml-[2px] flex h-[26px] w-[26px] items-center justify-center rounded-full bg-ui-surface-3 text-ui-text-2 hover:text-ui-text" onClick={onLogout} title={t("header.logout")}>
             <LogOut size={12} />
           </button>
         )}

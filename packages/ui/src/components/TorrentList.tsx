@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { KeyboardEvent, MouseEvent, ReactNode } from "react";
 import { AlertTriangle, Funnel, FunnelX, Search, SearchX, TriangleAlert, Undo2 } from "lucide-react";
 import type { Torrent } from "@torrentx/api-client";
 import { chips, evaluate, type Field, type Node, type ParseError, type SortKey } from "@torrentx/query";
@@ -8,7 +8,8 @@ import { bytes } from "../lib/format";
 import { COLUMNS, SORT_FIELD, type Column } from "../lib/columns";
 import { blame, NO_LENS, removeChip, type Lens } from "../lib/lens";
 import { Chip } from "./Chip";
-import { TorrentRow, type TorrentAction } from "./TorrentRow";
+import { TorrentRow } from "./TorrentRow";
+import type { TorrentAction } from "../lib/commands";
 
 interface TorrentListProps {
   /** Rows to show: tab query AND lens, already ordered by the query's `sort:`. */
@@ -30,8 +31,12 @@ interface TorrentListProps {
   sort?: SortKey;
   onSort: (field: Field) => void;
   compact: boolean;
-  selectedTorrentId: string | null;
-  onSelectTorrent: (id: string | null) => void;
+  selection: Set<string>;
+  cursor: string | null;
+  onRowClick: (id: string, e: MouseEvent) => void;
+  onRowOpen: (id: string) => void;
+  /** Keys while the list has focus: row cursor, Space, ⏎ (the registry's local list commands). */
+  onListKey: (e: KeyboardEvent) => void;
   onAction: (torrent: Torrent, action: TorrentAction) => void;
   engineError: string | null;
   onOpenSettings: () => void;
@@ -126,7 +131,7 @@ function ZeroResults(props: TorrentListProps) {
       </div>
       <div className="flex flex-wrap items-center justify-center gap-[8px]">
         {lensChips.length > 0 && (
-          <button className={primary} onClick={() => onLens(NO_LENS)}>
+          <button data-command="lens.clear" className={primary} onClick={() => onLens(NO_LENS)}>
             <FunnelX size={13} /> {t("zero.clearLens")}
           </button>
         )}
@@ -135,7 +140,7 @@ function ZeroResults(props: TorrentListProps) {
             <Undo2 size={13} /> {t("zero.remove", { predicate: cause.text })}
           </button>
         )}
-        <button className={secondary} onClick={onOpenBuilder}>
+        <button data-command="builder.open" className={secondary} onClick={onOpenBuilder}>
           <Funnel size={13} /> {t("zero.edit")}
         </button>
         <button className={secondary} onClick={onSearchAll}>
@@ -148,7 +153,7 @@ function ZeroResults(props: TorrentListProps) {
 }
 
 export function TorrentList(props: TorrentListProps) {
-  const { torrents, all, sort, onSort, compact, selectedTorrentId, onSelectTorrent, onAction, engineError, onOpenSettings } = props;
+  const { torrents, all, sort, onSort, compact, selection, cursor, onRowClick, onRowOpen, onListKey, onAction, engineError, onOpenSettings } = props;
   const { t } = useUi();
   const activity = useActivity(all);
 
@@ -173,7 +178,7 @@ export function TorrentList(props: TorrentListProps) {
           </button>
         ))}
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div id="tx-list" className="min-h-0 flex-1 overflow-y-auto focus:outline-none" tabIndex={0} onKeyDown={onListKey} aria-label={t("list.label")}>
         {!engineError && torrents.length === 0 ? (
           <ZeroResults {...props} />
         ) : (
@@ -183,8 +188,10 @@ export function TorrentList(props: TorrentListProps) {
                 key={torrent.id}
                 torrent={torrent}
                 compact={compact}
-                isSelected={selectedTorrentId === torrent.id}
-                onClick={() => onSelectTorrent(selectedTorrentId === torrent.id ? null : torrent.id)}
+                isSelected={selection.has(torrent.id)}
+                isCursor={cursor === torrent.id}
+                onClick={(e) => onRowClick(torrent.id, e)}
+                onDoubleClick={() => onRowOpen(torrent.id)}
                 onAction={(action) => onAction(torrent, action)}
                 samples={activity.get(torrent.id)}
               />

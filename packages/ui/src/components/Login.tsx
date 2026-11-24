@@ -24,7 +24,7 @@ export function Login({ onLoggedIn }: { onLoggedIn: () => void }) {
   };
 
   return (
-    <div className="h-full bg-tx-base font-mono">
+    <div className="h-full bg-ui-bg font-mono">
       <Modal
         title={
           <>
@@ -50,7 +50,7 @@ export function Login({ onLoggedIn }: { onLoggedIn: () => void }) {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          {error && <p className="text-xs text-red-400">{error}</p>}
+          {error && <p className="text-xs text-ui-red">{error}</p>}
           <button type="submit" className={`${primaryButtonClass} w-full justify-center`} disabled={busy}>
             {busy ? t("login.busy") : t("login.submit")}
           </button>

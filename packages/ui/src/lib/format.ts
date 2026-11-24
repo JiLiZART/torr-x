@@ -100,20 +100,9 @@ export function pieceCells(bitfield: string, count: number, max = 400): Cell[] {
   });
 }
 
-/** Status stripe/bar color. */
+/** Status stripe/bar color: the same mapping as the list's state dot. */
 export function statusColor(status: Status): string {
-  switch (status) {
-    case "downloading":
-      return "bg-blue-600";
-    case "seeding":
-      return "bg-green-600";
-    case "paused":
-      return "bg-yellow-600";
-    case "error":
-      return "bg-red-600";
-    default:
-      return "bg-gray-600";
-  }
+  return STATE_STYLE[status].dot;
 }
 
 /** Compact age for "added 3d ago": minutes, hours, days (under two weeks), weeks, years. */

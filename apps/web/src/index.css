@@ -9,7 +9,7 @@ body,
 #root {
   height: 100%;
   margin: 0;
-  background: rgb(var(--tx-base));
+  background: rgb(var(--ui-bg));
 }
 
 /* Desktop window (transparent on macOS/Linux): the page rounds itself; square while maximized. */

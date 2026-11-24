@@ -115,6 +115,12 @@ test("dates: relative age and ISO", () => {
   assert.ok(!matches("added:>2025-01-15", { addedAt: day }));
 });
 
+test("ext matches file rows only", () => {
+  assert.ok(matches("ext:mkv size:>1GB", { ext: "mkv" }));
+  assert.ok(!matches("ext:mkv", { ext: "srt" }));
+  assert.ok(!matches("ext:mkv"), "torrents have no extension");
+});
+
 test("fields with no source in the model never match", () => {
   assert.ok(!matches("category:movies"));
   assert.ok(!matches("done:<2025-01-01"));

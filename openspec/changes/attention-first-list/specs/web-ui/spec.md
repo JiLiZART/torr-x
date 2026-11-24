@@ -25,6 +25,16 @@ with the reason; cached data SHALL NOT survive a page reload.
 - **WHEN** the user clicks the SIZE header twice
 - **THEN** the chip row shows `sort:size asc` and the list is ordered by size ascending
 
+#### Scenario: Sort by size
+- **WHEN** the user clicks the SIZE header twice
+- **THEN** the chip row shows `sort:size asc`, the list is ordered by size ascending and the SIZE header marks the
+  direction
+
+#### Scenario: Search with no result
+- **WHEN** the user types `zzz` in the name filter and no torrent in the tab matches
+- **THEN** the zero-results state names `name:*zzz*` as the predicate that emptied the list and offers to remove
+  it or clear the lens
+
 #### Scenario: Diagnosis in the row
 - **WHEN** a torrent's diagnosis is `stalled-no-peers`
 - **THEN** its state cell reads the localized sentence (e.g. "stalled — no seeds across 2 trackers"), and the

@@ -1,5 +1,5 @@
 import { useEffect, useSyncExternalStore } from "react";
-import type { Preferences, Theme } from "@torrentx/api-client";
+import type { Preferences } from "@torrentx/api-client";
 
 const darkQuery = () => window.matchMedia("(prefers-color-scheme: dark)");
 const subscribe = (cb: () => void) => {
@@ -8,17 +8,20 @@ const subscribe = (cb: () => void) => {
   return () => mq.removeEventListener("change", cb);
 };
 
-/** OS preference mapped to a theme: dark → hacker, light → light. */
-export function useSystemTheme(): Theme {
-  return useSyncExternalStore(subscribe, () => darkQuery().matches) ? "hacker" : "light";
+/** The OS color scheme, re-rendering when it changes. */
+export function useSystemDark(): boolean {
+  return useSyncExternalStore(subscribe, () => darkQuery().matches);
 }
 
-/** Applies the chosen theme and language to <html>. */
+/** Applies mode (resolving `system` live), accent and language to <html>. */
 export function useApplyPrefs(prefs: Preferences) {
-  const system = useSystemTheme();
-  const theme = prefs.useSystemTheme ? system : prefs.theme;
+  const systemDark = useSystemDark();
+  const { mode, accent } = prefs.appearance;
+  const resolved = mode === "system" ? (systemDark ? "dark" : "light") : mode;
   useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-    document.documentElement.lang = prefs.language;
-  }, [theme, prefs.language]);
+    const root = document.documentElement;
+    root.dataset.theme = resolved;
+    root.dataset.accent = accent;
+    root.lang = prefs.language;
+  }, [resolved, accent, prefs.language]);
 }

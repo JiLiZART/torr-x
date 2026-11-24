@@ -106,10 +106,11 @@ export function FilterBar(props: FilterBarProps) {
             <>
               <label className={`${field} flex w-[230px] items-center gap-[7px] px-[9px] py-[6px] focus-within:border-ui-accent-line`}>
                 <Search size={13} className="shrink-0 text-ui-text-3" />
-                <input className="min-w-0 flex-1 bg-transparent caret-ui-accent placeholder-ui-text-3 focus:outline-none" value={lens.fuzzy} onChange={(e) => onFuzzy(e.target.value)} placeholder={t("filter.fuzzy")} aria-label={t("filter.fuzzy")} />
+                <input id="tx-fuzzy" className="min-w-0 flex-1 bg-transparent caret-ui-accent placeholder-ui-text-3 focus:outline-none" value={lens.fuzzy} onChange={(e) => onFuzzy(e.target.value)} placeholder={t("filter.fuzzy")} aria-label={t("filter.fuzzy")} />
               </label>
               <button
                 type="button"
+                data-command="builder.open"
                 onClick={() => onBuilder(!builderOpen)}
                 aria-expanded={builderOpen}
                 title={errorText ?? t("filter.funnel", { n: count })}
@@ -170,7 +171,7 @@ export function FilterBar(props: FilterBarProps) {
             ))}
           <span className="flex-1" />
           {!collapsed && (
-            <button type="button" onClick={onSaveOpen} disabled={list.length === 0 && !lens.fuzzy.trim()} className={ghost}>
+            <button type="button" data-command="tab.save" onClick={onSaveOpen} disabled={list.length === 0 && !lens.fuzzy.trim()} className={ghost}>
               <Save size={13} /> {t("filter.saveAsTab")}
             </button>
           )}

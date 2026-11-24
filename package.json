@@ -11,7 +11,7 @@
     "build:web": "pnpm --filter @torrentx/web build",
     "build:server": "pnpm build:web && ./scripts/fetch-geoip.sh && cargo build --release -p torrentx-server --features geoip",
     "build:desktop": "pnpm build:web && ./scripts/fetch-geoip.sh && pnpm --filter @torrentx/desktop tauri build --features geoip",
-    "lint": "node packages/ui/scripts/check-i18n.mjs && eslint apps/web/src packages/*/src --ext .ts,.tsx --max-warnings 0",
+    "lint": "node packages/ui/scripts/check-i18n.mjs && node packages/ui/scripts/check-colors.mjs && eslint apps/web/src packages/*/src --ext .ts,.tsx --max-warnings 0",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test"
   },

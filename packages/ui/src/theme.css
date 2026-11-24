@@ -1,22 +1,9 @@
-/* RGB triples consumed by the Tailwind preset. tx-* is the legacy ramp (dialogs, details, terminal);
-   ui-* is the canvas palette (pen/untitled.pen variables) used by the shell, filter bar and list.
-   dark-blue inherits the dark ui-* neutrals from :root and only swaps the accent. */
+/* Theme tokens as RGB triples (the canvas variables of pen/untitled.pen), consumed by the Tailwind
+   preset as `ui-*`. <html data-theme="dark|light" data-accent="green|cyan|amber|violet"> picks them; the
+   accent swaps only the three accent tokens. Components use these tokens only (scripts/check-colors.mjs). */
 :root,
-:root[data-theme="hacker"] {
+:root[data-theme="dark"] {
   color-scheme: dark;
-  --tx-base: 0 0 0;
-  --tx-surface-950: 3 7 18;
-  --tx-surface-900: 17 24 39;
-  --tx-surface-800: 31 41 55;
-  --tx-surface-700: 55 65 81;
-  --tx-accent-100: 220 252 231;
-  --tx-accent-300: 134 239 172;
-  --tx-accent-400: 74 222 128;
-  --tx-accent-500: 34 197 94;
-  --tx-accent-600: 22 163 74;
-  --tx-accent-700: 21 128 61;
-  --tx-accent-800: 22 101 52;
-  --tx-accent-900: 20 83 45;
   --ui-bg: 14 17 16;
   --ui-chrome: 20 24 23;
   --ui-chrome-2: 26 32 30;
@@ -28,9 +15,6 @@
   --ui-text: 230 239 233;
   --ui-text-2: 147 166 156;
   --ui-text-3: 93 109 101;
-  --ui-accent: 63 224 127;
-  --ui-accent-soft: 21 50 31;
-  --ui-accent-line: 42 94 60;
   --ui-amber: 227 179 65;
   --ui-amber-soft: 51 40 15;
   --ui-cyan: 69 200 216;
@@ -38,44 +22,13 @@
   --ui-red: 255 110 96;
   --ui-red-soft: 51 23 21;
   --ui-violet: 176 124 240;
+  --ui-accent: 63 224 127;
+  --ui-accent-soft: 21 50 31;
+  --ui-accent-line: 42 94 60;
 }
 
-:root[data-theme="dark-blue"] {
-  color-scheme: dark;
-  --tx-base: 2 6 23;
-  --tx-surface-950: 15 23 42;
-  --tx-surface-900: 30 41 59;
-  --tx-surface-800: 51 65 85;
-  --tx-surface-700: 71 85 105;
-  --tx-accent-100: 219 234 254;
-  --tx-accent-300: 147 197 253;
-  --tx-accent-400: 96 165 250;
-  --tx-accent-500: 59 130 246;
-  --tx-accent-600: 37 99 235;
-  --tx-accent-700: 29 78 216;
-  --tx-accent-800: 30 64 175;
-  --tx-accent-900: 30 58 138;
-  --ui-accent: 96 165 250;
-  --ui-accent-soft: 23 37 84;
-  --ui-accent-line: 30 64 175;
-}
-
-/* Light inverts the ramp: "bright" accent shades are the dark text colors. */
 :root[data-theme="light"] {
   color-scheme: light;
-  --tx-base: 255 255 255;
-  --tx-surface-950: 249 250 251;
-  --tx-surface-900: 243 244 246;
-  --tx-surface-800: 229 231 235;
-  --tx-surface-700: 209 213 219;
-  --tx-accent-100: 240 253 244;
-  --tx-accent-300: 2 44 34;
-  --tx-accent-400: 6 78 59;
-  --tx-accent-500: 4 120 87;
-  --tx-accent-600: 75 85 99;
-  --tx-accent-700: 5 150 105;
-  --tx-accent-800: 4 120 87;
-  --tx-accent-900: 167 243 208;
   --ui-bg: 242 244 243;
   --ui-chrome: 232 235 233;
   --ui-chrome-2: 223 227 225;
@@ -87,9 +40,6 @@
   --ui-text: 15 20 19;
   --ui-text-2: 88 99 94;
   --ui-text-3: 139 149 143;
-  --ui-accent: 11 143 67;
-  --ui-accent-soft: 220 243 227;
-  --ui-accent-line: 158 215 179;
   --ui-amber: 138 96 0;
   --ui-amber-soft: 251 239 210;
   --ui-cyan: 11 115 131;
@@ -97,4 +47,62 @@
   --ui-red: 194 45 30;
   --ui-red-soft: 251 226 223;
   --ui-violet: 107 54 174;
+  --ui-accent: 11 143 67;
+  --ui-accent-soft: 220 243 227;
+  --ui-accent-line: 158 215 179;
+}
+
+:root[data-accent="cyan"],
+[data-accent="cyan"] {
+  --ui-accent: 69 200 216;
+  --ui-accent-soft: 14 44 49;
+  --ui-accent-line: 31 90 99;
+}
+
+:root[data-theme="light"][data-accent="cyan"],
+:root[data-theme="light"] [data-accent="cyan"] {
+  --ui-accent: 11 115 131;
+  --ui-accent-soft: 214 241 245;
+  --ui-accent-line: 143 208 218;
+}
+
+:root[data-accent="amber"],
+[data-accent="amber"] {
+  --ui-accent: 227 179 65;
+  --ui-accent-soft: 51 40 15;
+  --ui-accent-line: 107 84 32;
+}
+
+:root[data-theme="light"][data-accent="amber"],
+:root[data-theme="light"] [data-accent="amber"] {
+  --ui-accent: 138 96 0;
+  --ui-accent-soft: 251 239 210;
+  --ui-accent-line: 226 194 120;
+}
+
+:root[data-accent="violet"],
+[data-accent="violet"] {
+  --ui-accent: 176 124 240;
+  --ui-accent-soft: 42 29 61;
+  --ui-accent-line: 84 57 122;
+}
+
+:root[data-theme="light"][data-accent="violet"],
+:root[data-theme="light"] [data-accent="violet"] {
+  --ui-accent: 107 54 174;
+  --ui-accent-soft: 237 226 250;
+  --ui-accent-line: 195 166 234;
+}
+
+/* Green is the default above; repeated so a green swatch renders green under another accent. */
+[data-accent="green"] {
+  --ui-accent: 63 224 127;
+  --ui-accent-soft: 21 50 31;
+  --ui-accent-line: 42 94 60;
+}
+
+:root[data-theme="light"] [data-accent="green"] {
+  --ui-accent: 11 143 67;
+  --ui-accent-soft: 220 243 227;
+  --ui-accent-line: 158 215 179;
 }

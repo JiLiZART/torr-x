@@ -35,6 +35,7 @@ export function StatusBar({ shown, total, inTab, lensActive, engine, engineError
       )}
       <span className="whitespace-nowrap">{t("status.free", { size: stats?.diskFree == null ? "—" : bytes(stats.diskFree) })}</span>
       <button
+        data-command="terminal.toggle"
         onClick={onToggleTerminal}
         aria-expanded={terminalOpen}
         className="flex items-center gap-[6px] rounded-[7px] border border-ui-border bg-ui-surface-2 px-[9px] py-[5px] text-ui-text-2 hover:border-ui-border-strong"

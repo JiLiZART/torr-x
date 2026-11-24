@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 import {
   ArrowDown,
   ArrowUp,
@@ -20,24 +20,15 @@ import { useUi } from "../lib/context";
 import { graphPaths, isActive, type Sample } from "../lib/activity";
 import { COLUMNS } from "../lib/columns";
 import { age, bytes, percent, rate, rowState, STATE_STYLE } from "../lib/format";
-
-export type TorrentAction =
-  | "pause"
-  | "resume"
-  | "remove"
-  | "erase"
-  | "reveal"
-  | "relocate"
-  | "rename"
-  | "torrentFile"
-  | "magnet"
-  | "verify"
-  | "tags";
+import { COMMAND_FOR_ACTION, type TorrentAction } from "../lib/commands";
 
 interface TorrentProps {
   torrent: Torrent;
   isSelected: boolean;
-  onClick: () => void;
+  /** The keyboard row cursor. */
+  isCursor: boolean;
+  onClick: (e: ReactMouseEvent) => void;
+  onDoubleClick: () => void;
   onAction: (action: TorrentAction) => void;
   /** Dense rows: one line, no secondary line. */
   compact: boolean;
@@ -47,10 +38,10 @@ interface TorrentProps {
 
 const itemClass = "w-full px-[10px] py-[6px] text-left text-[12px] flex items-center gap-[8px] disabled:opacity-40 disabled:cursor-not-allowed";
 
-function MenuItem({ icon, label, onClick, hint, danger }: { icon: ReactNode; label: string; onClick: () => void; hint?: string; danger?: boolean }) {
+function MenuItem({ icon, label, action, onAction, hint, danger }: { icon: ReactNode; label: string; action: TorrentAction; onAction: (a: TorrentAction) => void; hint?: string; danger?: boolean }) {
   return (
     <div title={hint}>
-      <button onClick={onClick} disabled={!!hint} className={`${itemClass} ${danger ? "text-ui-red hover:bg-ui-red-soft" : "text-ui-text-2 hover:bg-ui-surface-2 hover:text-ui-text"}`}>
+      <button data-command={COMMAND_FOR_ACTION[action]} onClick={() => onAction(action)} disabled={!!hint} className={`${itemClass} ${danger ? "text-ui-red hover:bg-ui-red-soft" : "text-ui-text-2 hover:bg-ui-surface-2 hover:text-ui-text"}`}>
         {icon}
         {label}
       </button>
@@ -63,7 +54,7 @@ const MAX_TAGS = 2;
 const tagClass = "rounded-[5px] border border-ui-border bg-ui-surface-2 px-[6px] py-[2px] font-code text-[10px] text-ui-text-2";
 const idle = <span className="text-ui-text-3">—</span>;
 
-export function TorrentRow({ torrent, isSelected, onClick, onAction, compact, samples }: TorrentProps) {
+export function TorrentRow({ torrent, isSelected, isCursor, onClick, onDoubleClick, onAction, compact, samples }: TorrentProps) {
   const { t, gate } = useUi();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -102,8 +93,11 @@ export function TorrentRow({ torrent, isSelected, onClick, onAction, compact, sa
 
   return (
     <div
-      className={`group relative isolate flex w-full cursor-pointer items-center gap-[10px] rounded-[10px] border px-[10px] ${compact ? "py-[5px]" : "py-[9px]"} ${isSelected ? "border-ui-border bg-ui-surface-2" : "border-transparent hover:bg-ui-surface"}`}
+      data-row={torrent.id}
+      aria-selected={isSelected}
+      className={`group relative isolate flex w-full cursor-pointer select-none items-center gap-[10px] rounded-[10px] border px-[10px] ${compact ? "py-[5px]" : "py-[9px]"} ${isSelected ? "bg-ui-surface-2" : "hover:bg-ui-surface"} ${isCursor ? "border-ui-border-strong" : isSelected ? "border-ui-border" : "border-transparent"}`}
       onClick={onClick}
+      onDoubleClick={onDoubleClick}
     >
       {graph && (
         <svg className="pointer-events-none absolute inset-0 -z-10 h-full w-full overflow-hidden rounded-[10px]" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
@@ -170,10 +164,10 @@ export function TorrentRow({ torrent, isSelected, onClick, onAction, compact, sa
         className={`${menuOpen ? "flex" : "hidden group-hover:flex"} absolute right-[10px] items-center gap-[2px] rounded-[8px] border border-ui-border bg-ui-surface px-[4px] py-[3px] shadow-lg`}
         onClick={(e) => e.stopPropagation()}
       >
-        <button className="rounded-[6px] p-[5px] text-ui-text-2 hover:bg-ui-surface-2 hover:text-ui-text" title={isPaused ? t("action.resume") : t("action.pause")} onClick={() => onAction(isPaused ? "resume" : "pause")}>
+        <button data-command={isPaused ? "sel.resume" : "sel.pause"} className="rounded-[6px] p-[5px] text-ui-text-2 hover:bg-ui-surface-2 hover:text-ui-text" title={isPaused ? t("action.resume") : t("action.pause")} onClick={() => onAction(isPaused ? "resume" : "pause")}>
           {isPaused ? <Play size={14} /> : <Pause size={14} />}
         </button>
-        <button className="rounded-[6px] p-[5px] text-ui-text-2 hover:bg-ui-surface-2 hover:text-ui-text" title={t("action.remove")} onClick={() => onAction("remove")}>
+        <button data-command="sel.remove" className="rounded-[6px] p-[5px] text-ui-text-2 hover:bg-ui-surface-2 hover:text-ui-text" title={t("action.remove")} onClick={() => onAction("remove")}>
           <Trash2 size={14} />
         </button>
         <div className="relative" ref={menuRef}>
@@ -183,23 +177,23 @@ export function TorrentRow({ torrent, isSelected, onClick, onAction, compact, sa
           {menuOpen && (
             <div className="absolute right-0 top-full z-50 mt-[4px] w-[240px] overflow-hidden rounded-[10px] border border-ui-border-strong bg-ui-surface py-[4px] shadow-xl">
               {isPaused ? (
-                <MenuItem icon={<Play size={14} />} label={t("action.resume")} onClick={() => act("resume")} />
+                <MenuItem icon={<Play size={14} />} label={t("action.resume")} action="resume" onAction={act} />
               ) : (
-                <MenuItem icon={<Pause size={14} />} label={t("action.pause")} onClick={() => act("pause")} />
+                <MenuItem icon={<Pause size={14} />} label={t("action.pause")} action="pause" onAction={act} />
               )}
               <Divider />
-              <MenuItem icon={<Trash2 size={14} />} label={t("action.remove")} onClick={() => act("remove")} />
-              <MenuItem icon={<Trash size={14} />} label={t("action.erase")} onClick={() => act("erase")} danger />
+              <MenuItem icon={<Trash2 size={14} />} label={t("action.remove")} action="remove" onAction={act} />
+              <MenuItem icon={<Trash size={14} />} label={t("action.erase")} action="erase" onAction={act} danger />
               <Divider />
-              <MenuItem icon={<FolderOpen size={14} />} label={t("action.reveal")} onClick={() => act("reveal")} />
-              <MenuItem icon={<Tag size={14} />} label={t("action.tags")} onClick={() => act("tags")} />
-              <MenuItem icon={<FolderInput size={14} />} label={t("action.relocate")} onClick={() => act("relocate")} hint={gate("relocate")} />
-              <MenuItem icon={<Edit3 size={14} />} label={t("action.rename")} onClick={() => act("rename")} hint={gate("rename")} />
+              <MenuItem icon={<FolderOpen size={14} />} label={t("action.reveal")} action="reveal" onAction={act} />
+              <MenuItem icon={<Tag size={14} />} label={t("action.tags")} action="tags" onAction={act} />
+              <MenuItem icon={<FolderInput size={14} />} label={t("action.relocate")} action="relocate" onAction={act} hint={gate("relocate")} />
+              <MenuItem icon={<Edit3 size={14} />} label={t("action.rename")} action="rename" onAction={act} hint={gate("rename")} />
               <Divider />
-              <MenuItem icon={<Save size={14} />} label={t("action.torrentFile")} onClick={() => act("torrentFile")} hint={gate("torrentFile")} />
-              <MenuItem icon={<Link2 size={14} />} label={t("action.magnet")} onClick={() => act("magnet")} />
+              <MenuItem icon={<Save size={14} />} label={t("action.torrentFile")} action="torrentFile" onAction={act} hint={gate("torrentFile")} />
+              <MenuItem icon={<Link2 size={14} />} label={t("action.magnet")} action="magnet" onAction={act} />
               <Divider />
-              <MenuItem icon={<CheckCircle size={14} />} label={t("action.verify")} onClick={() => act("verify")} hint={gate("verify")} />
+              <MenuItem icon={<CheckCircle size={14} />} label={t("action.verify")} action="verify" onAction={act} hint={gate("verify")} />
             </div>
           )}
         </div>

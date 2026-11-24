@@ -32,13 +32,56 @@ pub enum Language {
     Zh,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+/// Before `appearance`: one of three fixed themes. Read only to migrate.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "kebab-case")]
-pub enum Theme {
-    #[default]
+enum LegacyTheme {
     Hacker,
     DarkBlue,
     Light,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum Mode {
+    /// Follows the OS preference, live.
+    #[default]
+    System,
+    Light,
+    Dark,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum Accent {
+    #[default]
+    Green,
+    Cyan,
+    Amber,
+    Violet,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(default, deny_unknown_fields)]
+pub struct Appearance {
+    pub mode: Mode,
+    pub accent: Accent,
+}
+
+impl Appearance {
+    /// `useSystemTheme` wins over the theme; the theme still picks the accent.
+    fn from_legacy(theme: Option<LegacyTheme>, use_system: bool) -> Self {
+        let (mode, accent) = match theme {
+            Some(LegacyTheme::Hacker) => (Mode::Dark, Accent::Green),
+            Some(LegacyTheme::DarkBlue) => (Mode::Dark, Accent::Cyan),
+            Some(LegacyTheme::Light) => (Mode::Light, Accent::Green),
+            None => (Mode::System, Accent::Green),
+        };
+        Self {
+            mode: if use_system { Mode::System } else { mode },
+            accent,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -72,19 +115,101 @@ impl Default for Notifications {
 
 /// UI and desktop preferences; the server only stores them.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(default, rename_all = "camelCase")]
+#[serde(default, rename_all = "camelCase", from = "PreferencesIn")]
 pub struct Preferences {
     pub start_with_system: bool,
     pub start_minimized: bool,
     pub confirm_exit_while_downloading: bool,
     pub check_for_updates: bool,
     pub language: Language,
-    pub theme: Theme,
-    pub use_system_theme: bool,
+    pub appearance: Appearance,
     pub show_speed_graph: bool,
     pub show_piece_map: bool,
     pub date_format: DateFormat,
     pub notifications: Notifications,
+}
+
+/// What a stored file or a client may send: the current shape plus the pre-`appearance` keys,
+/// converted on load (`appearance` wins when both are present). Never serialized.
+#[derive(Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+struct PreferencesIn {
+    #[serde(flatten)]
+    current: PreferencesCurrent,
+    appearance: Option<Appearance>,
+    theme: Option<LegacyTheme>,
+    use_system_theme: bool,
+}
+
+impl Default for PreferencesIn {
+    fn default() -> Self {
+        Self {
+            current: PreferencesCurrent::from(Preferences::default()),
+            appearance: None,
+            theme: None,
+            use_system_theme: false,
+        }
+    }
+}
+
+/// `Preferences` minus `appearance`, so `PreferencesIn` can flatten it.
+#[derive(Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+struct PreferencesCurrent {
+    start_with_system: bool,
+    start_minimized: bool,
+    confirm_exit_while_downloading: bool,
+    check_for_updates: bool,
+    language: Language,
+    show_speed_graph: bool,
+    show_piece_map: bool,
+    date_format: DateFormat,
+    notifications: Notifications,
+}
+
+impl Default for PreferencesCurrent {
+    fn default() -> Self {
+        Self::from(Preferences::default())
+    }
+}
+
+impl From<Preferences> for PreferencesCurrent {
+    fn from(p: Preferences) -> Self {
+        Self {
+            start_with_system: p.start_with_system,
+            start_minimized: p.start_minimized,
+            confirm_exit_while_downloading: p.confirm_exit_while_downloading,
+            check_for_updates: p.check_for_updates,
+            language: p.language,
+            show_speed_graph: p.show_speed_graph,
+            show_piece_map: p.show_piece_map,
+            date_format: p.date_format,
+            notifications: p.notifications,
+        }
+    }
+}
+
+impl From<PreferencesIn> for Preferences {
+    fn from(p: PreferencesIn) -> Self {
+        let legacy = p.theme.is_some() || p.use_system_theme;
+        let c = p.current;
+        Self {
+            start_with_system: c.start_with_system,
+            start_minimized: c.start_minimized,
+            confirm_exit_while_downloading: c.confirm_exit_while_downloading,
+            check_for_updates: c.check_for_updates,
+            language: c.language,
+            appearance: match p.appearance {
+                Some(a) => a,
+                None if legacy => Appearance::from_legacy(p.theme, p.use_system_theme),
+                None => Appearance::default(),
+            },
+            show_speed_graph: c.show_speed_graph,
+            show_piece_map: c.show_piece_map,
+            date_format: c.date_format,
+            notifications: c.notifications,
+        }
+    }
 }
 
 impl Default for Preferences {
@@ -95,8 +220,7 @@ impl Default for Preferences {
             confirm_exit_while_downloading: true,
             check_for_updates: true,
             language: Language::En,
-            theme: Theme::Hacker,
-            use_system_theme: false,
+            appearance: Appearance::default(),
             show_speed_graph: true,
             show_piece_map: true,
             date_format: DateFormat::Relative,
@@ -403,6 +527,33 @@ mod tests {
         let d = std::env::temp_dir().join(format!("torrentx-cfg-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&d);
         d.join("config.toml")
+    }
+
+    #[test]
+    fn legacy_theme_is_converted() {
+        let load = |prefs: &str| -> Preferences {
+            toml::from_str::<Config>(&format!("[preferences]\n{prefs}")).unwrap().preferences
+        };
+        let look = |mode, accent| Appearance { mode, accent };
+        assert_eq!(load("theme = \"hacker\"").appearance, look(Mode::Dark, Accent::Green));
+        assert_eq!(load("theme = \"dark-blue\"").appearance, look(Mode::Dark, Accent::Cyan));
+        assert_eq!(load("theme = \"light\"").appearance, look(Mode::Light, Accent::Green));
+        assert_eq!(load("useSystemTheme = true").appearance, look(Mode::System, Accent::Green));
+        assert_eq!(
+            load("theme = \"dark-blue\"\nuseSystemTheme = true").appearance,
+            look(Mode::System, Accent::Cyan)
+        );
+        assert_eq!(
+            load("theme = \"light\"\nuseSystemTheme = false\nlanguage = \"de\"").language,
+            Language::De
+        );
+        // The current shape wins and the old keys are never written back.
+        let both = load("theme = \"hacker\"\n[preferences.appearance]\nmode = \"light\"\naccent = \"violet\"");
+        assert_eq!(both.appearance, look(Mode::Light, Accent::Violet));
+        let text = toml::to_string(&Config { preferences: both, ..Config::default() }).unwrap();
+        assert!(!text.contains("theme") && !text.contains("useSystemTheme"), "{text}");
+        assert_eq!(Preferences::default().appearance, look(Mode::System, Accent::Green));
+        assert!(toml::from_str::<Config>("[preferences.appearance]\nmode = \"sepia\"").is_err());
     }
 
     #[test]

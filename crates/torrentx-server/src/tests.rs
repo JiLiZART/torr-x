@@ -110,7 +110,7 @@ async fn torrent_errors_with_real_engine() {
     let s = state_with(&dir, config, engine, HOST.parse().unwrap());
 
     let (status, _, body) = get(&s, &format!("/api/v1/torrents/{ZERO_ID}")).await;
-    assert_eq!(status, StatusCode::NOT_FOUND);
+    assert_eq!(status, StatusCode::NOT_FOUND, "{body}");
     assert_eq!(body["error"]["kind"], "not_found");
 
     let (status, _, body) = call(
@@ -399,7 +399,7 @@ async fn settings_sections_round_trip() {
         "type": "socks5", "host": "proxy.lan", "port": 1080,
         "authRequired": true, "username": "u", "password": "pw"
     });
-    settings["preferences"]["theme"] = json!("dark-blue");
+    settings["preferences"]["appearance"] = json!({ "mode": "dark", "accent": "cyan" });
     settings["network"]["maxDownloadKBps"] = json!(100);
     let (status, _, body) = call(&s, json_req(Method::PUT, "/api/v1/settings", &settings)).await;
     assert_eq!(status, StatusCode::OK, "{body}");
@@ -412,7 +412,22 @@ async fn settings_sections_round_trip() {
     let saved = Config::load_or_create(&s.config_path).unwrap();
     assert_eq!(saved.network.proxy.password, "pw");
     assert_eq!(saved.network.max_download_kbps, 100);
-    assert_eq!(saved.preferences.theme, config::Theme::DarkBlue);
+    assert_eq!(saved.preferences.appearance.accent, config::Accent::Cyan);
+    assert!(body["settings"]["preferences"].get("theme").is_none());
+
+    let mut sepia = body["settings"].clone();
+    sepia["preferences"]["appearance"] = json!({ "mode": "sepia" });
+    let (status, _, body) = call(&s, json_req(Method::PUT, "/api/v1/settings", &sepia)).await;
+    assert_eq!((status, body["error"]["kind"].as_str()), (StatusCode::BAD_REQUEST, Some("invalid_input")));
+
+    // An old client still sending `theme` is converted, not rejected.
+    let mut legacy = again.clone();
+    let prefs = legacy["preferences"].as_object_mut().unwrap();
+    prefs.remove("appearance");
+    prefs.insert("theme".into(), json!("light"));
+    let (status, _, body) = call(&s, json_req(Method::PUT, "/api/v1/settings", &legacy)).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(body["settings"]["preferences"]["appearance"], json!({ "mode": "light", "accent": "green" }));
 }
 
 #[tokio::test]

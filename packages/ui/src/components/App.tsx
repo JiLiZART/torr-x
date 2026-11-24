@@ -1,16 +1,19 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent } from "react";
 import { Edit3, FolderInput, Tag, X } from "lucide-react";
 import { api, ApiError, type Health, type Tab, type TabPatch, type Torrent } from "@torrentx/api-client";
 import { compare, evaluate, parse, sortKeys } from "@torrentx/query";
 import { DEFAULT_PREFS, makeUi, UiContext } from "../lib/context";
 import { useCapabilities, useSettings, useStats, useTabs, useTorrents } from "../lib/hooks";
-import { canonical, clickSort, combine, fuzzyNode, hasLens, NO_LENS, predicateCount, type Lens } from "../lib/lens";
+import { canonical, clickSort, combine, fuzzyNode, hasLens, NO_LENS, predicateCount, sections, type Lens } from "../lib/lens";
+import { COMMAND_FOR_ACTION, COMMANDS, type Handler, type Handlers, type TorrentAction } from "../lib/commands";
+import { commandFor, IS_MAC, useKeymap } from "../lib/keymap";
 import { useBrowserNotifications } from "../lib/notify";
 import { ALL_TAB, useRoute } from "../lib/route";
 import { useApplyPrefs } from "../lib/theme";
 import { useUpdateCheck } from "../lib/updates";
 import { usePoll } from "../lib/usePoll";
-import { initDesktopChrome } from "../lib/window";
+import { initDesktopChrome, isTauri } from "../lib/window";
+import type { AddSource } from "../lib/addFlow";
 import { FilterBar, type SaveDraft } from "./FilterBar";
 import { Shell } from "./Shell";
 import { Sidebar } from "./Sidebar";
@@ -20,11 +23,11 @@ import { TorrentDetails } from "./TorrentDetails";
 import { Terminal } from "./Terminal";
 import { StatusBar } from "./StatusBar";
 import { Settings } from "./Settings";
-import { AddTorrent } from "./AddTorrent";
 import { RemoveDialog } from "./RemoveDialog";
 import { PromptDialog } from "./Modal";
 import { Login } from "./Login";
-import type { TorrentAction } from "./TorrentRow";
+import { Palette } from "./Palette";
+import { ShortcutSheet } from "./ShortcutSheet";
 
 const NO_TABS: Tab[] = [];
 const DENSITY_KEY = "tx-density";
@@ -32,7 +35,10 @@ const UNDO_SAVE_MS = 6000;
 
 const isUnauthorized = (e: unknown) => e instanceof ApiError && e.kind === "unauthorized";
 
-type Prompt = { kind: "relocate" | "rename" | "tags"; torrent: Torrent };
+type Prompt = { kind: "relocate" | "rename" | "tags"; torrents: Torrent[] };
+
+const LIST_KEYS = COMMANDS.filter((def) => def.local && def.group === "list");
+const DESKTOP = isTauri();
 
 async function downloadTorrentFile(t: Torrent) {
   const res = await fetch(api.torrentFileUrl(t.id), { credentials: "same-origin" });
@@ -62,12 +68,19 @@ export function App() {
   const [saved, setSaved] = useState<{ tab: Tab; from: string; lens: Lens } | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [compact, setCompact] = useState(() => localStorage.getItem(DENSITY_KEY) === "compact");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [removing, setRemoving] = useState<{ torrent: Torrent; erase: boolean } | null>(null);
+  // Selection (many rows), the keyboard row cursor, and the torrent whose details are open.
+  const [selection, setSelection] = useState<string[]>([]);
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(null);
+  // The one panel: Spotlight / palette (`input` ">" = commands), optionally opened in its add flow.
+  const [palette, setPalette] = useState<{ input: string; add?: AddSource } | null>(null);
+  const pickRef = useRef<HTMLInputElement>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [renameRequest, setRenameRequest] = useState(0);
+  const [removing, setRemoving] = useState<{ torrents: Torrent[]; erase: boolean } | null>(null);
   const [prompt, setPrompt] = useState<Prompt | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [terminalOpen, setTerminalOpen] = useState(false);
-  const [add, setAdd] = useState<{ file?: File } | null>(null);
 
   /** Polling failures: only 401 matters globally, the rest is shown where the data is used. */
   const onPollError = useCallback((e: unknown) => {
@@ -89,7 +102,9 @@ export function App() {
   const settings = useSettings(live);
   const caps = useCapabilities(health?.engine, live);
 
-  const prefs = settings.data?.preferences ?? DEFAULT_PREFS;
+  // Over the defaults, so a server from before a preference existed (e.g. `appearance`) cannot break the UI.
+  const loaded = settings.data?.preferences;
+  const prefs = useMemo(() => ({ ...DEFAULT_PREFS, ...loaded }), [loaded]);
   const ui = useMemo(() => makeUi(prefs, caps.data), [prefs, caps.data]);
   const { t } = ui;
   useApplyPrefs(prefs);
@@ -205,15 +220,6 @@ export function App() {
     }
   };
 
-  const createTab = () =>
-    run(async () => {
-      const used = new Set(tabList.map((tab) => tab.name));
-      let n = tabList.length + 1;
-      while (used.has(t("tabs.default", { n }))) n++;
-      const tab = await api.createTab({ name: t("tabs.default", { n }), query: "" });
-      await tabs.reload();
-      navigate(tab.id);
-    });
   const patchTab = (id: string, patch: TabPatch) => run(() => api.updateTab(id, patch));
   const deleteTab = (id: string) =>
     run(async () => {
@@ -261,59 +267,159 @@ export function App() {
     setCompact(!compact);
   };
 
-  useEffect(() => {
-    if (needsLogin) return;
-    const onKey = (e: KeyboardEvent) => {
-      const mod = e.metaKey || e.ctrlKey;
-      const key = e.key.toLowerCase();
-      const typing = e.target instanceof HTMLElement && e.target.matches("input, textarea, select");
-      if (e.ctrlKey && e.key === "`") setTerminalOpen((open) => !open);
-      else if (mod && e.shiftKey && key === "t") void createTab();
-      else if (mod && e.shiftKey && key === "k") setLens(NO_LENS);
-      else if (mod && key === "f" && !typing) setBuilderOpen(true);
-      else if (mod && key === "t") setAdd({});
-      else if (mod && key === "s") setSaveOpen(hasLens(lens));
-      else if (mod && key === "z" && !typing) undoLens();
-      else return;
-      e.preventDefault();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  });
+  // ---- commands: one handler per registry entry ---------------------------------------------
 
-  const onAction = (tor: Torrent, action: TorrentAction) => {
-    switch (action) {
-      case "pause":
-        return run(() => api.pause(tor.id));
-      case "resume":
-        return run(() => api.resume(tor.id));
-      case "remove":
-      case "erase":
-        return setRemoving({ torrent: tor, erase: action === "erase" });
-      case "reveal":
-        return run(() => api.reveal(tor.id));
-      case "relocate":
-      case "rename":
-        return setPrompt({ kind: action, torrent: tor });
-      case "torrentFile":
-        return run(() => downloadTorrentFile(tor));
-      case "magnet":
-        return run(async () => {
-          await navigator.clipboard.writeText(await api.magnet(tor.id));
-          setNotice(t("notice.magnetCopied"));
-        });
-      case "verify":
-        return run(() => api.verify(tor.id));
-      case "tags":
-        return setPrompt({ kind: action, torrent: tor });
-    }
+  const selectedSet = useMemo(() => new Set(selection), [selection]);
+  const selected = useMemo(() => list.filter((row) => selectedSet.has(row.id)), [list, selectedSet]);
+  // Sidebar order (pinned, smart, groups, ad-hoc): what ⌘1…9 and next/previous walk.
+  const sidebarOrder = useMemo(() => {
+    const s = sections(tabList);
+    return [...s.pinned, ...s.smart, ...s.groups.flatMap((g) => g.tabs), ...s.adhoc];
+  }, [tabList]);
+  const stepTab = (step: number) => {
+    const at = sidebarOrder.findIndex((tab) => tab.id === tabId);
+    const next = sidebarOrder[(at + step + sidebarOrder.length) % sidebarOrder.length];
+    if (next) navigate(next.id);
   };
+  const moveCursor = (step: number, extend: boolean) => {
+    if (visible.length === 0) return;
+    const at = visible.findIndex((row) => row.id === cursor);
+    const next = visible[Math.min(Math.max(at < 0 ? 0 : at + step, 0), visible.length - 1)].id;
+    setCursor(next);
+    setSelection((current) => (extend ? [...new Set([...current, ...(cursor ? [cursor] : []), next])] : [next]));
+    document.querySelector(`[data-row="${next}"]`)?.scrollIntoView({ block: "nearest" });
+  };
+  const openDetails = (id: string | null) => id && setDetailId(id);
+  const pauseRows = (rows: Torrent[]) => run(() => Promise.all(rows.map((row) => api.pause(row.id))));
+  const resumeRows = (rows: Torrent[]) => run(() => Promise.all(rows.map((row) => api.resume(row.id))));
+
+  /** Selection commands for `targets` (the selection, or the row whose menu was used). */
+  const selectionHandlers = (targets: Torrent[]): Handlers => {
+    const none = targets.length === 0 ? t("cmd.needSelection") : null;
+    const one = none ?? (targets.length > 1 ? t("cmd.needOne") : null);
+    const single = targets[0];
+    const gated = (feature: string) => one ?? ui.gate(feature) ?? null;
+    const allPaused = targets.length > 0 && targets.every((row) => row.status === "paused");
+    return {
+      // Space toggles: resumes when everything selected is paused.
+      "sel.pause": { run: () => (allPaused ? resumeRows(targets) : pauseRows(targets)), disabled: none },
+      "sel.resume": { run: () => resumeRows(targets), disabled: none },
+      "sel.remove": { run: () => setRemoving({ torrents: targets, erase: false }), disabled: none },
+      "sel.erase": { run: () => setRemoving({ torrents: targets, erase: true }), disabled: none },
+      "sel.tags": { run: () => setPrompt({ kind: "tags", torrents: targets }), disabled: none },
+      "sel.verify": { run: () => run(() => Promise.all(targets.map((row) => api.verify(row.id)))), disabled: none ?? ui.gate("verify") ?? null },
+      "sel.reveal": { run: () => run(() => api.reveal(single.id)), disabled: one },
+      "sel.relocate": { run: () => setPrompt({ kind: "relocate", torrents: [single] }), disabled: gated("relocate") },
+      "sel.rename": { run: () => setPrompt({ kind: "rename", torrents: [single] }), disabled: gated("rename") },
+      "sel.torrentFile": { run: () => run(() => downloadTorrentFile(single)), disabled: gated("torrentFile") },
+      "sel.magnet": {
+        run: () =>
+          run(async () => {
+            await navigator.clipboard.writeText(await api.magnet(single.id));
+            setNotice(t("notice.magnetCopied"));
+          }),
+        disabled: one,
+      },
+    };
+  };
+  const notPaused = (rows: Torrent[]) => rows.filter((row) => row.status !== "paused");
+  const paused = (rows: Torrent[]) => rows.filter((row) => row.status === "paused");
+  const handler = (run: Handler["run"], disabled?: string | null): Handler => ({ run, disabled });
+  const handlers: Handlers = {
+    "palette.open": handler(() => setPalette({ input: "" })),
+    "palette.commands": handler(() => setPalette({ input: ">" })),
+    "sheet.open": handler(() => setSheetOpen(true)),
+    "torrent.add": handler(() => pickRef.current?.click()),
+    "tab.jump": handler((n) => {
+      const tab = sidebarOrder[(n ?? 1) - 1];
+      if (tab) navigate(tab.id);
+    }),
+    "tab.next": handler(() => stepTab(1)),
+    "tab.prev": handler(() => stepTab(-1)),
+    // New tab is the same surface: a tab is created from a query there.
+    "tab.new": handler(() => setPalette({ input: "" })),
+    "tab.save": handler(() => setSaveOpen(true), hasLens(lens) ? null : t("cmd.needLens")),
+    "tab.rename": handler(() => {
+      setSidebarCollapsed(false);
+      setRenameRequest((n) => n + 1);
+    }),
+    "tab.moveUp": handler(() => activeTab && patchTab(activeTab.id, { order: Math.max(activeTab.order - 1, 0) })),
+    "tab.moveDown": handler(() => activeTab && patchTab(activeTab.id, { order: activeTab.order + 1 })),
+    "sidebar.toggle": handler(() => setSidebarCollapsed((c) => !c)),
+    "filter.focus": handler(() => document.getElementById("tx-fuzzy")?.focus()),
+    "builder.open": handler(() => setBuilderOpen(true)),
+    "lens.clear": handler(() => setLens(NO_LENS), hasLens(lens) ? null : t("cmd.needLens")),
+    "lens.undo": handler(undoLens, undo.length > 0 ? null : t("cmd.nothingToUndo")),
+    "list.down": handler(() => moveCursor(1, false)),
+    "list.up": handler(() => moveCursor(-1, false)),
+    "list.extendDown": handler(() => moveCursor(1, true)),
+    "list.extendUp": handler(() => moveCursor(-1, true)),
+    "list.selectAll": handler(() => setSelection(visible.map((row) => row.id))),
+    "list.open": handler(() => openDetails(cursor ?? selection[0] ?? null), cursor || selection.length ? null : t("cmd.needSelection")),
+    ...selectionHandlers(selected),
+    "tab.pauseAll": handler(() => pauseRows(notPaused(visible))),
+    "tab.resumeAll": handler(() => resumeRows(paused(visible))),
+    "all.pause": handler(() => pauseRows(notPaused(list))),
+    "all.resume": handler(() => resumeRows(paused(list))),
+    "nav.back": handler(() => window.history.back()),
+    "nav.forward": handler(() => window.history.forward()),
+    "settings.open": handler(() => setSettingsOpen(true)),
+    "terminal.toggle": handler(() => setTerminalOpen((open) => !open)),
+    "density.toggle": handler(() => toggleDensity()),
+    "auth.logout": { run: () => void api.logout().finally(() => setNeedsLogin(true)), unavailable: !health?.authRequired },
+  };
+  const dialogOpen = palette !== null || sheetOpen || settingsOpen || !!removing || !!prompt;
+  useKeymap(COMMANDS, handlers, !needsLogin && !dialogOpen, DESKTOP);
+
+  const onListKey = (e: ReactKeyboardEvent) => {
+    const found = commandFor(e.nativeEvent, LIST_KEYS, { mac: IS_MAC, desktop: DESKTOP });
+    const h = found && handlers[found.def.id];
+    if (!found || !h) return;
+    e.preventDefault();
+    if (!h.disabled) h.run(found.arg);
+  };
+  const onRowClick = (id: string, e: MouseEvent) => {
+    if (e.metaKey || e.ctrlKey) {
+      setSelection((current) => (current.includes(id) ? current.filter((x) => x !== id) : [...current, id]));
+    } else if (e.shiftKey && cursor) {
+      const [a, b] = [visible.findIndex((row) => row.id === cursor), visible.findIndex((row) => row.id === id)].sort((x, y) => x - y);
+      setSelection(visible.slice(a, b + 1).map((row) => row.id));
+      return;
+    } else {
+      setSelection([id]);
+      setDetailId(detailId === id ? null : id);
+    }
+    setCursor(id);
+  };
+  const onAction = (tor: Torrent, action: TorrentAction) => selectionHandlers([tor])[COMMAND_FOR_ACTION[action]].run();
+
+  const jumpTorrent = (id: string) => {
+    if (!visible.some((row) => row.id === id)) {
+      onSwitch.current = { snapshot: true, next: NO_LENS };
+      navigate(ALL_TAB);
+    }
+    setSelection([id]);
+    setCursor(id);
+    setDetailId(id);
+  };
+  const applyFromPalette = (next: Lens, inAll: boolean) => {
+    if (inAll && tabId !== ALL_TAB) {
+      onSwitch.current = { snapshot: true, next };
+      navigate(ALL_TAB);
+    } else setLens(next);
+  };
+  const createFromPalette = (query: string) =>
+    run(async () => {
+      // Named by its query, not activated: the palette never steals the current view.
+      const tab = await api.createTab({ name: query, query });
+      setNotice(t("palette.created", { tab: tab.name }));
+    });
 
   const onDropFiles = (e: DragEvent) => {
     const file = [...e.dataTransfer.files].find((f) => f.name.endsWith(".torrent"));
     if (!file) return;
     e.preventDefault();
-    setAdd({ file });
+    setPalette({ input: "", add: { kind: "file", file } });
   };
 
   const onSettingsSaved = () => {
@@ -336,7 +442,8 @@ export function App() {
     );
   }
 
-  const selected = list.find((x) => x.id === selectedId) ?? null;
+  const detail = list.find((x) => x.id === detailId) ?? null;
+  const tabRows = tabAst ? list.filter((row) => evaluate(tabAst, row)) : [];
 
   const banner = "flex shrink-0 items-center gap-[10px] border-b border-ui-border bg-ui-accent-soft px-[16px] py-[8px] text-[12px] text-ui-accent";
 
@@ -355,12 +462,13 @@ export function App() {
               lensCount={lensCount}
               stats={stats.data}
               onActivate={navigate}
-              onCreate={createTab}
+              onCreate={() => setPalette({ input: "" })}
               onPatch={patchTab}
               onDelete={deleteTab}
-              onTrigger={() => setAdd({})}
+              onTrigger={() => setPalette({ input: "" })}
               onSaveLens={hasLens(lens) ? () => setSaveOpen(true) : null}
               onCollapse={() => setSidebarCollapsed(true)}
+              renameRequest={renameRequest}
             />
           )
         }
@@ -370,6 +478,7 @@ export function App() {
             lensCount={lensCount}
             sidebarCollapsed={sidebarCollapsed}
             onExpandSidebar={() => setSidebarCollapsed(false)}
+            onCollapseSidebar={() => setSidebarCollapsed(true)}
             compact={compact}
             onToggleDensity={toggleDensity}
             terminalOpen={terminalOpen}
@@ -461,21 +570,24 @@ export function App() {
             sort={order[0]}
             onSort={(field) => setLens({ ...lens, query: clickSort(lens.query, tabAst ? sortKeys(tabAst) : [], field) })}
             compact={compact}
-            selectedTorrentId={selectedId}
-            onSelectTorrent={setSelectedId}
+            selection={selectedSet}
+            cursor={cursor}
+            onRowClick={onRowClick}
+            onRowOpen={(id) => setDetailId(id)}
+            onListKey={onListKey}
             onAction={onAction}
             engineError={engineError}
             onOpenSettings={() => setSettingsOpen(true)}
           />
-          {selected && (
+          {detail && (
             <TorrentDetails
-              id={selected.id}
-              onClose={() => setSelectedId(null)}
+              id={detail.id}
+              onClose={() => setDetailId(null)}
               onError={handleError}
               onPollError={onPollError}
             />
           )}
-          {terminalOpen && !selected && (
+          {terminalOpen && !detail && (
             <Terminal onClose={() => setTerminalOpen(false)} onChanged={refresh} />
           )}
         </main>
@@ -489,22 +601,56 @@ export function App() {
             checkUpdates={updates.checkNow}
           />
         )}
-        {add && (
-          <AddTorrent
-            onClose={() => setAdd(null)}
-            onAdded={refresh}
-            initialFile={add.file}
+        {palette !== null && (
+          <Palette
+            initial={palette.input}
+            initialAdd={palette.add}
             settings={settings.data}
             diskFree={stats.data?.diskFree ?? null}
+            onAdded={(_id, name) => {
+              refresh();
+              setNotice(t("addflow.added", { name }));
+            }}
+            tabs={tabList}
+            counts={counts}
+            activeTab={activeTab}
+            tabLabel={tabLabel}
+            all={list}
+            tabRows={tabRows}
+            handlers={handlers}
+            desktop={DESKTOP}
+            onApply={applyFromPalette}
+            onJumpTab={navigate}
+            onJumpTorrent={jumpTorrent}
+            onCreateTab={(query) => void createFromPalette(query)}
+            onSheet={() => {
+              setPalette(null);
+              setSheetOpen(true);
+            }}
+            onClose={() => setPalette(null)}
           />
         )}
+        <input
+          ref={pickRef}
+          type="file"
+          accept=".torrent,application/x-bittorrent"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            e.target.value = "";
+            if (file) setPalette({ input: "", add: { kind: "file", file } });
+          }}
+        />
+        {sheetOpen && <ShortcutSheet desktop={DESKTOP} onClose={() => setSheetOpen(false)} />}
         {removing && (
           <RemoveDialog
-            torrent={removing.torrent}
+            torrents={removing.torrents}
             deleteData={removing.erase}
             onClose={() => setRemoving(null)}
             onRemoved={() => {
-              if (removing.torrent.id === selectedId) setSelectedId(null);
+              const gone = new Set(removing.torrents.map((row) => row.id));
+              setSelection((current) => current.filter((id) => !gone.has(id)));
+              if (detailId && gone.has(detailId)) setDetailId(null);
               setRemoving(null);
               refresh();
             }}
@@ -530,17 +676,17 @@ export function App() {
             label={t(prompt.kind === "relocate" ? "prompt.newPath" : prompt.kind === "rename" ? "prompt.newName" : "prompt.tags")}
             initial={
               prompt.kind === "relocate"
-                ? prompt.torrent.savePath
+                ? prompt.torrents[0].savePath
                 : prompt.kind === "rename"
-                  ? prompt.torrent.name
-                  : prompt.torrent.tags.join(", ")
+                  ? prompt.torrents[0].name
+                  : [...new Set(prompt.torrents.flatMap((row) => row.tags))].join(", ")
             }
             allowEmpty={prompt.kind === "tags"}
             onClose={() => setPrompt(null)}
             onSubmit={async (value) => {
-              if (prompt.kind === "relocate") await api.relocate(prompt.torrent.id, value);
-              else if (prompt.kind === "rename") await api.rename(prompt.torrent.id, value);
-              else await api.setTags(prompt.torrent.id, value.split(","));
+              if (prompt.kind === "relocate") await api.relocate(prompt.torrents[0].id, value);
+              else if (prompt.kind === "rename") await api.rename(prompt.torrents[0].id, value);
+              else for (const row of prompt.torrents) await api.setTags(row.id, value.split(","));
               refresh();
             }}
           />

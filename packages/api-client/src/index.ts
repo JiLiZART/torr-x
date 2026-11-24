@@ -163,7 +163,13 @@ export interface Health {
 }
 
 export type Language = "en" | "fr" | "de" | "es" | "ru" | "zh";
-export type Theme = "hacker" | "dark-blue" | "light";
+/** `system` follows the OS preference, live. */
+export type Mode = "system" | "light" | "dark";
+export type Accent = "green" | "cyan" | "amber" | "violet";
+export interface Appearance {
+  mode: Mode;
+  accent: Accent;
+}
 export type DateFormat = "relative" | "absolute" | "iso";
 export type ProxyKind = "none" | "http" | "socks4" | "socks5";
 
@@ -185,8 +191,7 @@ export interface Preferences {
   confirmExitWhileDownloading: boolean;
   checkForUpdates: boolean;
   language: Language;
-  theme: Theme;
-  useSystemTheme: boolean;
+  appearance: Appearance;
   showSpeedGraph: boolean;
   showPieceMap: boolean;
   dateFormat: DateFormat;
