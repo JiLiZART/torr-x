@@ -32,7 +32,10 @@ export interface Torrent {
   uploaded: number;
   ratio: number | null;
   wantedSize: number;
-  tabId: string | null;
+  /** Normalized (trimmed, lowercase, unique) user tags; stored by the server. */
+  tags: string[];
+  /** Host of the first tracker. */
+  tracker: string | null;
   priority: Priority;
 }
 
@@ -104,11 +107,26 @@ export interface AddOptions {
   wantedFiles?: number[];
 }
 
+/** A saved query. An empty `name` means the tab is named by its query (ad-hoc). */
 export interface Tab {
   id: string;
   name: string;
-  torrentIds: string[];
+  /** `@torrentx/query` text, stored verbatim even when it does not parse. */
+  query: string;
+  /** Position in the list. */
+  order: number;
+  pinned: boolean;
+  group: string | null;
 }
+
+export interface TabList {
+  /** Grammar the queries were written in. */
+  grammarVersion: number;
+  tabs: Tab[];
+}
+
+/** `group: null` ungroups; `order` moves the tab to that position. */
+export type TabPatch = Partial<Pick<Tab, "name" | "query" | "order" | "pinned" | "group">>;
 
 export interface Stats {
   downloadRate: number;
@@ -322,12 +340,13 @@ export const api = {
   /** URL for a plain `<a download>`; same-origin cookies apply. */
   torrentFileUrl: (id: string) => `${BASE}/torrents/${enc(id)}/torrent-file`,
   reveal: (id: string) => request<void>("POST", `/torrents/${enc(id)}/reveal`),
-  setTab: (id: string, tabId: string | null) =>
-    request<void>("PUT", `/torrents/${enc(id)}/tab`, { tabId }),
+  /** Replaces the torrent's tags. */
+  setTags: (id: string, tags: string[]) => request<void>("PUT", `/torrents/${enc(id)}/tags`, tags),
 
-  tabs: () => request<Tab[]>("GET", "/tabs"),
-  createTab: (name: string) => request<Tab>("POST", "/tabs", { name }),
-  renameTab: (id: string, name: string) => request<Tab>("PATCH", `/tabs/${enc(id)}`, { name }),
+  tabs: () => request<TabList>("GET", "/tabs"),
+  createTab: (tab: Pick<Tab, "query"> & Partial<Pick<Tab, "name" | "pinned" | "group">>) =>
+    request<Tab>("POST", "/tabs", tab),
+  updateTab: (id: string, patch: TabPatch) => request<Tab>("PATCH", `/tabs/${enc(id)}`, patch),
   deleteTab: (id: string) => request<void>("DELETE", `/tabs/${enc(id)}`),
 
   getSettings: () => request<Settings>("GET", "/settings"),

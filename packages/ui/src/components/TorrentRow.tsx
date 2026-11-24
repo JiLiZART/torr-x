@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type DragEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Play,
   Pause,
@@ -10,15 +10,16 @@ import {
   Save,
   Link2,
   CheckCircle,
-  ChevronRight,
   Trash,
+  Tag,
+  ArrowDown,
+  ArrowUp,
 } from "lucide-react";
-import type { Tab, Torrent } from "@torrentx/api-client";
+import type { Torrent } from "@torrentx/api-client";
 import { useUi } from "../lib/context";
 import { graphPaths, isActive, type Sample } from "../lib/activity";
 import { COLUMNS } from "../lib/columns";
-import { bytes, eta, percent, rate, statusColor } from "../lib/format";
-import { TORRENT_DRAG_TYPE } from "./TabBar";
+import { bytes, percent, rate, statusBadge, statusColor } from "../lib/format";
 
 export type TorrentAction =
   | "pause"
@@ -30,18 +31,16 @@ export type TorrentAction =
   | "rename"
   | "torrentFile"
   | "magnet"
-  | "verify";
+  | "verify"
+  | "tags";
 
 interface TorrentProps {
   torrent: Torrent;
   isSelected: boolean;
   onClick: () => void;
-  onDragStart: () => void;
-  onDragEnd: () => void;
-  isDragging: boolean;
-  tabs: Tab[];
-  onMoveToTab: (tabId: string | null) => void;
   onAction: (action: TorrentAction) => void;
+  /** Dense rows: one line, no secondary line. */
+  compact: boolean;
   /** Recent activity; drawn behind the row while downloading or seeding. */
   samples?: Sample[];
 }
@@ -77,37 +76,30 @@ function MenuItem({
 
 const Divider = () => <div className="border-t border-tx-accent-900/30 my-1"></div>;
 
-export function TorrentItem({
-  torrent,
-  isSelected,
-  onClick,
-  onDragStart,
-  onDragEnd,
-  isDragging,
-  tabs,
-  onMoveToTab,
-  onAction,
-  samples,
-}: TorrentProps) {
-  const { t, gate } = useUi();
+const MAX_TAGS = 2;
+const tagClass = "rounded border border-tx-accent-900/40 bg-tx-surface-900 px-1.5 py-0.5 text-[11px] text-tx-accent-500";
+
+/** A rate with its arrow, or a dash while idle; the cell width never changes. */
+function Rate({ value, up }: { value: number; up?: boolean }) {
+  if (value <= 0) return <span className="text-tx-accent-800">—</span>;
+  const Icon = up ? ArrowUp : ArrowDown;
+  return (
+    <span className={up ? "text-tx-accent-600" : "text-tx-accent-300"}>
+      <Icon size={11} className="mr-1 inline" />
+      {rate(value).trim()}
+    </span>
+  );
+}
+
+export function TorrentRow({ torrent, isSelected, onClick, onAction, compact, samples }: TorrentProps) {
+  const { t, gate, date } = useUi();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [submenuOpen, setSubmenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const close = () => {
-    setMenuOpen(false);
-    setSubmenuOpen(false);
-  };
+  const close = () => setMenuOpen(false);
   const act = (action: TorrentAction) => {
     close();
     onAction(action);
-  };
-
-  const handleDragStart = (e: DragEvent) => {
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData(TORRENT_DRAG_TYPE, torrent.id);
-    e.dataTransfer.setData("text/plain", torrent.name);
-    onDragStart();
   };
 
   useEffect(() => {
@@ -122,15 +114,22 @@ export function TorrentItem({
   const isPaused = torrent.status === "paused";
   const color = statusColor(torrent.status);
   const graph = isActive(torrent) && samples && samples.length >= 2 ? graphPaths(samples) : null;
+  // The state reason replaces "tracker · added" while the state needs explaining.
+  const reason =
+    torrent.status === "error"
+      ? (torrent.error ?? t("status.error"))
+      : torrent.status === "checking"
+        ? t("row.checking")
+        : isPaused
+          ? t("row.paused")
+          : null;
+  const meta = reason ?? [torrent.tracker, t("row.added", { when: date(torrent.addedAt) })].filter(Boolean).join(" · ");
+  const done = torrent.progress >= 1;
 
   return (
     <div
-      draggable
-      onDragStart={handleDragStart}
-      onDragEnd={onDragEnd}
-      className={`h-14 px-4 flex items-center isolate transition-colors duration-200 cursor-pointer ${isSelected ? "bg-tx-accent-900/20 hover:bg-tx-accent-900/30" : "hover:bg-tx-surface-900/70"} ${isDragging ? "opacity-50" : ""} group relative`}
+      className={`${compact ? "h-9" : "h-14"} px-4 flex items-center isolate transition-colors duration-200 cursor-pointer ${isSelected ? "bg-tx-accent-900/20 hover:bg-tx-accent-900/30" : "hover:bg-tx-surface-900/70"} group relative`}
       onClick={onClick}
-      title={torrent.error ? `${torrent.name}\n${torrent.error}` : torrent.name}
     >
       {graph && (
         <svg
@@ -144,28 +143,49 @@ export function TorrentItem({
           <path d={graph.up} className="fill-none stroke-tx-accent-700/60" vectorEffect="non-scaling-stroke" />
         </svg>
       )}
-      <div className="flex flex-1 min-w-0 items-center text-sm text-tx-accent-400">
-        <div className={COLUMNS.name}>
-          <div className="flex items-center">
-            <div className={`w-2 h-2 rounded-full mr-2 shrink-0 ${color}`}></div>
-            <span className="line-clamp-2 break-all">{torrent.name}</span>
+      <div className="flex flex-1 min-w-0 items-center text-sm text-tx-accent-400 tabular-nums">
+        <div className={`${COLUMNS.name} flex items-center`}>
+          <div className={`w-2 h-2 rounded-full mr-3 shrink-0 ${color}`}></div>
+          <div className="min-w-0">
+            <div className="truncate" title={torrent.name}>
+              {torrent.name}
+            </div>
+            {!compact && (
+              <div className={`truncate text-[11px] ${torrent.status === "error" ? "text-red-400" : "text-tx-accent-700"}`} title={meta}>
+                {meta}
+              </div>
+            )}
           </div>
         </div>
-        <div className={COLUMNS.size}>{bytes(torrent.size)}</div>
+        <div className={`${COLUMNS.size} text-xs text-tx-accent-500`}>{bytes(torrent.size)}</div>
         <div className={COLUMNS.progress}>
           <div className="w-full bg-tx-surface-800 rounded-full h-1.5">
-            <div
-              className={`h-1.5 rounded-full ${color} transition-all duration-300`}
-              style={{ width: `${torrent.progress * 100}%` }}
-            ></div>
+            <div className={`h-1.5 rounded-full ${color}`} style={{ width: `${torrent.progress * 100}%` }}></div>
           </div>
-          <span className="text-xs mt-1 inline-block">{percent(torrent.progress)}</span>
+          {!compact && <span className="text-[11px] text-tx-accent-500">{done ? t("row.done") : percent(torrent.progress)}</span>}
         </div>
-        <div className={COLUMNS.seeds}>{torrent.seeds}</div>
-        <div className={COLUMNS.peers}>{torrent.peers}</div>
-        <div className={COLUMNS.download}>{rate(torrent.downloadRate)}</div>
-        <div className={COLUMNS.upload}>{rate(torrent.uploadRate)}</div>
-        <div className={COLUMNS.eta}>{isPaused ? t("status.paused") : eta(torrent)}</div>
+        <div className={`${COLUMNS.down} text-xs`}>
+          <Rate value={torrent.downloadRate} />
+        </div>
+        <div className={`${COLUMNS.up} text-xs`}>
+          <Rate value={torrent.uploadRate} up />
+        </div>
+        <div className={`${COLUMNS.peers} text-xs text-tx-accent-500`}>{torrent.peers}</div>
+        <div className={`${COLUMNS.ratio} text-xs text-tx-accent-500`}>{torrent.ratio == null ? "—" : torrent.ratio.toFixed(2)}</div>
+        <div className={COLUMNS.state}>
+          <span className={`rounded px-1.5 py-0.5 text-[11px] ${statusBadge(torrent.status)}`}>{t(`state.${torrent.status}`)}</span>
+        </div>
+        <div className={`${COLUMNS.tags} space-x-1 overflow-hidden`} title={torrent.tags.join(", ")}>
+          {torrent.tags.slice(0, MAX_TAGS).map((tag) => (
+            <span key={tag} className={tagClass}>
+              {tag}
+            </span>
+          ))}
+          {torrent.tags.length > MAX_TAGS && <span className={tagClass}>+{torrent.tags.length - MAX_TAGS}</span>}
+        </div>
+        <div className={`${COLUMNS.tracker} truncate text-xs text-tx-accent-700`} title={torrent.tracker ?? undefined}>
+          {torrent.tracker ?? "—"}
+        </div>
         <div
           className={`${menuOpen ? "flex" : "hidden group-hover:flex"} items-center space-x-1 ml-2 absolute right-4 bg-tx-surface-950/80 px-2 py-1 rounded-md shadow-lg backdrop-blur-sm transition-opacity duration-200`}
           onClick={(e) => e.stopPropagation()}
@@ -208,48 +228,7 @@ export function TorrentItem({
                 <Divider />
                 <MenuItem icon={<FolderOpen size={14} className="mr-2" />} label={t("action.reveal")} onClick={() => act("reveal")} />
                 <Divider />
-                <div className="relative" onMouseEnter={() => setSubmenuOpen(true)} onMouseLeave={() => setSubmenuOpen(false)}>
-                  <button
-                    className="w-full px-3 py-2 text-left text-sm text-tx-accent-400 hover:bg-tx-accent-900/20 flex items-center justify-between"
-                    onClick={() => setSubmenuOpen(!submenuOpen)}
-                  >
-                    <span className="flex items-center">
-                      <FolderInput size={14} className="mr-2" />
-                      {t("action.moveToTab")}
-                    </span>
-                    <ChevronRight size={14} />
-                  </button>
-                  {submenuOpen && (
-                    <div className="absolute left-full top-0 ml-1 w-48 bg-tx-surface-950 border border-tx-accent-900/50 rounded-md shadow-xl z-50">
-                      {tabs.length === 0 && (
-                        <div className="px-3 py-2 text-sm text-tx-accent-700">{t("action.noTabs")}</div>
-                      )}
-                      {tabs.map((tab) => (
-                        <button
-                          key={tab.id}
-                          onClick={() => {
-                            close();
-                            onMoveToTab(tab.id);
-                          }}
-                          className={`w-full px-3 py-2 text-left text-sm hover:bg-tx-accent-900/20 ${tab.torrentIds.includes(torrent.id) ? "text-tx-accent-300" : "text-tx-accent-400"}`}
-                        >
-                          {tab.name}
-                        </button>
-                      ))}
-                      {tabs.some((tab) => tab.torrentIds.includes(torrent.id)) && (
-                        <button
-                          onClick={() => {
-                            close();
-                            onMoveToTab(null);
-                          }}
-                          className="w-full px-3 py-2 text-left text-sm text-tx-accent-600 hover:bg-tx-accent-900/20 border-t border-tx-accent-900/30"
-                        >
-                          {t("action.removeFromTab")}
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
+                <MenuItem icon={<Tag size={14} className="mr-2" />} label={t("action.tags")} onClick={() => act("tags")} />
                 <MenuItem icon={<FolderInput size={14} className="mr-2" />} label={t("action.relocate")} onClick={() => act("relocate")} hint={gate("relocate")} />
                 <MenuItem icon={<Edit3 size={14} className="mr-2" />} label={t("action.rename")} onClick={() => act("rename")} hint={gate("rename")} />
                 <Divider />

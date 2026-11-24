@@ -12,7 +12,7 @@ use tokio::sync::{Mutex, OnceCell};
 use torrentx_core::{
     AddOptions, AddSource, Capabilities, DownloadSettings, EngineError, EngineResult, EngineTuning,
     FileInfo, Peer, Pieces, Preview, PreviewFile, Priority, Status, Torrent, TorrentDetails,
-    Tracker, check_uri, parse_id,
+    Tracker, check_uri, parse_id, tracker_host,
 };
 
 const ENGINE: &str = "transmission";
@@ -39,6 +39,7 @@ const LIST_FIELDS: &[&str] = &[
     "uploadRatio",
     "sizeWhenDone",
     "bandwidthPriority",
+    "trackers",
 ];
 
 const DETAIL_FIELDS: &[&str] = &[
@@ -94,6 +95,13 @@ struct RawTorrent {
     upload_ratio: f64,
     size_when_done: u64,
     bandwidth_priority: i64,
+    #[serde(default)]
+    trackers: Vec<RawAnnounce>,
+}
+
+#[derive(Deserialize)]
+struct RawAnnounce {
+    announce: String,
 }
 
 #[derive(Deserialize)]
@@ -303,7 +311,8 @@ impl RawTorrent {
             // -1 = nothing downloaded, -2 = infinite.
             ratio: (self.upload_ratio >= 0.0).then_some(self.upload_ratio),
             wanted_size: self.size_when_done,
-            tab_id: None,
+            tags: Vec::new(),
+            tracker: self.trackers.iter().find_map(|t| tracker_host(&t.announce)),
             priority: map_priority(self.bandwidth_priority),
         }
     }
@@ -912,10 +921,12 @@ mod tests {
             "peersConnected": 1, "peersSendingToUs": 1, "status": 4,
             "error": 0, "errorString": "", "eta": -1, "addedDate": 0,
             "downloadDir": "/d", "downloadedEver": 0, "uploadedEver": 0,
-            "uploadRatio": -1, "sizeWhenDone": 10, "bandwidthPriority": 0
+            "uploadRatio": -1, "sizeWhenDone": 10, "bandwidthPriority": 0,
+            "trackers": [{ "announce": "udp://Tracker.Example:1337/announce", "id": 0, "tier": 0 }]
         }))
         .unwrap();
         let t = raw.into_torrent();
+        assert_eq!(t.tracker.as_deref(), Some("tracker.example"));
         assert_eq!(t.eta_secs, None);
         assert_eq!(t.error, None);
         assert_eq!(t.ratio, None);
@@ -939,7 +950,7 @@ mod tests {
         assert_eq!(t.ratio, Some(0.2));
         assert_eq!(t.wanted_size, 2048);
         assert_eq!(t.eta_secs, Some(120));
-        assert_eq!(t.tab_id, None);
+        assert!(t.tags.is_empty());
         assert_eq!(d.piece_size, Some(16384));
         assert_eq!(d.pieces, Some(1));
         assert_eq!(d.wasted, Some(0));

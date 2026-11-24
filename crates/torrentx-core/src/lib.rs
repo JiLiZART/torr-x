@@ -48,8 +48,10 @@ pub struct Torrent {
     pub ratio: Option<f64>,
     /// Bytes of the files that are wanted.
     pub wanted_size: u64,
-    /// User tab; engines leave it null, the server fills it.
-    pub tab_id: Option<String>,
+    /// User tags; engines leave it empty, the server fills it.
+    pub tags: Vec<String>,
+    /// Host of the torrent's first tracker; null when it has none (or is not known yet).
+    pub tracker: Option<String>,
     pub priority: Priority,
 }
 
@@ -220,9 +222,31 @@ pub fn check_uri(uri: &str) -> EngineResult<&str> {
     }
 }
 
+/// Lowercase host of a tracker URL (`udp://Tracker.Example:1337/announce` → `tracker.example`).
+pub fn tracker_host(url: &str) -> Option<String> {
+    let rest = url.split_once("://")?.1;
+    let authority = rest.split(['/', '?']).next()?;
+    let host = authority.rsplit_once('@').map_or(authority, |(_, h)| h);
+    let host = match host.strip_prefix('[') {
+        Some(v6) => v6.split(']').next()?,
+        None => host.split(':').next()?,
+    };
+    (!host.is_empty()).then(|| host.to_ascii_lowercase())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn tracker_host_rules() {
+        let host = |u| tracker_host(u);
+        assert_eq!(host("udp://Tracker.Example:1337/announce").as_deref(), Some("tracker.example"));
+        assert_eq!(host("https://user@t.example/a?b=1").as_deref(), Some("t.example"));
+        assert_eq!(host("udp://[::1]:80/announce").as_deref(), Some("::1"));
+        assert_eq!(host("not a url"), None);
+        assert_eq!(host("udp:///announce"), None);
+    }
 
     const FIXTURE: &str = include_str!("../tests/fixtures/torrent.json");
 

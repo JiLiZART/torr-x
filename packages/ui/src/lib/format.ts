@@ -114,3 +114,19 @@ export function statusColor(status: Status): string {
       return "bg-gray-600";
   }
 }
+
+/** State word (badge) colors; pairs with `statusColor` for the dot and the bar. */
+export function statusBadge(status: Status): string {
+  switch (status) {
+    case "downloading":
+      return "bg-blue-500/15 text-blue-500";
+    case "seeding":
+      return "bg-green-500/15 text-green-500";
+    case "paused":
+      return "bg-yellow-500/15 text-yellow-500";
+    case "error":
+      return "bg-red-500/15 text-red-500";
+    default:
+      return "bg-tx-surface-800 text-tx-accent-600";
+  }
+}

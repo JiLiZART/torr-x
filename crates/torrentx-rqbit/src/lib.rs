@@ -19,7 +19,7 @@ use librqbit::{
 use torrentx_core::{
     AddOptions, AddSource, Capabilities, EngineError, EngineResult, EngineTuning, FileInfo, Peer,
     Pieces, Preview, PreviewFile, Priority, ProxyKind, Status, Torrent, TorrentDetails, Tracker,
-    check_uri, parse_id,
+    check_uri, parse_id, tracker_host,
 };
 
 const ENGINE: &str = "rqbit";
@@ -324,7 +324,9 @@ impl RqbitEngine {
             uploaded,
             ratio: (downloaded > 0).then(|| uploaded as f64 / downloaded as f64),
             wanted_size,
-            tab_id: None,
+            tags: Vec::new(),
+            // Unordered set in librqbit: the smallest host keeps the answer stable.
+            tracker: t.shared().trackers.iter().filter_map(|u| tracker_host(u.as_str())).min(),
             priority: Priority::Normal,
         }
     }

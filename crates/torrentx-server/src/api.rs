@@ -1,6 +1,5 @@
 //! `/api/v1` JSON API.
 
-use std::collections::HashSet;
 use std::net::{IpAddr, SocketAddr};
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -23,7 +22,7 @@ use torrentx_core::{
 
 use crate::config::{Config, EngineKind, Preferences};
 use crate::engine::Engine;
-use crate::store::{PausedBy, Tab};
+use crate::store::{PausedBy, Tab, TabPatch};
 use crate::{AppState, ServerEvent, auth, ui};
 
 /// Big enough for any sane .torrent file.
@@ -102,9 +101,10 @@ pub fn router(state: Arc<AppState>) -> Router {
         .route("/torrents/{id}/magnet", get(magnet))
         .route("/torrents/{id}/torrent-file", get(torrent_file))
         .route("/torrents/{id}/reveal", post(reveal))
-        .route("/torrents/{id}/tab", put(set_tab))
+        .route("/torrents/{id}/tab", put(set_tab_gone))
+        .route("/torrents/{id}/tags", put(set_tags))
         .route("/tabs", get(tabs).post(create_tab))
-        .route("/tabs/{id}", axum::routing::patch(rename_tab).delete(delete_tab))
+        .route("/tabs/{id}", axum::routing::patch(update_tab).delete(delete_tab))
         .route("/stats", get(stats))
         .route("/capabilities", get(capabilities))
         .route("/settings", get(get_settings).put(put_settings))
@@ -148,9 +148,9 @@ async fn health(State(state): State<Arc<AppState>>) -> Json<Value> {
     }))
 }
 
-/// Adds what only the server knows: tab, rename override, queued-by-policy.
+/// Adds what only the server knows: tags, rename override, queued-by-policy.
 fn decorate(state: &AppState, t: &mut Torrent) {
-    t.tab_id = state.store.tab_of(&t.id);
+    t.tags = state.store.tags_of(&t.id);
     if let Some(name) = state.store.name_of(&t.id) {
         t.name = name;
     }
@@ -496,38 +496,42 @@ async fn reveal(
 
 // ---- tabs -------------------------------------------------------------------
 
-async fn known_ids(state: &AppState) -> Option<HashSet<String>> {
-    let engine = engine(state).await.ok()?;
-    let all = engine.list().await.ok()?;
-    Some(all.into_iter().map(|t| t.id).collect())
+/// Tabs are saved queries. The query text round-trips verbatim: the server never parses it.
+async fn tabs(State(state): State<Arc<AppState>>) -> Json<Value> {
+    Json(json!({
+        "grammarVersion": state.store.grammar_version(),
+        "tabs": state.store.tabs(),
+    }))
 }
 
-async fn tabs(State(state): State<Arc<AppState>>) -> Json<Vec<Tab>> {
-    let known = known_ids(&state).await;
-    Json(state.store.tabs(known.as_ref()))
+#[derive(Deserialize)]
+#[serde(default)]
+#[derive(Default)]
+struct NewTab {
+    name: String,
+    query: String,
+    pinned: bool,
+    group: Option<String>,
 }
 
 async fn create_tab(
     State(state): State<Arc<AppState>>,
-    Json(body): Json<NameBody>,
+    Json(body): Json<NewTab>,
 ) -> ApiResult<impl IntoResponse> {
-    let tab = state.store.create_tab(&body.name).map_err(ApiError::invalid)?;
+    let tab = state
+        .store
+        .create_tab(&body.name, &body.query, body.pinned, body.group)
+        .map_err(store_err)?;
     Ok((StatusCode::CREATED, Json(tab)))
 }
 
-async fn rename_tab(
+async fn update_tab(
     State(state): State<Arc<AppState>>,
     Path(id): Path<String>,
-    Json(body): Json<NameBody>,
+    Json(patch): Json<TabPatch>,
 ) -> ApiResult<Json<Tab>> {
-    match state.store.rename_tab(&id, &body.name).map_err(ApiError::invalid)? {
-        Some(mut tab) => {
-            let known = known_ids(&state).await;
-            if let Some(k) = known {
-                tab.torrent_ids.retain(|t| k.contains(t));
-            }
-            Ok(Json(tab))
-        }
+    match state.store.update_tab(&id, patch).map_err(store_err)? {
+        Some(tab) => Ok(Json(tab)),
         None => Err(ApiError::not_found(format!("tab {id} not found"))),
     }
 }
@@ -536,30 +540,30 @@ async fn delete_tab(
     State(state): State<Arc<AppState>>,
     Path(id): Path<String>,
 ) -> ApiResult<StatusCode> {
-    if state.store.delete_tab(&id).map_err(store_err)? {
+    if state.store.delete_tab(&id).map_err(ApiError::invalid)? {
         Ok(StatusCode::NO_CONTENT)
     } else {
         Err(ApiError::not_found(format!("tab {id} not found")))
     }
 }
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct SetTabBody {
-    tab_id: Option<String>,
-}
-
-async fn set_tab(
+async fn set_tags(
     State(state): State<Arc<AppState>>,
     Path(id): Path<String>,
-    Json(body): Json<SetTabBody>,
+    Json(tags): Json<Vec<String>>,
 ) -> ApiResult<StatusCode> {
     let id = parse_id(&id)?;
-    state
-        .store
-        .assign(&id, body.tab_id.as_deref())
-        .map_err(ApiError::not_found)?;
+    state.store.set_tags(&id, &tags).map_err(ApiError::invalid)?;
     Ok(StatusCode::NO_CONTENT)
+}
+
+/// Manual tab membership was replaced by tags.
+async fn set_tab_gone() -> ApiError {
+    ApiError::new(
+        StatusCode::GONE,
+        "not_found",
+        "PUT /torrents/{id}/tab was removed; use PUT /torrents/{id}/tags",
+    )
 }
 
 // ---- stats / capabilities ---------------------------------------------------

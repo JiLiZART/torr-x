@@ -29,9 +29,13 @@ crates/torrentx-core        shared model (Torrent, TorrentDetails, Peer, Preview
 crates/torrentx-rqbit       RqbitEngine (librqbit Session with JSON persistence + fastresume)
 crates/torrentx-transmission TransmissionEngine (RPC, 409 session-id retry, status mapping)
 crates/torrentx-server      lib: config (+v1 migration), Engine enum, api router, auth + guards, store
-                            (state.json: tabs, renames, policy), policy loop, stats, geoip, ui; bin: torrentx-server
+                            (state.json v3: saved-query tabs, tags, renames, policy; migrates v2 membership
+                            tabs), policy loop, stats, geoip, ui; bin: torrentx-server
 packages/api-client         @torrentx/api-client: TS types + fetch wrapper (mirrors Rust model)
-packages/ui                 @torrentx/ui: ported vendor UI (components, hooks, i18n, themes, Tailwind preset)
+packages/query              @torrentx/query: the query language, pure TS with no runtime deps (parse, evaluate,
+                            compare, format, chips, complete, ParseError)
+packages/ui                 @torrentx/ui: shell (Sidebar, TopBar, FilterBar, StatusBar), list, dialogs, hooks,
+                            i18n, themes, Tailwind preset
 vendor/torrent-client-magic-patterns  original design mock (reference only, not built)
 scripts/fetch-geoip.sh      downloads the DB-IP country DB embedded by `--features geoip`
 packaging/systemd           torrentx.service
@@ -51,13 +55,29 @@ openspec/                   specs and change proposals
   `via: server`, plus added/completed `ServerEvent`s); decisions are a pure `plan()` with unit tests.
   rqbit verify/relocate = forget + re-add; rqbit rename = display-name override in `state.json`.
 - **Torrent id** = lowercase hex info-hash everywhere.
+- **One query language** (`packages/query`): `field:value`, `!`, `> < >= <=`, `a..b`, quoted phrases, `*`, implicit
+  AND, `AND`/`OR`, one level of `( )`, and `sort:` as a predicate. Tabs, the lens, the filter builder and column
+  headers all produce query text; nothing else filters or orders the list. Parse errors carry
+  `{message, column, length, suggestion}`. `category:` and `done:` parse but match nothing (no source in the model).
+- **Tabs are saved queries**: `{id, name, query, order, pinned, group}` in `state.json`, with `GRAMMAR_VERSION`. The
+  server stores query text verbatim and never parses it; an unparseable tab shows an error badge and lists nothing.
+  Built-in tabs (All, Downloading, Active, Seeding, Stalled) are seeded once; only `all` cannot be deleted. An empty
+  `name` means "named by its query". Sidebar sections are derived in `lib/lens.ts` `sections()`: PINNED = `pinned`,
+  AD-HOC = unnamed and ungrouped, SMART TABS = the rest.
+- **Tags** replace tab membership: `Torrent.tags` (trimmed, lowercase, unique; at most 32 of 64 chars), set with
+  `PUT /torrents/{id}/tags`, filled by the server in `decorate`. `Torrent.tracker` is the first tracker's host,
+  filled by the engines.
+- **Lens**: per-tab, in-memory query ANDed onto the tab query (`App.tsx` + `lib/lens.ts`). Switching tabs clears it
+  and keeps a session snapshot behind the `restore lens` pill. "Save as tab" is the only write path to the sidebar.
+- **Addresses**: `#/tab/<id>` (`lib/route.ts`); browser back/forward move between tabs; an address never carries a
+  lens; a stale address opens `all` with a notice.
 - **Engine slot** (`AppState.engine`) is `Result<Arc<Engine>, String>`; Err → API `engine_unavailable` (503).
   Settings changes to the engine restart it live; bind/port changes return `restartRequired`.
 - **Security**: `auth::guard` enforces a Host allowlist when bound to loopback (anti DNS-rebinding) and rejects
   POST/PUT/DELETE whose `Origin` ≠ Host (anti CSRF), even with auth off. No CORS headers. Auth (off by default)
   = session cookie (`tx_session`, in-memory) or HTTP Basic. Passwords never returned by `GET /settings`.
-- **Desktop**: frameless window (`decorations(false)`); the UI header dots render and call `@tauri-apps/api/window`
-  only when `window.__TAURI_INTERNALS__` exists, and `capabilities/window.json` grants just window ops (plus
+- **Desktop**: frameless window (`decorations(false)`); the window dots (sidebar head, or the top bar while the
+  sidebar is collapsed) render and call `@tauri-apps/api/window` only when `window.__TAURI_INTERNALS__` exists, and `capabilities/window.json` grants just window ops (plus
   is-maximized/fullscreen and resize events) to the loopback server origin. Rounded corners: the window is
   transparent on macOS/Linux (`macos-private-api` feature, `macOSPrivateApi`), `initDesktopChrome()` sets
   `html[data-desktop]` / `[data-maximized]` and `apps/web/src/index.css` rounds `#root`; Windows 11 rounds natively. Autostart, start minimized, quit confirmation and native notifications follow
@@ -81,7 +101,7 @@ pnpm dev:desktop         # tauri dev (TORRENTX_UI_DEV_URL=http://localhost:1420 
 pnpm build:web | build:server | build:desktop   # server/desktop builds fetch + embed the GeoIP DB
 pnpm lint                # i18n key check + ESLint over apps/web + packages, --max-warnings 0
 pnpm typecheck
-pnpm test                # node --test for packages/ui pure logic (terminal parser)
+pnpm test                # node --test for packages/query and packages/ui pure logic
 cargo test --workspace   # unit + API tests (tower oneshot)
 cargo test -p torrentx-rqbit -- --ignored          # network tests (magnet lifecycle, persistence)
 TORRENTX_TEST_TRANSMISSION=http://127.0.0.1:9091/transmission/rpc \
@@ -92,6 +112,7 @@ TORRENTX_TEST_TRANSMISSION=http://127.0.0.1:9091/transmission/rpc \
 
 - Keep the terminal look: green on black, monospace, minimal shadows.
 - UI state: local React hooks; polling via `usePoll` (pauses when the tab is hidden).
+- Filtering and ordering go through `@torrentx/query` only; a column header edits the `sort:` chip.
 - Lint before commits: `pnpm lint`.
 - TS: double quotes, semicolons, named exports (`export function Foo`), component props as `interface FooProps`,
   event handlers `handleX`/`onX`. Types come from `@torrentx/api-client` — never redeclare model types in `packages/ui`.
@@ -115,6 +136,7 @@ TORRENTX_TEST_TRANSMISSION=http://127.0.0.1:9091/transmission/rpc \
 
 ## Known Gaps
 
+- The query fields `category:` and `done:` have no data source yet.
 - No list virtualization — fine for hundreds of torrents, revisit at thousands.
 - Release binaries are unsigned (macOS Gatekeeper / Windows SmartScreen warn on first launch).
 - Features no engine offers stay disabled: OS cache, super seeding, anonymous mode, WebSocket trackers,

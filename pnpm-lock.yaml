@@ -79,6 +79,15 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
+  packages/query:
+    devDependencies:
+      '@types/node':
+        specifier: ^20.11.18
+        version: 20.19.24
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
   packages/ui:
     dependencies:
       '@tauri-apps/api':
@@ -87,6 +96,9 @@ importers:
       '@torrentx/api-client':
         specifier: workspace:*
         version: link:../api-client
+      '@torrentx/query':
+        specifier: workspace:*
+        version: link:../query
       lucide-react:
         specifier: 0.522.0
         version: 0.522.0(react@19.2.0)

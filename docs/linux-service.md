@@ -118,7 +118,7 @@ CLI flags `--bind` and `--port` override the file for a single run.
 Configs from before the split Transmission fields (`url = "..."`) are migrated on
 first start; the original is kept as `config.v1.bak` next to `config.toml`.
 
-Server state (user tabs, rename overrides, seeding bookkeeping) lives in
+Server state (saved-query tabs, tags, rename overrides, seeding bookkeeping) lives in
 `state.json` in the data directory (`/var/lib/torrentx` for the service).
 
 ### Not available on a headless server

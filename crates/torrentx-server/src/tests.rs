@@ -418,35 +418,64 @@ async fn settings_sections_round_trip() {
 #[tokio::test]
 async fn tabs_endpoints() {
     let (s, _) = state("tabs");
-    let (status, _, body) =
-        call(&s, json_req(Method::POST, "/api/v1/tabs", &json!({ "name": "   " }))).await;
-    assert_eq!(status, StatusCode::BAD_REQUEST);
-    assert_eq!(body["error"]["kind"], "invalid_input");
+    let (_, _, body) = get(&s, "/api/v1/tabs").await;
+    assert_eq!(body["grammarVersion"], 1);
+    assert_eq!(body["tabs"].as_array().unwrap().len(), 5, "built-ins are seeded");
+    assert_eq!(
+        body["tabs"][0],
+        json!({ "id": "all", "name": "All", "query": "", "order": 0, "pinned": true, "group": null })
+    );
 
-    let (status, _, tab) =
-        call(&s, json_req(Method::POST, "/api/v1/tabs", &json!({ "name": "Linux" }))).await;
+    // An unparseable query round-trips verbatim.
+    let new = json!({ "query": "statu:active", "group": "Media" });
+    let (status, _, tab) = call(&s, json_req(Method::POST, "/api/v1/tabs", &new)).await;
     assert_eq!(status, StatusCode::CREATED);
     let tab_id = tab["id"].as_str().unwrap().to_string();
+    let (_, _, body) = get(&s, "/api/v1/tabs").await;
+    assert_eq!(
+        body["tabs"][5],
+        json!({ "id": tab_id, "name": "", "query": "statu:active", "order": 5, "pinned": false, "group": "Media" })
+    );
 
-    let id = "ab".repeat(20);
-    let set = |t: Value| json_req(Method::PUT, &format!("/api/v1/torrents/{id}/tab"), &json!({ "tabId": t }));
-    assert_eq!(call(&s, set(json!(tab_id))).await.0, StatusCode::NO_CONTENT);
-    assert_eq!(call(&s, set(json!("nope"))).await.0, StatusCode::NOT_FOUND);
-    let (_, _, tabs) = get(&s, "/api/v1/tabs").await;
-    assert_eq!(tabs, json!([{ "id": tab_id, "name": "Linux", "torrentIds": [id] }]));
-
-    let (status, _, renamed) = call(
-        &s,
-        json_req(Method::PATCH, &format!("/api/v1/tabs/{tab_id}"), &json!({ "name": "Distros" })),
-    )
-    .await;
+    let patch = |t: &str, body: Value| json_req(Method::PATCH, &format!("/api/v1/tabs/{t}"), &body);
+    let (status, _, moved) =
+        call(&s, patch(&tab_id, json!({ "name": "Distros", "order": 1, "pinned": true, "group": null }))).await;
     assert_eq!(status, StatusCode::OK);
-    assert_eq!(renamed["name"], "Distros");
+    assert_eq!(
+        moved,
+        json!({ "id": tab_id, "name": "Distros", "query": "statu:active", "order": 1, "pinned": true, "group": null })
+    );
+    assert_eq!(call(&s, patch("nope", json!({ "name": "x" }))).await.0, StatusCode::NOT_FOUND);
 
     let del = |t: &str| req(Method::DELETE, &format!("/api/v1/tabs/{t}")).body(Body::empty()).unwrap();
     assert_eq!(call(&s, del(&tab_id)).await.0, StatusCode::NO_CONTENT);
     assert_eq!(call(&s, del(&tab_id)).await.0, StatusCode::NOT_FOUND);
-    assert_eq!(get(&s, "/api/v1/tabs").await.2, json!([]));
+    assert_eq!(call(&s, del("all")).await.0, StatusCode::BAD_REQUEST);
+    assert_eq!(get(&s, "/api/v1/tabs").await.2["tabs"].as_array().unwrap().len(), 5);
+}
+
+#[tokio::test]
+async fn tags_endpoint() {
+    let (s, _) = state("tags");
+    let id = "ab".repeat(20);
+    let set = |tags: Value| json_req(Method::PUT, &format!("/api/v1/torrents/{id}/tags"), &tags);
+    assert_eq!(call(&s, set(json!([" 4K ", "4k", "Movies"]))).await.0, StatusCode::NO_CONTENT);
+    assert_eq!(s.store.tags_of(&id), ["4k", "movies"]);
+
+    let many: Vec<String> = (0..33).map(|i| format!("t{i}")).collect();
+    let (status, _, body) = call(&s, set(json!(many))).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+    assert_eq!(body["error"]["kind"], "invalid_input");
+    assert_eq!(s.store.tags_of(&id), ["4k", "movies"]);
+
+    let bad_id = json_req(Method::PUT, "/api/v1/torrents/nope/tags", &json!([]));
+    assert_eq!(call(&s, bad_id).await.0, StatusCode::NOT_FOUND);
+
+    // The old membership route points at the new one.
+    let old = json_req(Method::PUT, &format!("/api/v1/torrents/{id}/tab"), &json!({ "tabId": null }));
+    let (status, _, body) = call(&s, old).await;
+    assert_eq!(status, StatusCode::GONE);
+    assert!(body["error"]["message"].as_str().unwrap().contains("/tags"));
 }
 
 #[tokio::test]
@@ -491,7 +520,7 @@ async fn new_mutations_are_guarded() {
         (Method::POST, format!("/api/v1/torrents/{ZERO_ID}/verify")),
         (Method::POST, format!("/api/v1/torrents/{ZERO_ID}/reveal")),
         (Method::PUT, format!("/api/v1/torrents/{ZERO_ID}/files")),
-        (Method::PUT, format!("/api/v1/torrents/{ZERO_ID}/tab")),
+        (Method::PUT, format!("/api/v1/torrents/{ZERO_ID}/tags")),
         (Method::PATCH, "/api/v1/tabs/t1".to_string()),
         (Method::POST, "/api/v1/tabs".to_string()),
         (Method::POST, "/api/v1/torrents/preview".to_string()),

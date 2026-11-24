@@ -1,0 +1,16 @@
+{
+  "name": "@torrentx/query",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test src/*.test.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.18",
+    "typescript": "5.9.3"
+  }
+}

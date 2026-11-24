@@ -55,12 +55,14 @@ interface PromptProps {
   title: ReactNode;
   label: string;
   initial: string;
+  /** Accept an empty value (e.g. to clear tags). */
+  allowEmpty?: boolean;
   onClose: () => void;
   /** Throws to keep the dialog open and show the error. */
   onSubmit: (value: string) => Promise<void>;
 }
 
-export function PromptDialog({ title, label, initial, onClose, onSubmit }: PromptProps) {
+export function PromptDialog({ title, label, initial, allowEmpty, onClose, onSubmit }: PromptProps) {
   const { t } = useUi();
   const [value, setValue] = useState(initial);
   const [busy, setBusy] = useState(false);
@@ -68,7 +70,7 @@ export function PromptDialog({ title, label, initial, onClose, onSubmit }: Promp
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!value.trim()) return setError(t("common.required"));
+    if (!allowEmpty && !value.trim()) return setError(t("common.required"));
     setBusy(true);
     try {
       await onSubmit(value.trim());

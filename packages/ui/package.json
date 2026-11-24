@@ -20,6 +20,7 @@
   "dependencies": {
     "@tauri-apps/api": "2.12.0",
     "@torrentx/api-client": "workspace:*",
+    "@torrentx/query": "workspace:*",
     "lucide-react": "0.522.0"
   },
   "devDependencies": {
