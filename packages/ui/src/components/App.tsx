@@ -19,7 +19,7 @@ import { Shell } from "./Shell";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
 import { TorrentList } from "./TorrentList";
-import { TorrentDetails } from "./TorrentDetails";
+import { DetailPage } from "./detail/DetailPage";
 import { Terminal } from "./Terminal";
 import { StatusBar } from "./StatusBar";
 import { Settings } from "./Settings";
@@ -59,7 +59,9 @@ export function App() {
   const [health, setHealth] = useState<Health | null>(null);
   const [needsLogin, setNeedsLogin] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-  const [tabId, navigate] = useRoute();
+  const { view, tabId, navigate, openTorrent } = useRoute();
+  const detailView = view.kind === "torrent" ? view : null;
+  const openedFromList = useRef(false);
   // The lens: ephemeral, per tab, in memory. Only "Save as tab" ever writes it anywhere.
   const [lens, setLensState] = useState<Lens>(NO_LENS);
   const [undo, setUndo] = useState<Lens[]>([]);
@@ -77,7 +79,6 @@ export function App() {
   // Selection (many rows), the keyboard row cursor, and the torrent whose details are open.
   const [selection, setSelection] = useState<string[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
-  const [detailId, setDetailId] = useState<string | null>(null);
   // The one panel: Spotlight / palette (`input` ">" = commands), optionally opened in its add flow.
   const [palette, setPalette] = useState<{ input: string; add?: AddSource } | null>(null);
   const pickRef = useRef<HTMLInputElement>(null);
@@ -206,6 +207,13 @@ export function App() {
     setNotice(t("tabs.gone"));
   }, [loadedTabs, tabId, navigate, t]);
 
+  const loadedList = torrents.data;
+  useEffect(() => {
+    if (!detailView || !loadedList || loadedList.some((row) => row.id === detailView.id)) return;
+    navigate(tabId, true);
+    setNotice(t("detail.gone"));
+  }, [detailView, loadedList, tabId, navigate, t]);
+
   useEffect(() => {
     if (!saved) return;
     const timer = setTimeout(() => setSaved(null), UNDO_SAVE_MS);
@@ -295,7 +303,12 @@ export function App() {
     setSelection((current) => (extend ? [...new Set([...current, ...(cursor ? [cursor] : []), next])] : [next]));
     document.querySelector(`[data-row="${next}"]`)?.scrollIntoView({ block: "nearest" });
   };
-  const openDetails = (id: string | null) => id && setDetailId(id);
+  // Enter / double-click opens the page; single click only selects.
+  const openDetails = (id: string | null) => {
+    if (!id) return;
+    openedFromList.current = !detailView;
+    openTorrent(id, detailView?.section ?? "overview");
+  };
   const pauseRows = (rows: Torrent[]) => run(() => Promise.all(rows.map((row) => api.pause(row.id))));
   const resumeRows = (rows: Torrent[]) => run(() => Promise.all(rows.map((row) => api.resume(row.id))));
 
@@ -375,7 +388,7 @@ export function App() {
     "tab.resumeAll": handler(() => resumeRows(paused(visible))),
     "all.pause": handler(() => pauseRows(notPaused(list))),
     "all.resume": handler(() => resumeRows(paused(list))),
-    "nav.back": handler(() => window.history.back()),
+    "nav.back": handler(() => (detailView ? backToList() : window.history.back())),
     "nav.forward": handler(() => window.history.forward()),
     "settings.open": handler(() => setSettingsOpen(true)),
     "terminal.toggle": handler(() => setTerminalOpen((open) => !open)),
@@ -401,20 +414,20 @@ export function App() {
       return;
     } else {
       setSelection([id]);
-      setDetailId(detailId === id ? null : id);
     }
     setCursor(id);
   };
   const onAction = (tor: Torrent, action: TorrentAction) => selectionHandlers([tor])[COMMAND_FOR_ACTION[action]].run();
 
   const jumpTorrent = (id: string) => {
-    if (!visible.some((row) => row.id === id)) {
-      onSwitch.current = { snapshot: true, next: NO_LENS };
-      navigate(ALL_TAB);
-    }
     setSelection([id]);
     setCursor(id);
-    setDetailId(id);
+    openDetails(id);
+  };
+  // Back to the list it came from: history when we pushed the page, else a fresh entry.
+  const backToList = () => {
+    if (openedFromList.current) window.history.back();
+    else navigate(tabId);
   };
   const applyFromPalette = (next: Lens, inAll: boolean) => {
     if (inAll && tabId !== ALL_TAB) {
@@ -456,7 +469,7 @@ export function App() {
     );
   }
 
-  const detail = list.find((x) => x.id === detailId) ?? null;
+  const detailTorrent = detailView ? list.find((x) => x.id === detailView.id) : undefined;
   const tabRows = tabAst ? list.filter((row) => evaluate(tabAst, row)) : [];
 
   const banner = "flex shrink-0 items-center gap-[10px] border-b border-ui-border bg-ui-accent-soft px-[16px] py-[8px] text-[12px] text-ui-accent";
@@ -487,6 +500,7 @@ export function App() {
         }
         top={
           <TopBar
+            crumb={detailView ? { back: activeTab ? tabLabel(activeTab) : "", name: detailTorrent?.name ?? "", onBack: backToList } : undefined}
             title={activeTab ? tabLabel(activeTab) : ""}
             lensCount={lensCount}
             sidebarCollapsed={sidebarCollapsed}
@@ -518,6 +532,7 @@ export function App() {
           />
         }
       >
+        <div className={detailView ? "hidden" : "contents"}>
         <FilterBar
           lens={lens}
           onLens={setLens}
@@ -537,6 +552,7 @@ export function App() {
           collapsed={filterCollapsed}
           onCollapse={setFilterCollapsed}
         />
+        </div>
         {updates.notice && (
           <div className={banner}>
             <span className="flex-1">
@@ -567,6 +583,8 @@ export function App() {
           </div>
         )}
         <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          {/* Hidden, not unmounted, while a torrent page is open: back finds the same scroll offset. */}
+          <div className={detailView ? "hidden" : "flex min-h-0 flex-1 flex-col"}>
           <TorrentList
             torrents={visible}
             all={list}
@@ -593,21 +611,25 @@ export function App() {
             selection={selectedSet}
             cursor={cursor}
             onRowClick={onRowClick}
-            onRowOpen={(id) => setDetailId(id)}
+            onRowOpen={(id) => openDetails(id)}
             onListKey={onListKey}
             onAction={onAction}
             engineError={engineError}
             onOpenSettings={() => setSettingsOpen(true)}
           />
-          {detail && (
-            <TorrentDetails
-              id={detail.id}
-              onClose={() => setDetailId(null)}
+          </div>
+          {detailView && (
+            <DetailPage
+              id={detailView.id}
+              section={detailView.section}
+              onSection={(section) => openTorrent(detailView.id, section, true)}
+              onAction={onAction}
               onError={handleError}
               onPollError={onPollError}
+              onNotice={setNotice}
             />
           )}
-          {terminalOpen && !detail && (
+          {terminalOpen && (
             <Terminal onClose={() => setTerminalOpen(false)} onChanged={refresh} />
           )}
         </main>
@@ -670,7 +692,7 @@ export function App() {
             onRemoved={() => {
               const gone = new Set(removing.torrents.map((row) => row.id));
               setSelection((current) => current.filter((id) => !gone.has(id)));
-              if (detailId && gone.has(detailId)) setDetailId(null);
+              if (detailView && gone.has(detailView.id)) navigate(tabId, true);
               setRemoving(null);
               refresh();
             }}

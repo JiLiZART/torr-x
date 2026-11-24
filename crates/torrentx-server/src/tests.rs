@@ -129,6 +129,29 @@ async fn torrent_errors_with_real_engine() {
     assert_eq!(status, StatusCode::OK);
     assert_eq!(body, json!([]));
 
+    // Detail actions rqbit cannot do are 501 `unsupported`; a bad web-seed URL is caught first.
+    let post = |uri: String, body: Value| json_req(Method::POST, &uri, &body);
+    let (status, _, body) = call(&s, post(format!("/api/v1/torrents/{ZERO_ID}/reannounce"), json!({}))).await;
+    assert_eq!((status, body["error"]["kind"].as_str()), (StatusCode::NOT_IMPLEMENTED, Some("unsupported")));
+    let seed = |url: &str| post(format!("/api/v1/torrents/{ZERO_ID}/web-seeds"), json!({ "url": url }));
+    assert_eq!(call(&s, seed("https://mirror.example.org/x/")).await.0, StatusCode::NOT_IMPLEMENTED);
+    assert_eq!(call(&s, seed("ftp://mirror.example.org/x/")).await.0, StatusCode::BAD_REQUEST);
+    // Files of an unknown torrent: 404 (from loopback; a remote peer gets 403 first).
+    let file = |action: &str, ip: &str| {
+        let mut r = req(Method::POST, &format!("/api/v1/torrents/{ZERO_ID}/files/99/{action}")).body(Body::empty()).unwrap();
+        r.extensions_mut().insert(axum::extract::ConnectInfo(format!("{ip}:5555").parse::<SocketAddr>().unwrap()));
+        r
+    };
+    for action in ["open", "reveal"] {
+        assert_eq!(call(&s, file(action, "127.0.0.1")).await.0, StatusCode::NOT_FOUND, "{action}");
+        assert_eq!(call(&s, file(action, "192.168.1.20")).await.0, StatusCode::FORBIDDEN, "{action}");
+    }
+    let (_, _, caps) = get(&s, "/api/v1/capabilities").await;
+    let f = &caps["features"];
+    assert_eq!((f["reannounce"]["supported"].as_bool(), f["webSeeds"]["supported"].as_bool()), (Some(false), Some(false)));
+    assert_eq!((f["openFile"]["supported"].as_bool(), f["openFile"]["via"].as_str()), (Some(true), Some("server")));
+    assert_eq!(f["addWebSeed"]["supported"], false);
+
     s.engine.read().await.as_ref().unwrap().shutdown().await;
 }
 
@@ -534,6 +557,10 @@ async fn new_mutations_are_guarded() {
     let token_free = [
         (Method::POST, format!("/api/v1/torrents/{ZERO_ID}/verify")),
         (Method::POST, format!("/api/v1/torrents/{ZERO_ID}/reveal")),
+        (Method::POST, format!("/api/v1/torrents/{ZERO_ID}/reannounce")),
+        (Method::POST, format!("/api/v1/torrents/{ZERO_ID}/web-seeds")),
+        (Method::POST, format!("/api/v1/torrents/{ZERO_ID}/files/0/open")),
+        (Method::POST, format!("/api/v1/torrents/{ZERO_ID}/files/0/reveal")),
         (Method::PUT, format!("/api/v1/torrents/{ZERO_ID}/files")),
         (Method::PUT, format!("/api/v1/torrents/{ZERO_ID}/tags")),
         (Method::PATCH, "/api/v1/tabs/t1".to_string()),
@@ -557,6 +584,10 @@ async fn new_mutations_are_guarded() {
     };
     for uri in ["/api/v1/tabs", "/api/v1/stats", "/api/v1/capabilities"] {
         assert_eq!(get(&s, uri).await.0, StatusCode::UNAUTHORIZED, "{uri}");
+    }
+    for uri in [format!("/api/v1/torrents/{ZERO_ID}/reannounce"), format!("/api/v1/torrents/{ZERO_ID}/files/0/open")] {
+        let r = req(Method::POST, &uri).body(Body::empty()).unwrap();
+        assert_eq!(call(&s, r).await.0, StatusCode::UNAUTHORIZED, "{uri}");
     }
 }
 

@@ -33,6 +33,28 @@ export const FIELD_NAMES = Object.keys(FIELDS) as Field[];
 /** Engine statuses plus the derived `active` and `stalled`. */
 export const STATES = ["downloading", "seeding", "paused", "checking", "queued", "error", "active", "stalled"] as const;
 
+type Value = string | number | string[] | null;
+
+/**
+ * What a query can say about one kind of row: its fields, the allowed values of enum fields, the field a
+ * bare word searches, and how to read a field. Torrents are the default; the detail page's sections
+ * (files, peers, trackers, web seeds) have their own.
+ */
+export interface Scope {
+  fields: Record<string, Kind>;
+  enums: Record<string, readonly string[]>;
+  defaultField: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  read: (field: string, row: any) => Value;
+  /** A field with its own matching (torrent `state:` derives active/stalled). */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  special?: (field: string, value: string) => ((row: any) => boolean) | null;
+}
+
+/** Section rows carry their fields as properties: the reader is a lookup. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const lookup = (field: string, row: any): Value => row[field] ?? null;
+
 /** The part of a torrent the language reads; `Torrent` from the API client satisfies it. */
 export interface Row {
   name: string;
@@ -59,19 +81,20 @@ export type Op = "=" | ">" | "<" | ">=" | "<=";
 
 export interface Pred {
   type: "pred";
-  field: Field;
+  field: string;
   negated: boolean;
   op: Op;
   /** Without quotes; `a..b` for a range. */
   value: string;
   column: number;
   length: number;
-  /** Compiled at parse time; ignores `negated`. */
-  test: (row: Row, now: number) => boolean;
+  /** Compiled at parse time; ignores `negated`. Rows are torrents or a section scope's rows. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  test: (row: any, now: number) => boolean;
 }
 
 export interface SortKey {
-  field: Field;
+  field: string;
   desc: boolean;
 }
 
@@ -110,7 +133,7 @@ class Fail extends Error {
 const isText = (kind: Kind) => kind === "text" || kind === "exact" || kind === "enum";
 
 /** Numeric, size, speed and date keys sort descending by default; text keys ascending. */
-export const defaultDesc = (field: Field) => !isText(FIELDS[field]);
+export const defaultDesc = (field: string, scope: Scope = TORRENT) => !isText(scope.fields[field] ?? "text");
 
 function read(field: Field, row: Row): string | number | string[] | null {
   switch (field) {
@@ -224,9 +247,9 @@ function bound(kind: Kind, text: string): Bound | null {
   }
 }
 
-function numericTest(field: Field, op: Op, a: Bound, b: Bound): Pred["test"] {
+function numericTest(field: string, op: Op, a: Bound, b: Bound, scope: Scope): Pred["test"] {
   return (row, now) => {
-    const v = read(field, row);
+    const v = scope.read(field, row);
     if (typeof v !== "number") return false;
     let lo = a.age ? now - a.lo : a.lo;
     let hi = b.age ? now - b.lo : b.hi;
@@ -246,28 +269,30 @@ function numericTest(field: Field, op: Op, a: Bound, b: Bound): Pred["test"] {
   };
 }
 
-function textTest(field: Field, value: string): Pred["test"] {
+function textTest(field: string, value: string, scope: Scope): Pred["test"] {
   const needle = value.toLowerCase();
-  if (field === "state") return (row) => isState(row, needle);
+  const special = scope.special?.(field, needle);
+  if (special) return special;
   let match: (s: string) => boolean;
   if (needle.includes("*")) {
     const glob = needle.split("*").map((part) => part.replace(/[.+?^${}()|[\]\\]/g, "\\$&"));
     const re = new RegExp(`^${glob.join(".*")}$`, "s");
     match = (s) => re.test(s);
-  } else if (FIELDS[field] === "text") {
+  } else if (scope.fields[field] === "text") {
     match = (s) => s.includes(needle);
   } else {
     match = (s) => s === needle;
   }
   return (row) => {
-    const v = read(field, row);
+    const v = scope.read(field, row);
     if (v === null || typeof v === "number") return false;
     return (Array.isArray(v) ? v : [v]).some((s) => match(s.toLowerCase()));
   };
 }
 
-/** Parses query text. An empty query matches everything. Never throws. */
-export function parse(input: string): ParseResult {
+/** Parses query text for `scope` (torrents by default). An empty query matches everything. Never throws. */
+export function parse(input: string, scope: Scope = TORRENT): ParseResult {
+  const names = Object.keys(scope.fields);
   let i = 0;
   const fail = (message: string, column: number, length: number, suggestion: string | null = null): never => {
     throw new Fail({ message, column, length: Math.max(length, 1), suggestion });
@@ -289,13 +314,13 @@ export function parse(input: string): ParseResult {
       const m = eat(/[A-Za-z]+/y);
       if (!m) return fail("missing sort key", start, i - start);
       const field = m[0].toLowerCase();
-      if (!(field in FIELDS)) {
-        return fail(`unknown sort key "${m[0]}"`, keyStart, m[0].length, nearest(field, FIELD_NAMES));
+      if (!(field in scope.fields)) {
+        return fail(`unknown sort key "${m[0]}"`, keyStart, m[0].length, nearest(field, names));
       }
       const dir = eat(/\s+(asc|desc)(?=[\s,)]|$)/iy);
       keys.push({
-        field: field as Field,
-        desc: dir ? dir[1].toLowerCase() === "desc" : defaultDesc(field as Field),
+        field,
+        desc: dir ? dir[1].toLowerCase() === "desc" : defaultDesc(field, scope),
       });
     } while (eat(/\s*,\s*/y));
     return { type: "sort", keys, column: start, length: i - start };
@@ -317,15 +342,15 @@ export function parse(input: string): ParseResult {
     let negated = !!eat(/!/y);
     const nameStart = i;
     const named = eat(/([A-Za-z]+):/y);
-    const field = named ? named[1].toLowerCase() : "name";
+    const field = named ? named[1].toLowerCase() : scope.defaultField;
     if (field === "sort") {
       if (negated) fail("sort cannot be negated", start, 1);
       return sort(start);
     }
-    if (named && !(field in FIELDS)) {
-      fail(`unknown field "${named[1]}"`, nameStart, named[1].length, nearest(field, [...FIELD_NAMES, "sort"]));
+    if (named && !(field in scope.fields)) {
+      fail(`unknown field "${named[1]}"`, nameStart, named[1].length, nearest(field, [...names, "sort"]));
     }
-    const kind = FIELDS[field as Field];
+    const kind = scope.fields[field];
     if (named && eat(/!/y)) negated = !negated;
     const op = (named ? eat(/>=|<=|>|</y)?.[0] : undefined) ?? "=";
 
@@ -348,11 +373,12 @@ export function parse(input: string): ParseResult {
       if (op !== "=") fail(`"${field}" does not support ${op}`, nameStart, i - nameStart);
       if (kind === "enum") {
         value = value.toLowerCase();
-        if (!(STATES as readonly string[]).includes(value)) {
-          fail(`unknown state "${value}"`, valueStart, valueLength, nearest(value, STATES));
+        const allowed = scope.enums[field] ?? [];
+        if (!allowed.includes(value)) {
+          fail(`unknown ${field} "${value}"`, valueStart, valueLength, nearest(value, allowed));
         }
       }
-      test = textTest(field as Field, value);
+      test = textTest(field, value, scope);
     } else {
       const [from, to, ...rest] = value.split("..");
       const a = bound(kind, from);
@@ -360,9 +386,9 @@ export function parse(input: string): ParseResult {
       if (!a || !b || rest.length > 0 || (to !== undefined && op !== "=")) {
         return fail(`invalid ${kind} "${value}"`, valueStart, valueLength);
       }
-      test = numericTest(field as Field, op as Op, a, b);
+      test = numericTest(field, op as Op, a, b, scope);
     }
-    return { type: "pred", field: field as Field, negated, op: op as Op, value, column: start, length: i - start, test };
+    return { type: "pred", field, negated, op: op as Op, value, column: start, length: i - start, test };
   }
 
   function and(depth: number): Node {
@@ -407,7 +433,8 @@ export function parse(input: string): ParseResult {
 }
 
 /** True when the torrent matches; `sort:` always matches. `now` is unix seconds. */
-export function evaluate(node: Node, row: Row, now = Date.now() / 1000): boolean {
+/** True when the row matches (a torrent, or a row of the scope the query was parsed for); `sort:` always matches. */
+export function evaluate(node: Node, row: object, now = Date.now() / 1000): boolean {
   switch (node.type) {
     case "pred":
       return node.negated !== node.test(row, now);
@@ -428,11 +455,14 @@ export function sortKeys(node: Node): SortKey[] {
 }
 
 /** Comparator for the keys, left to right; unknown values last; ties break by name. */
-export function compare(keys: SortKey[]): (a: Row, b: Row) => number {
-  const byName = (a: Row, b: Row) => a.name.localeCompare(b.name);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function compare(keys: SortKey[], scope: Scope = TORRENT): (a: any, b: any) => number {
+  const key = (row: unknown) => String(scope.read(scope.defaultField, row) ?? "");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const byName = (a: any, b: any) => key(a).localeCompare(key(b));
   return (a, b) => {
     for (const { field, desc } of keys) {
-      const [x, y] = [read(field, a), read(field, b)].map((v) => (Array.isArray(v) ? v.join(",") : v));
+      const [x, y] = [scope.read(field, a), scope.read(field, b)].map((v) => (Array.isArray(v) ? v.join(",") : v));
       if (x === y) continue;
       if (x === null) return 1;
       if (y === null) return -1;
@@ -444,9 +474,9 @@ export function compare(keys: SortKey[]): (a: Row, b: Row) => number {
 }
 
 /** What a column header click does: flip the leading key, or make the field the only key. */
-export function toggleSort(keys: SortKey[], field: Field): SortKey[] {
+export function toggleSort(keys: SortKey[], field: string, scope: Scope = TORRENT): SortKey[] {
   if (keys[0]?.field === field) return [{ field, desc: !keys[0].desc }, ...keys.slice(1)];
-  return [{ field, desc: defaultDesc(field) }];
+  return [{ field, desc: defaultDesc(field, scope) }];
 }
 
 export function formatSort(keys: SortKey[]): string {
@@ -510,8 +540,10 @@ export interface Completion {
 export function complete(
   input: string,
   caret: number,
-  values: Partial<Record<Field, string[]>> = {},
+  values: Partial<Record<string, string[]>> = {},
+  scope: Scope = TORRENT,
 ): Completion {
+  const names = Object.keys(scope.fields);
   const head = input.slice(0, caret);
   const pick = (pool: readonly string[], partial: string): Completion => ({
     from: caret - partial.length,
@@ -523,27 +555,87 @@ export function complete(
   if (sorting) {
     const segment = sorting[1].slice(sorting[1].lastIndexOf(",") + 1).trimStart();
     const dir = /^([a-z]+)\s+([a-z]*)$/i.exec(segment);
-    if (dir && dir[1].toLowerCase() in FIELDS) {
+    if (dir && dir[1].toLowerCase() in scope.fields) {
       const found = pick(["asc", "desc"], dir[2]);
       if (found.options.length > 0) return found;
     } else if (/^[a-z]*$/i.test(segment)) {
-      return pick(FIELD_NAMES, segment);
+      return pick(names, segment);
     }
   }
 
   const token = /[^\s()]*$/.exec(head)![0];
   const colon = token.indexOf(":");
   if (colon < 0) {
-    const found = pick([...FIELD_NAMES, "sort"], token.replace(/^!/, ""));
+    const found = pick([...names, "sort"], token.replace(/^!/, ""));
     return { ...found, options: found.options.map((name) => `${name}:`) };
   }
   const field = token.slice(0, colon).replace(/^!/, "").toLowerCase();
-  if (!(field in FIELDS)) return { from: caret, to: caret, options: [] };
+  if (!(field in scope.fields)) return { from: caret, to: caret, options: [] };
   const rest = token.slice(colon + 1);
   const partial = rest.replace(/^!?(>=|<=|>|<)?/, "");
-  if (field === "state") return pick(STATES, partial);
-  const live = values[field as Field];
+  const enumValues = scope.enums[field];
+  if (enumValues) return pick(enumValues, partial);
+  const live = values[field];
   if (live) return pick(live, partial);
-  if (!isText(FIELDS[field as Field]) && rest === "") return pick([">", "<", ">=", "<="], "");
+  if (!isText(scope.fields[field]) && rest === "") return pick([">", "<", ">=", "<="], "");
   return { from: caret, to: caret, options: [] };
 }
+
+/** Torrents: the list, tabs, the lens and the palette. */
+export const TORRENT: Scope = {
+  fields: FIELDS,
+  enums: { state: STATES },
+  defaultField: "name",
+  read: (field, row) => read(field as Field, row),
+  special: (field, value) => (field === "state" ? (row: Row) => isState(row, value) : null),
+};
+
+/** Peer flag letters as words: `flags:!snubbed`. */
+export const PEER_FLAGS: Record<string, string> = {
+  D: "downloading",
+  U: "uploading",
+  I: "incoming",
+  E: "encrypted",
+  K: "unchoked",
+  S: "snubbed",
+  O: "optimistic",
+  X: "pex",
+  H: "dht",
+  T: "utp",
+  "?": "unknown",
+};
+
+export const FILE_PRIORITIES = ["high", "normal", "low", "skip"] as const;
+export const TRACKER_STATUSES = ["working", "updating", "not working", "disabled", "unknown"] as const;
+
+/** Detail page, Files: rows `{name, path, ext, size, done (0–100), priority, ep, season}`. */
+export const FILE_SCOPE: Scope = {
+  fields: { name: "text", path: "text", ext: "exact", size: "size", done: "percent", priority: "enum", ep: "number", season: "number" },
+  enums: { priority: FILE_PRIORITIES },
+  defaultField: "name",
+  read: lookup,
+};
+
+/** Detail page, Peers: rows `{address, country, client, flags (words), progress (0–100), down, up}`. */
+export const PEER_SCOPE: Scope = {
+  fields: { address: "text", country: "exact", client: "text", flags: "enum", progress: "percent", down: "speed", up: "speed" },
+  enums: { flags: [...new Set(Object.values(PEER_FLAGS))] },
+  defaultField: "client",
+  read: lookup,
+};
+
+/** Detail page, Trackers: rows `{url, kind, tier, status, seeds, leechers}`. */
+export const TRACKER_SCOPE: Scope = {
+  fields: { url: "text", kind: "enum", tier: "number", status: "enum", seeds: "number", leechers: "number" },
+  enums: { kind: ["tracker", "dht", "pex"], status: TRACKER_STATUSES },
+  defaultField: "url",
+  read: lookup,
+};
+
+/** Detail page, Web seeds: rows `{url, type, status, speed}`. */
+export const WEBSEED_SCOPE: Scope = {
+  fields: { url: "text", type: "enum", status: "text", speed: "speed" },
+  enums: { type: ["bep19", "bep17"] },
+  defaultField: "url",
+  read: lookup,
+};

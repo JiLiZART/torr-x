@@ -106,6 +106,14 @@ impl Engine {
         dispatch!(self, e => e.add_tracker(id, url).await)
     }
 
+    pub async fn reannounce(&self, id: &str) -> EngineResult<()> {
+        dispatch!(self, e => e.reannounce(id).await)
+    }
+
+    pub async fn add_web_seed(&self, id: &str, url: &str) -> EngineResult<()> {
+        dispatch!(self, e => e.add_web_seed(id, url).await)
+    }
+
     pub async fn set_files(
         &self,
         id: &str,

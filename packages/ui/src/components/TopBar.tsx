@@ -11,9 +11,12 @@ import {
     SquareTerminal
 } from "lucide-react";
 import { useUi } from "../lib/context";
+import { KeyCaps } from "./KeyCaps";
 import { WindowDotsSpace } from "./Sidebar";
 
 interface TopBarProps {
+  /** On a torrent page: `← <tab> ⌘[ / <name>` instead of the tab title and lens. */
+  crumb?: { back: string; name: string; onBack: () => void };
   title: string;
   /** Predicates in the active lens; null without a lens. */
   lensCount: number | null;
@@ -37,7 +40,7 @@ const on = "border-ui-accent-line bg-ui-accent-soft text-ui-accent";
 
 // data-tauri-drag-region only applies to the element carrying it, so the empty areas are tagged
 // and the controls are not.
-export function TopBar({ title, lensCount, sidebarCollapsed, onExpandSidebar, onCollapseSidebar, compact, onToggleDensity, filterBarOpen, onToggleFilterBar, terminalOpen, onToggleTerminal, onOpenSettings, onLogout }: TopBarProps) {
+export function TopBar({ crumb, title, lensCount, sidebarCollapsed, onExpandSidebar, onCollapseSidebar, compact, onToggleDensity, filterBarOpen, onToggleFilterBar, terminalOpen, onToggleTerminal, onOpenSettings, onLogout }: TopBarProps) {
   const { t } = useUi();
   return (
     <header data-tauri-drag-region className="flex h-[54px] shrink-0 items-center gap-[10px] border-b border-ui-border px-[14px]">
@@ -53,6 +56,24 @@ export function TopBar({ title, lensCount, sidebarCollapsed, onExpandSidebar, on
               <PanelLeftClose size={15} />
           </button>
       )}
+      {crumb ? (
+        <>
+          <button data-command="nav.back" onClick={crumb.onBack} className="flex shrink-0 items-center gap-[7px] rounded-[8px] border border-ui-border bg-ui-surface-2 px-[11px] py-[7px] hover:border-ui-border-strong" title={t("detail.backHint")}>
+            <ChevronLeft size={14} className="text-ui-text-2" />
+            <span className="max-w-[160px] truncate text-[12px] font-medium text-ui-text">{crumb.back}</span>
+            <KeyCaps binding="Mod+[" tone="text-ui-text-3" />
+          </button>
+          <span data-tauri-drag-region className="flex min-w-0 flex-1 items-center gap-[6px] text-[12px]">
+            <span className="shrink-0 text-ui-text-3">{crumb.back}</span>
+            <span className="shrink-0 font-code text-ui-text-3">/</span>
+            <span className="truncate font-semibold text-ui-text" title={crumb.name}>
+              {crumb.name}
+            </span>
+          </span>
+          <span className="hidden shrink-0 font-code text-[9px] text-ui-text-3 xl:block">{t("detail.backHint")}</span>
+        </>
+      ) : (
+        <>
       <div className="flex items-center gap-[2px]">
         <button data-command="nav.back" className={nav} onClick={() => window.history.back()} title={t("nav.back")}>
           <ChevronLeft size={16} />
@@ -74,6 +95,8 @@ export function TopBar({ title, lensCount, sidebarCollapsed, onExpandSidebar, on
         </>
       )}
       <span data-tauri-drag-region className="flex-1 self-stretch" />
+        </>
+      )}
       <div className="flex items-center gap-[4px]">
         <button data-command="filterBar.toggle" className={`${action} ${filterBarOpen ? on : off}`} onClick={onToggleFilterBar} title={t("cmd.filterBar.toggle")} aria-pressed={filterBarOpen}>
           <ListFilter size={16} />

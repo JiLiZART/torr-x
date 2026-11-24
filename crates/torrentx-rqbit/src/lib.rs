@@ -18,7 +18,7 @@ use librqbit::{
 };
 use torrentx_core::{
     AddOptions, AddSource, Capabilities, EngineError, EngineResult, EngineTuning, FileInfo, Peer,
-    Pieces, Preview, PreviewFile, Priority, ProxyKind, Status, Torrent, TorrentDetails, Tracker,
+    Pieces, Preview, PreviewFile, Priority, ProxyKind, Status, Torrent, TorrentDetails, Tracker, TrackerKind,
     check_uri, parse_id, tracker_host,
 };
 
@@ -86,18 +86,25 @@ fn limits(t: &EngineTuning) -> LimitsConfig {
     }
 }
 
-/// createdBy, comment, createdAt, tracker URLs from raw .torrent bytes.
-type MetaFields = (Option<String>, Option<String>, Option<i64>, Vec<String>);
+/// createdBy, comment, createdAt, tracker URLs with their announce-list tier, from raw .torrent bytes.
+type MetaFields = (Option<String>, Option<String>, Option<i64>, Vec<(String, Option<u32>)>);
 
 fn meta_fields(torrent_bytes: &[u8]) -> MetaFields {
     let Ok(t) = torrent_from_bytes(torrent_bytes) else {
         return Default::default();
     };
     let s = |b: &librqbit::ByteBuf| String::from_utf8_lossy(b.as_ref()).into_owned();
-    let mut trackers: Vec<String> = Vec::new();
-    for url in t.iter_announce().map(s) {
-        if !url.is_empty() && !trackers.contains(&url) {
-            trackers.push(url);
+    // `announce-list` carries tiers; a lone `announce` has none.
+    let tiered: Vec<(String, Option<u32>)> = if t.announce_list.iter().flatten().next().is_some() {
+        let tiers = t.announce_list.iter().enumerate();
+        tiers.flat_map(|(tier, urls)| urls.iter().map(move |u| (s(u), Some(tier as u32)))).collect()
+    } else {
+        t.announce.iter().map(|u| (s(u), None)).collect()
+    };
+    let mut trackers: Vec<(String, Option<u32>)> = Vec::new();
+    for (url, tier) in tiered {
+        if !url.is_empty() && !trackers.iter().any(|(u, _)| *u == url) {
+            trackers.push((url, tier));
         }
     }
     (
@@ -237,6 +244,7 @@ impl RqbitEngine {
                 "verify",
                 "relocate",
                 "rename",
+                "openFile",
                 "queue",
                 "seedLimits",
                 "moveCompleted",
@@ -352,6 +360,8 @@ impl RqbitEngine {
             comment: None,
             created_at: None,
             trackers: Vec::new(),
+            // librqbit does not use web seeds.
+            web_seeds: Vec::new(),
             files: Vec::new(),
         };
         // Magnet whose metadata isn't resolved yet: nothing more is known.
@@ -365,13 +375,18 @@ impl RqbitEngine {
             details.created_at = created_at;
             details.trackers = trackers
                 .into_iter()
-                .map(|url| Tracker {
+                // librqbit keeps no per-tracker state: URL and tier only.
+                .map(|(url, tier)| Tracker {
                     url,
+                    kind: TrackerKind::Tracker,
+                    tier,
                     status: None,
+                    error: None,
                     last_announce: None,
                     next_announce: None,
                     seeds: None,
-                    peers: None,
+                    leechers: None,
+                    downloaded: None,
                 })
                 .collect();
             details.files = m
@@ -498,7 +513,7 @@ impl RqbitEngine {
             created_at,
             created_by,
             comment,
-            trackers,
+            trackers: trackers.into_iter().map(|(url, _)| url).collect(),
             files: r
                 .info
                 .iter_file_details()
@@ -555,6 +570,7 @@ impl RqbitEngine {
                 download_rate: 0,
                 upload_rate: 0,
                 flags: None,
+                encryption: None,
                 is_seed: false,
             })
             .collect())
@@ -660,6 +676,14 @@ impl RqbitEngine {
 
     pub async fn add_tracker(&self, _id: &str, _url: &str) -> EngineResult<()> {
         Err(unsupported("adding trackers"))
+    }
+
+    pub async fn reannounce(&self, _id: &str) -> EngineResult<()> {
+        Err(unsupported("re-announcing"))
+    }
+
+    pub async fn add_web_seed(&self, _id: &str, _url: &str) -> EngineResult<()> {
+        Err(unsupported("web seeds"))
     }
 
     pub async fn set_files(

@@ -69,12 +69,49 @@ pub struct FileInfo {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Tracker {
+    /// Announce URL; `[DHT]` / `[PeX]` for the pseudo-rows.
     pub url: String,
+    pub kind: TrackerKind,
+    /// Announce-list tier; null for pseudo-rows and when the engine does not say.
+    pub tier: Option<u32>,
     pub status: Option<String>,
+    /// The engine's failure text, verbatim, while the tracker is failing.
+    pub error: Option<String>,
     pub last_announce: Option<i64>,
     pub next_announce: Option<i64>,
     pub seeds: Option<u32>,
-    pub peers: Option<u32>,
+    pub leechers: Option<u32>,
+    /// Bytes downloaded from peers this tracker supplied; no engine reports it yet.
+    pub downloaded: Option<u64>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum TrackerKind {
+    Tracker,
+    /// Peer sources shown as tracker rows; not editable, no announce schedule.
+    Dht,
+    Pex,
+}
+
+/// An HTTP seed: BEP 19 (`url-list`) or BEP 17 (`httpseeds`).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WebSeed {
+    pub url: String,
+    pub kind: WebSeedKind,
+    pub status: Option<String>,
+    /// Bytes per second.
+    pub speed: Option<u64>,
+    pub downloaded: Option<u64>,
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum WebSeedKind {
+    Bep19,
+    Bep17,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -90,6 +127,7 @@ pub struct TorrentDetails {
     pub comment: Option<String>,
     pub created_at: Option<i64>,
     pub trackers: Vec<Tracker>,
+    pub web_seeds: Vec<WebSeed>,
     pub files: Vec<FileInfo>,
 }
 
@@ -103,7 +141,10 @@ pub struct Peer {
     pub progress: Option<f64>,
     pub download_rate: u64,
     pub upload_rate: u64,
+    /// Engine flag letters (D, U, I, E, K, S, X, …), verbatim.
     pub flags: Option<String>,
+    /// Cipher of the connection (`rc4`); null when plain or unknown.
+    pub encryption: Option<String>,
     pub is_seed: bool,
 }
 

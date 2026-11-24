@@ -29,11 +29,37 @@
   "trackers": [
     {
       "url": "udp://tracker.opentrackr.org:1337",
+      "kind": "tracker",
+      "tier": 0,
       "status": null,
+      "error": null,
       "lastAnnounce": null,
       "nextAnnounce": null,
       "seeds": null,
-      "peers": null
+      "leechers": null,
+      "downloaded": null
+    },
+    {
+      "url": "[DHT]",
+      "kind": "dht",
+      "tier": null,
+      "status": "working",
+      "error": null,
+      "lastAnnounce": null,
+      "nextAnnounce": null,
+      "seeds": null,
+      "leechers": null,
+      "downloaded": null
+    }
+  ],
+  "webSeeds": [
+    {
+      "url": "https://mirror.example.org/bbb/",
+      "kind": "bep19",
+      "status": null,
+      "speed": null,
+      "downloaded": null,
+      "error": null
     }
   ],
   "files": [

@@ -240,3 +240,47 @@ test("completion", () => {
   assert.deepEqual(options("bogus:"), []);
   assert.deepEqual(complete("state:pa tag:4k", 8), { from: 6, to: 8, options: ["paused"] });
 });
+
+test("section scopes: files, peers, trackers, web seeds", async () => {
+  const { FILE_SCOPE, PEER_SCOPE, TRACKER_SCOPE, WEBSEED_SCOPE } = await import("./index.ts");
+  const run = (scope: typeof FILE_SCOPE, query: string, rows: Record<string, unknown>[], key: string) => {
+    const { ast, error } = parse(query, scope);
+    assert.equal(error, null, `${query}: ${error?.message}`);
+    return rows.filter((r) => evaluate(ast!, r as never)).sort(compare(sortKeys(ast!), scope)).map((r) => r[key]);
+  };
+
+  const files = [
+    { name: "a.mkv", path: "S/a.mkv", ext: "mkv", size: 2 * GB, done: 50, priority: "normal", ep: 1, season: 2 },
+    { name: "b.mkv", path: "S/b.mkv", ext: "mkv", size: 3 * GB, done: 0, priority: "skip", ep: 4, season: 2 },
+    { name: "c.srt", path: "S/c.srt", ext: "srt", size: 100, done: 100, priority: "high", ep: null, season: null },
+    { name: "d.mkv", path: "S/d.mkv", ext: "mkv", size: 1 * GB, done: 10, priority: "low", ep: 5, season: 2 },
+  ];
+  assert.deepEqual(run(FILE_SCOPE, "ext:mkv priority:!skip", files, "name"), ["a.mkv", "d.mkv"]);
+  assert.deepEqual(run(FILE_SCOPE, "ep:>3 sort:ep asc", files, "name"), ["b.mkv", "d.mkv"]);
+  assert.deepEqual(run(FILE_SCOPE, "c", files, "name"), ["c.srt"], "a bare word searches the file name");
+  assert.equal(parse("priority:urgent", FILE_SCOPE).error?.suggestion, null);
+  assert.equal(parse("state:active", FILE_SCOPE).error?.message, 'unknown field "state"', "torrent fields do not leak");
+
+  const peers = [
+    { address: "1.1.1.1:1", country: "CN", client: "qB", flags: ["downloading"], progress: 100, down: 300, up: 0 },
+    { address: "2.2.2.2:2", country: "DE", client: "Tr", flags: ["downloading", "uploading"], progress: 90, down: 900, up: 5 },
+    { address: "3.3.3.3:3", country: "NL", client: "lt", flags: ["snubbed"], progress: 20, down: 100, up: 0 },
+    { address: "4.4.4.4:4", country: null, client: "rq", flags: [], progress: 5, down: 500, up: 0 },
+  ];
+  assert.deepEqual(run(PEER_SCOPE, "country:!CN flags:!snubbed sort:down desc", peers, "address"), ["2.2.2.2:2", "4.4.4.4:4"]);
+  assert.deepEqual(run(PEER_SCOPE, "flags:uploading", peers, "address"), ["2.2.2.2:2"]);
+
+  const trackers = [
+    { url: "udp://b", kind: "tracker", tier: 1, status: "working", seeds: 3, leechers: 1 },
+    { url: "udp://a", kind: "tracker", tier: 0, status: "not working", seeds: null, leechers: null },
+    { url: "[DHT]", kind: "dht", tier: null, status: "working", seeds: null, leechers: null },
+    { url: "udp://c", kind: "tracker", tier: 2, status: "disabled", seeds: null, leechers: null },
+  ];
+  assert.deepEqual(run(TRACKER_SCOPE, "status:!disabled sort:tier asc", trackers, "url"), ["udp://a", "udp://b", "[DHT]"], "no tier sorts last");
+  assert.deepEqual(run(TRACKER_SCOPE, 'status:"not working"', trackers, "url"), ["udp://a"]);
+  assert.equal(format(parse('status:"not working"', TRACKER_SCOPE).ast!), 'status:"not working"');
+
+  const seeds = [{ url: "https://m/", type: "bep19", status: "connected", speed: 10 }, { url: "https://c/", type: "bep17", status: null, speed: null }];
+  assert.deepEqual(run(WEBSEED_SCOPE, "type:bep17", seeds, "url"), ["https://c/"]);
+  assert.deepEqual(complete("type:", 5, {}, WEBSEED_SCOPE).options, ["bep19", "bep17"]);
+});

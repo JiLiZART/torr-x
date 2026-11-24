@@ -49,12 +49,30 @@ export interface FileInfo {
 }
 
 export interface Tracker {
+  /** Announce URL; `[DHT]` / `[PeX]` for the pseudo-rows. */
   url: string;
+  kind: "tracker" | "dht" | "pex";
+  /** Announce-list tier; null for pseudo-rows. */
+  tier: number | null;
   status: string | null;
+  /** The engine's failure text, verbatim. */
+  error: string | null;
   lastAnnounce: number | null;
   nextAnnounce: number | null;
   seeds: number | null;
-  peers: number | null;
+  leechers: number | null;
+  /** Bytes downloaded through this tracker's peers. */
+  downloaded: number | null;
+}
+
+export interface WebSeed {
+  url: string;
+  kind: "bep19" | "bep17";
+  status: string | null;
+  /** Bytes per second. */
+  speed: number | null;
+  downloaded: number | null;
+  error: string | null;
 }
 
 export interface TorrentDetails extends Torrent {
@@ -66,6 +84,7 @@ export interface TorrentDetails extends Torrent {
   comment: string | null;
   createdAt: number | null;
   trackers: Tracker[];
+  webSeeds: WebSeed[];
   files: FileInfo[];
 }
 
@@ -76,7 +95,10 @@ export interface Peer {
   progress: number | null;
   downloadRate: number;
   uploadRate: number;
+  /** Engine flag letters (D, U, I, E, K, S, X, …). */
   flags: string | null;
+  /** Cipher (`rc4`); null when plain or unknown. */
+  encryption: string | null;
   isSeed: boolean;
 }
 
@@ -345,6 +367,11 @@ export const api = {
   /** URL for a plain `<a download>`; same-origin cookies apply. */
   torrentFileUrl: (id: string) => `${BASE}/torrents/${enc(id)}/torrent-file`,
   reveal: (id: string) => request<void>("POST", `/torrents/${enc(id)}/reveal`),
+  reannounce: (id: string) => request<void>("POST", `/torrents/${enc(id)}/reannounce`),
+  addWebSeed: (id: string, url: string) => request<void>("POST", `/torrents/${enc(id)}/web-seeds`, { url }),
+  /** Opens the file on the machine running TorrentX (loopback clients only). */
+  openFile: (id: string, index: number) => request<void>("POST", `/torrents/${enc(id)}/files/${index}/open`),
+  revealFile: (id: string, index: number) => request<void>("POST", `/torrents/${enc(id)}/files/${index}/reveal`),
   /** Replaces the torrent's tags. */
   setTags: (id: string, tags: string[]) => request<void>("PUT", `/torrents/${enc(id)}/tags`, tags),
 

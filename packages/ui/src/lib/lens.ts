@@ -13,7 +13,9 @@ import {
   type Field,
   type Node,
   type Row,
+  type Scope,
   type SortKey,
+  TORRENT,
 } from "@torrentx/query";
 
 export interface Lens {
@@ -27,8 +29,9 @@ export const NO_LENS: Lens = { fuzzy: "", query: "" };
 
 export const hasLens = (lens: Lens) => lens.fuzzy.trim() !== "" || lens.query.trim() !== "";
 
-const items = (text: string): Node[] => {
-  const ast = parse(text).ast;
+// Every helper takes the scope its query is written for: torrents, or a detail section.
+const items = (text: string, scope: Scope = TORRENT): Node[] => {
+  const ast = parse(text, scope).ast;
   return ast ? topItems(ast) : [];
 };
 // Canonical lens shape: filters in the user's order, sort chip(s) last.
@@ -42,16 +45,16 @@ export function fuzzyNode(fuzzy: string): Node | null {
 }
 
 /** Predicates in the lens, sort excluded: the funnel count and the top bar badge. */
-export const predicateCount = (query: string) => chips(parse(query).ast ?? { type: "and", items: [] }).filter((c) => c.kind !== "sort").length;
+export const predicateCount = (query: string, scope: Scope = TORRENT) => chips(parse(query, scope).ast ?? { type: "and", items: [] }).filter((c) => c.kind !== "sort").length;
 
 /** Appends predicates; `extra` must parse. */
-export const addChips = (query: string, extra: string) => join([...items(query), ...items(extra)]);
+export const addChips = (query: string, extra: string, scope: Scope = TORRENT) => join([...items(query, scope), ...items(extra, scope)]);
 
-export const removeChip = (query: string, index: number) => join(items(query).filter((_, i) => i !== index));
+export const removeChip = (query: string, index: number, scope: Scope = TORRENT) => join(items(query, scope).filter((_, i) => i !== index));
 
 /** Flips negation of a predicate chip; groups and sort stay as they are. */
-export function negateChip(query: string, index: number): string {
-  return join(items(query).map((item, i) => (i === index && item.type === "pred" ? { ...item, negated: !item.negated } : item)));
+export function negateChip(query: string, index: number, scope: Scope = TORRENT): string {
+  return join(items(query, scope).map((item, i) => (i === index && item.type === "pred" ? { ...item, negated: !item.negated } : item)));
 }
 
 export function moveChip(query: string, from: number, to: number): string {
@@ -63,11 +66,11 @@ export function moveChip(query: string, from: number, to: number): string {
 }
 
 /** A column header click: edits the lens's sort chip, starting from the order in effect. */
-export function clickSort(query: string, tabKeys: SortKey[], field: Field): string {
-  const list = items(query);
+export function clickSort(query: string, tabKeys: SortKey[], field: string, scope: Scope = TORRENT): string {
+  const list = items(query, scope);
   const own = list.flatMap(sortKeys);
-  const next = toggleSort(own.length > 0 ? own : tabKeys, field);
-  return join([...list.filter((item) => item.type !== "sort"), ...items(formatSort(next))]);
+  const next = toggleSort(own.length > 0 ? own : tabKeys, field, scope);
+  return join([...list.filter((item) => item.type !== "sort"), ...items(formatSort(next), scope)]);
 }
 
 /** Tab query AND lens as one query: what "Save as tab" stores. The lens's sort replaces the tab's. */
@@ -179,7 +182,7 @@ export function toBuilder(query: string): Builder {
   const toRow = (node: Node): BuilderRow | null => {
     if (node.type !== "pred") return null;
     if (node.negated && node.op !== "=") return null;
-    return { field: node.field, op: node.negated ? "!=" : node.op, value: node.value };
+    return { field: node.field as Field, op: node.negated ? "!=" : node.op, value: node.value };
   };
   const allRows = (nodes: Node[]) => {
     const rows = nodes.map(toRow);

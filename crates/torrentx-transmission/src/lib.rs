@@ -12,7 +12,7 @@ use tokio::sync::{Mutex, OnceCell};
 use torrentx_core::{
     AddOptions, AddSource, Capabilities, DownloadSettings, EngineError, EngineResult, EngineTuning,
     FileInfo, Peer, Pieces, Preview, PreviewFile, Priority, Status, Torrent, TorrentDetails,
-    Tracker, check_uri, parse_id, tracker_host,
+    Tracker, TrackerKind, WebSeed, WebSeedKind, check_uri, parse_id, tracker_host,
 };
 
 const ENGINE: &str = "transmission";
@@ -52,6 +52,9 @@ const DETAIL_FIELDS: &[&str] = &[
     "desiredAvailable",
     "leftUntilDone",
     "trackerStats",
+    "peersFrom",
+    "webseeds",
+    "webseedsSendingToUs",
     "files",
     "fileStats",
 ];
@@ -118,6 +121,10 @@ struct RawDetails {
     desired_available: u64,
     left_until_done: u64,
     tracker_stats: Vec<RawTracker>,
+    #[serde(default)]
+    peers_from: RawPeersFrom,
+    #[serde(default)]
+    webseeds: Vec<String>,
     files: Vec<RawFile>,
     file_stats: Vec<RawFileStat>,
 }
@@ -141,6 +148,8 @@ struct RawFileStat {
 #[serde(rename_all = "camelCase")]
 struct RawTracker {
     announce: String,
+    #[serde(default)]
+    tier: i64,
     announce_state: i64,
     has_announced: bool,
     last_announce_succeeded: bool,
@@ -161,6 +170,16 @@ struct RawPeer {
     rate_to_client: u64,
     rate_to_peer: u64,
     flag_str: String,
+    #[serde(default)]
+    is_encrypted: bool,
+}
+
+/// Where the connected peers came from; DHT and PeX become pseudo-tracker rows.
+#[derive(Deserialize, Default)]
+#[serde(default, rename_all = "camelCase")]
+struct RawPeersFrom {
+    from_dht: i64,
+    from_pex: i64,
 }
 
 /// Maps Transmission's `status` (0..=6) and `error` codes to the shared model.
@@ -218,6 +237,8 @@ pub fn capabilities_for(rpc: i64) -> Capabilities {
             "relocate",
             "rename",
             "addTracker",
+            "reannounce",
+            "webSeeds",
             "trackerStatus",
             "peerList",
             "peerClient",
@@ -235,7 +256,7 @@ pub fn capabilities_for(rpc: i64) -> Capabilities {
             "pex",
             "lpd",
         ])
-        .server(&["addPreview", "torrentFile"])
+        .server(&["addPreview", "torrentFile", "openFile"])
         .note("seedLimits", "seeding time enforced by TorrentX");
     // `sequential_download` arrived with Transmission 4.1 (rpc-version 18).
     if rpc >= 18 {
@@ -260,12 +281,18 @@ fn tracker_status(t: &RawTracker) -> String {
 
 impl RawTracker {
     fn into_tracker(self) -> Tracker {
+        let failing = self.has_announced && !self.last_announce_succeeded && !self.last_announce_result.is_empty();
         Tracker {
             status: Some(tracker_status(&self)),
+            kind: TrackerKind::Tracker,
+            tier: u32::try_from(self.tier).ok(),
+            error: failing.then(|| self.last_announce_result.clone()),
             last_announce: positive(self.last_announce_time),
             next_announce: positive(self.next_announce_time),
             seeds: count(self.seeder_count),
-            peers: count(self.leecher_count),
+            leechers: count(self.leecher_count),
+            // Transmission counts per-tracker snatches, not bytes we downloaded through it.
+            downloaded: None,
             url: self.announce,
         }
     }
@@ -285,6 +312,8 @@ impl RawPeer {
             download_rate: self.rate_to_client,
             upload_rate: self.rate_to_peer,
             flags: non_empty(self.flag_str),
+            // Transmission's peer encryption is MSE/PE, i.e. RC4.
+            encryption: self.is_encrypted.then(|| "rc4".to_string()),
             is_seed: self.progress >= 1.0,
         }
     }
@@ -360,10 +389,34 @@ impl RawDetails {
                 .tracker_stats
                 .into_iter()
                 .map(RawTracker::into_tracker)
+                .chain(pseudo_tracker("[DHT]", TrackerKind::Dht, self.peers_from.from_dht))
+                .chain(pseudo_tracker("[PeX]", TrackerKind::Pex, self.peers_from.from_pex))
+                .collect(),
+            // `webseeds` is the url-list (BEP 19); Transmission keeps no per-seed state.
+            web_seeds: self
+                .webseeds
+                .into_iter()
+                .map(|url| WebSeed { url, kind: WebSeedKind::Bep19, status: None, speed: None, downloaded: None, error: None })
                 .collect(),
             files,
         }
     }
+}
+
+/// A DHT / PeX row, shown only when that source supplied connected peers (so it is working).
+fn pseudo_tracker(url: &str, kind: TrackerKind, peers: i64) -> Option<Tracker> {
+    (peers > 0).then(|| Tracker {
+        url: url.into(),
+        kind,
+        tier: None,
+        status: Some("working".into()),
+        error: None,
+        last_announce: None,
+        next_announce: None,
+        seeds: None,
+        leechers: None,
+        downloaded: None,
+    })
 }
 
 fn decode_pieces(b64: &str, count: u32) -> EngineResult<Pieces> {
@@ -761,6 +814,15 @@ impl TransmissionEngine {
         self.action("torrent-verify", id, json!({})).await
     }
 
+    pub async fn reannounce(&self, id: &str) -> EngineResult<()> {
+        self.action("torrent-reannounce", id, json!({})).await
+    }
+
+    /// The RPC has no way to change a torrent's url-list.
+    pub async fn add_web_seed(&self, _id: &str, _url: &str) -> EngineResult<()> {
+        Err(EngineError::unsupported(ENGINE, "adding web seeds"))
+    }
+
     pub async fn relocate(&self, id: &str, path: &str) -> EngineResult<()> {
         if path.trim().is_empty() {
             return Err(EngineError::InvalidInput("empty location".into()));
@@ -968,16 +1030,25 @@ mod tests {
         assert_eq!(a.path, "tx-fixture/a.txt");
         assert_eq!(a.progress, 0.5);
 
-        let [ok, err, idle] = &d.trackers[..] else {
-            panic!("3 trackers")
+        // Three announce URLs, then DHT (it supplied peers); PeX supplied none, so no row.
+        let [ok, err, idle, dht] = &d.trackers[..] else {
+            panic!("3 trackers + DHT, got {:?}", d.trackers)
         };
+        assert_eq!((ok.tier, err.tier, idle.tier), (Some(0), Some(1), Some(1)));
+        assert_eq!((dht.url.as_str(), dht.kind, dht.tier), ("[DHT]", TrackerKind::Dht, None));
+        assert_eq!((dht.status.as_deref(), dht.seeds, dht.leechers), (Some("working"), None, None));
+        let [seed] = &d.web_seeds[..] else { panic!("1 web seed") };
+        assert_eq!((seed.url.as_str(), seed.kind), ("https://mirror.example.org/tx-fixture/", WebSeedKind::Bep19));
+        assert_eq!((seed.status.as_deref(), seed.speed, seed.downloaded), (None, None, None));
         assert_eq!(ok.url, "udp://tracker.opentrackr.org:1337/announce");
         assert_eq!(ok.status.as_deref(), Some("working"));
         assert_eq!(ok.last_announce, Some(1700000100));
         assert_eq!(ok.next_announce, Some(1700001900));
-        assert_eq!((ok.seeds, ok.peers), (Some(12), Some(3)));
+        assert_eq!((ok.seeds, ok.leechers), (Some(12), Some(3)));
         assert_eq!(err.status.as_deref(), Some("Connection failed"));
-        assert_eq!((err.seeds, err.peers), (None, None));
+        assert_eq!((err.seeds, err.leechers), (None, None));
+        assert_eq!(err.error.as_deref(), Some("Connection failed"));
+        assert_eq!((ok.error.as_deref(), ok.kind, ok.downloaded), (None, TrackerKind::Tracker, None));
         assert_eq!(idle.status.as_deref(), Some("inactive"));
         assert_eq!(idle.last_announce, None);
     }
@@ -1007,6 +1078,7 @@ mod tests {
         assert_eq!(p.client.as_deref(), Some("qBittorrent 4.6"));
         assert_eq!((p.download_rate, p.upload_rate), (2048, 16));
         assert_eq!(p.flags.as_deref(), Some("DEX"));
+        assert_eq!(p.encryption.as_deref(), Some("rc4"));
         assert!(p.is_seed);
         assert_eq!(p.country, None);
     }

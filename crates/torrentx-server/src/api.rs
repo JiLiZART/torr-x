@@ -101,6 +101,10 @@ pub fn router(state: Arc<AppState>) -> Router {
         .route("/torrents/{id}/magnet", get(magnet))
         .route("/torrents/{id}/torrent-file", get(torrent_file))
         .route("/torrents/{id}/reveal", post(reveal))
+        .route("/torrents/{id}/reannounce", post(reannounce))
+        .route("/torrents/{id}/web-seeds", post(add_web_seed))
+        .route("/torrents/{id}/files/{index}/open", post(open_file))
+        .route("/torrents/{id}/files/{index}/reveal", post(reveal_file))
         .route("/torrents/{id}/tab", put(set_tab_gone))
         .route("/torrents/{id}/tags", put(set_tags))
         .route("/tabs", get(tabs).post(create_tab))
@@ -398,6 +402,77 @@ async fn add_tracker(
         return Err(ApiError::invalid("tracker URL must be udp://, http(s):// or wss://"));
     }
     engine(&state).await?.add_tracker(&id, url).await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+async fn reannounce(State(state): State<Arc<AppState>>, Path(id): Path<String>) -> ApiResult<StatusCode> {
+    engine(&state).await?.reannounce(&parse_id(&id)?).await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+async fn add_web_seed(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<String>,
+    Json(body): Json<TrackerBody>,
+) -> ApiResult<StatusCode> {
+    let url = body.url.trim();
+    let lower = url.to_ascii_lowercase();
+    if !(lower.starts_with("http://") || lower.starts_with("https://")) {
+        return Err(ApiError::invalid("web seed URL must be http(s)://"));
+    }
+    let id = parse_id(&id)?;
+    engine(&state).await?.add_web_seed(&id, url).await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+/// The file's path on the server machine; 404 for an index the torrent does not have.
+/// Only for loopback peers, like `reveal`: a remote browser must not pop windows on the host.
+fn is_loopback(req: &Request) -> bool {
+    req.extensions()
+        .get::<ConnectInfo<SocketAddr>>()
+        .is_some_and(|ConnectInfo(a)| a.ip().is_loopback())
+}
+
+async fn file_path(state: &AppState, id: &str, index: u32, local: bool) -> ApiResult<PathBuf> {
+    if !local {
+        return Err(ApiError::forbidden("opening files is only available on the machine running TorrentX"));
+    }
+    let d = engine(state).await?.get(&parse_id(id)?).await?;
+    let file = d
+        .files
+        .iter()
+        .find(|f| f.index == index)
+        .ok_or_else(|| ApiError::not_found(format!("torrent has no file {index}")))?;
+    let path = PathBuf::from(&d.torrent.save_path).join(&file.path);
+    // Paths come from torrent metadata: refuse anything that climbs out of the save path.
+    if file.path.split(['/', '\\']).any(|part| part == "..") {
+        return Err(ApiError::invalid("file path leaves the download folder"));
+    }
+    Ok(path)
+}
+
+async fn open_file(
+    State(state): State<Arc<AppState>>,
+    Path((id, index)): Path<(String, u32)>,
+    req: Request,
+) -> ApiResult<StatusCode> {
+    let path = file_path(&state, &id, index, is_loopback(&req)).await?;
+    if !path.exists() {
+        return Err(ApiError::not_found(format!("{} is not on disk yet", path.display())));
+    }
+    open::that_detached(&path).map_err(|e| ApiError::internal(format!("cannot open {}: {e}", path.display())))?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+/// Opens the folder holding the file (the closest one that exists).
+async fn reveal_file(
+    State(state): State<Arc<AppState>>,
+    Path((id, index)): Path<(String, u32)>,
+    req: Request,
+) -> ApiResult<StatusCode> {
+    let path = file_path(&state, &id, index, is_loopback(&req)).await?;
+    let dir = path.ancestors().skip(1).find(|p| p.is_dir()).map(PathBuf::from).unwrap_or(path);
+    open::that_detached(&dir).map_err(|e| ApiError::internal(format!("cannot open {}: {e}", dir.display())))?;
     Ok(StatusCode::NO_CONTENT)
 }
 

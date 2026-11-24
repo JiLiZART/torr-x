@@ -1,0 +1,74 @@
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import { evaluate, FILE_SCOPE, parse, PEER_SCOPE, TRACKER_SCOPE } from "@torrentx/query";
+import { fileActionBlock, fileClass, FILE_ACTIONS, fileRow, joinPath, peerRow, swarm, trackerRow, trackerStatus, webSeedRow } from "./detail.ts";
+import { episodeCode, episodeState, mediaEpisodes, parseEpisode, qualityTags } from "./media.ts";
+
+test("episodes: codes, quality tags, titles only when named", () => {
+  const e = parseEpisode("Arcane.S02/Arcane.S02E04.2160p.NF.WEB-DL.DDP5.1.Atmos.DV.HDR10.H.265-FLUX.mkv")!;
+  assert.deepEqual([e.season, e.ep, e.title, e.show], [2, 4, null, "arcane"]);
+  assert.deepEqual(e.quality, ["2160p", "DDP5.1", "Atmos", "DV", "HDR10"]);
+  assert.equal(parseEpisode("The.Bear.S03E01.Tomorrow.1080p.WEB.mkv")!.title, "Tomorrow");
+  assert.equal(parseEpisode("show - 2x07 - The Long Night [1080p].mkv")!.title, "The Long Night");
+  assert.equal(parseEpisode("Severance.S02E09.2160p.ATVP-GROUP.mkv")!.title, null);
+  assert.equal(parseEpisode("Blade.Runner.2049.2160p.mkv"), null);
+  assert.equal(episodeCode({ season: 2, ep: 4 }), "S02E04");
+  assert.deepEqual(qualityTags("Movie.1080p.BluRay.x264.DD5.1"), ["1080p", "DD5.1"]);
+});
+
+test("media mode needs two episodes of one show", () => {
+  const f = (index: number, path: string) => ({ index, path, size: 1, progress: 0, wanted: true });
+  const season = [f(0, "S/Arcane.S02E02.mkv"), f(1, "S/Arcane.S02E01.mkv"), f(2, "S/Sample/Arcane.S02E01.sample.mkv"), f(3, "S/Subs/Arcane.S02E01.srt")];
+  assert.deepEqual(mediaEpisodes(season)!.map((e) => e.ep), [1, 2], "samples and subtitles are not episodes; sorted");
+  assert.equal(mediaEpisodes([f(0, "Arcane.S02E01.mkv")]), null);
+  assert.equal(mediaEpisodes([f(0, "Arcane.S02E01.mkv"), f(1, "Dune.S01E01.mkv")]), null, "two shows");
+  assert.equal(mediaEpisodes([f(0, "movie.mkv"), f(1, "extras.mkv")]), null);
+  assert.equal(episodeState({ ...f(0, "x"), progress: 1 }, true), "ready");
+  assert.equal(episodeState({ ...f(0, "x"), progress: 0.3 }, true), "downloading");
+  assert.equal(episodeState({ ...f(0, "x"), progress: 0.3 }, false), "queued");
+  assert.equal(episodeState({ ...f(0, "x"), wanted: false }, true), "skipped");
+});
+
+test("section rows feed the section scopes", () => {
+  const files = [
+    fileRow({ index: 0, path: "S/Arcane.S02E04.mkv", size: 2 ** 31, progress: 0.5, wanted: true, priority: "normal" }),
+    fileRow({ index: 1, path: "S/Arcane.S02E05.mkv", size: 2 ** 31, progress: 0, wanted: false, priority: "normal" }),
+    fileRow({ index: 2, path: "S/Subs/en.srt", size: 10, progress: 1, wanted: true, priority: "high" }),
+  ];
+  assert.deepEqual([files[1].priority, files[0].ep, files[2].ep, files[2].ext], ["skip", 4, null, "srt"]);
+  const shown = (q: string) => files.filter((r) => evaluate(parse(q, FILE_SCOPE).ast!, r)).map((r) => r.index);
+  assert.deepEqual(shown("ext:mkv priority:!skip"), [0]);
+  assert.deepEqual(shown("ep:>3"), [0, 1]);
+
+  const peer = peerRow({ address: "1.2.3.4:5", client: "qB", country: "DE", progress: 0.5, downloadRate: 9, uploadRate: 1, flags: "DUE", encryption: "rc4", isSeed: false });
+  assert.deepEqual([peer.letters, peer.flags, peer.progress], [["D", "U", "E"], ["downloading", "uploading", "encrypted"], 50]);
+  assert.ok(evaluate(parse("country:!CN flags:!snubbed", PEER_SCOPE).ast!, peer));
+
+  const base = { kind: "tracker" as const, tier: 0, error: null, lastAnnounce: null, nextAnnounce: null, seeds: null, leechers: null, downloaded: null };
+  const status = (s: string | null, error: string | null = null) => trackerStatus({ ...base, url: "u", status: s, error });
+  assert.deepEqual(
+    [status("working"), status("announcing"), status("inactive"), status(null), status("Connection failed"), status("working", "refused")],
+    ["working", "updating", "disabled", "unknown", "not working", "not working"],
+  );
+  const rows = [trackerRow({ ...base, url: "a", status: "inactive" }), trackerRow({ ...base, url: "b", status: "working", seeds: 112, leechers: 31 })];
+  assert.deepEqual(rows.filter((r) => evaluate(parse("status:!disabled", TRACKER_SCOPE).ast!, r)).map((r) => r.url), ["b"]);
+  assert.deepEqual(swarm(rows.map((r) => r.tracker)), { seeds: 112, leechers: 31 });
+  assert.deepEqual(swarm([]), { seeds: null, leechers: null });
+  assert.equal(webSeedRow({ url: "u", kind: "bep19", status: null, speed: null, downloaded: null, error: "HTTP 404" }).status, "failed");
+});
+
+test("file actions follow the format and say why they cannot run", () => {
+  assert.deepEqual(FILE_ACTIONS[fileClass("mkv")], ["play", "library", "cast"]);
+  assert.deepEqual(FILE_ACTIONS[fileClass("iso")], ["contents", "mount"]);
+  assert.deepEqual(FILE_ACTIONS[fileClass("nfo")], ["open", "reveal", "copyPath"]);
+  const ctx = { openFile: undefined, local: true, done: true };
+  assert.equal(fileActionBlock("open", ctx), null);
+  assert.equal(fileActionBlock("open", { ...ctx, local: false }), "remote");
+  assert.equal(fileActionBlock("reveal", { ...ctx, openFile: "not supported by x" }), "engine");
+  assert.equal(fileActionBlock("open", { ...ctx, done: false }), "notOnDisk");
+  assert.equal(fileActionBlock("reveal", { ...ctx, done: false }), null);
+  assert.equal(fileActionBlock("play", ctx), "notYet");
+  assert.equal(fileActionBlock("copyPath", { ...ctx, local: false }), null);
+  assert.equal(joinPath("/data/", "a/b.mkv"), "/data/a/b.mkv");
+  assert.equal(joinPath("C:\\Downloads", "a/b.mkv"), "C:\\Downloads\\a\\b.mkv");
+});

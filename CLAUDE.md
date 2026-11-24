@@ -69,8 +69,16 @@ openspec/                   specs and change proposals
   filled by the engines.
 - **Lens**: per-tab, in-memory query ANDed onto the tab query (`App.tsx` + `lib/lens.ts`). Switching tabs clears it
   and keeps a session snapshot behind the `restore lens` pill. "Save as tab" is the only write path to the sidebar.
-- **Addresses**: `#/tab/<id>` (`lib/route.ts`); browser back/forward move between tabs; an address never carries a
-  lens; a stale address opens `all` with a notice.
+- **Addresses**: `#/tab/<id>` and `#/torrent/<id>/<section>` (`lib/route.ts`); browser back/forward move between
+  views; an address never carries a lens; a stale tab or torrent address opens a tab with a notice.
+- **Detail page** (`components/detail/`): opened with Enter or double-click (a click only selects). The list and
+  its filter bar stay mounted but hidden, so ⌘[ / the breadcrumb return to the same scroll and lens. Sections
+  Overview, Files, Peers, Trackers, Web seeds, Pieces each have a mini filter bar in the same query language
+  with their own scope (`FILE_SCOPE`, `PEER_SCOPE`, `TRACKER_SCOPE`, `WEBSEED_SCOPE` in `packages/query`; rows
+  built in `lib/detail.ts`); a section lens is in memory and cleared when the section changes. Files offers a
+  media view when `lib/media.ts` finds two or more episodes of one show; titles and quality come only from file
+  names. Detail endpoints: `POST /torrents/{id}/reannounce`, `/web-seeds`, `/files/{index}/open|reveal`
+  (loopback only, like reveal); capability keys `reannounce`, `webSeeds`, `addWebSeed`, `openFile`.
 - **Engine slot** (`AppState.engine`) is `Result<Arc<Engine>, String>`; Err → API `engine_unavailable` (503).
   Settings changes to the engine restart it live; bind/port changes return `restartRequired`.
 - **Security**: `auth::guard` enforces a Host allowlist when bound to loopback (anti DNS-rebinding) and rejects
