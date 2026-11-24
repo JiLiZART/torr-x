@@ -50,6 +50,7 @@ export const COMMANDS: CommandDef[] = [
   def("tab.moveDown", "tabs", "tab", "ArrowDown", ["Mod+Ctrl+ArrowDown"]),
   def("sidebar.toggle", "tabs", "global", "PanelLeft", ["Mod+B"]),
 
+  def("filterBar.toggle", "lens", "global", "ListFilter", ["Mod+Shift+F"]),
   def("filter.focus", "lens", "tab", "Search", ["Mod+F"]),
   def("builder.open", "lens", "tab", "Funnel", ["Alt+F"]),
   def("lens.clear", "lens", "tab", "FunnelX", ["Mod+Shift+K"]),

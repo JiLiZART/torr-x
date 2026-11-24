@@ -536,5 +536,6 @@
   "addflow.addPaused": "Добавить на паузе",
   "addflow.addAnyway": "Добавить всё равно",
   "addflow.addAnywayPaused": "Добавить на паузе",
-  "addflow.added": "«{name}» добавлен."
+  "addflow.added": "«{name}» добавлен.",
+  "cmd.filterBar.toggle": "Показать / скрыть панель фильтров"
 }

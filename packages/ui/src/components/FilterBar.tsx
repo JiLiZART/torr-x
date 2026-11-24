@@ -33,6 +33,9 @@ interface FilterBarProps {
   onSaveConfirm: (name: string) => void;
   onSaveCancel: () => void;
   onGoTo: (tabId: string) => void;
+  /** Collapsed: only the chips stay (nothing when there are none); the top bar toggle brings it back. */
+  collapsed: boolean;
+  onCollapse: (collapsed: boolean) => void;
 }
 
 const field = "rounded-[8px] border border-ui-border bg-ui-surface-2 font-code text-[11px] text-ui-text placeholder-ui-text-3 focus:border-ui-accent-line focus:outline-none";
@@ -73,9 +76,8 @@ function SaveAsTab({ save, onConfirm, onCancel, onGoTo }: { save: SaveDraft; onC
 
 /** The lens editor: fuzzy name input, funnel + builder, the always-visible chip row, save as tab. */
 export function FilterBar(props: FilterBarProps) {
-  const { lens, onLens, onFuzzy, snapshot, onRestore, tabName, all, values, builderOpen, onBuilder, save, onSaveOpen, onSaveConfirm, onSaveCancel, onGoTo } = props;
+  const { lens, onLens, onFuzzy, snapshot, onRestore, tabName, all, values, builderOpen, onBuilder, save, onSaveOpen, onSaveConfirm, onSaveCancel, onGoTo, collapsed, onCollapse } = props;
   const { t } = useUi();
-  const [collapsed, setCollapsed] = useState(false);
   const [draft, setDraft] = useState<string | null>(null);
   const [dragging, setDragging] = useState<number | null>(null);
 
@@ -98,10 +100,13 @@ export function FilterBar(props: FilterBarProps) {
       ? "border-ui-accent-line bg-ui-accent-soft text-ui-accent"
       : "border-ui-border bg-ui-surface-2 text-ui-text-3 hover:text-ui-text-2";
 
+  const saveForm = save && <SaveAsTab key={save.query} save={save} onConfirm={onSaveConfirm} onCancel={onSaveCancel} onGoTo={onGoTo} />;
+  if (collapsed && list.length === 0 && !snapshot) return saveForm || null;
+
   return (
     <>
       <div className="relative z-20 shrink-0 border-b border-ui-border bg-ui-chrome-2">
-        <div className="flex min-h-[48px] flex-wrap items-center gap-[8px] px-[14px] py-[8px]">
+        <div className={`flex flex-wrap items-center gap-[8px] px-[14px] ${collapsed ? "min-h-[38px] py-[5px]" : "min-h-[48px] py-[8px]"}`}>
           {!collapsed && (
             <>
               <label className={`${field} flex w-[230px] items-center gap-[7px] px-[9px] py-[6px] focus-within:border-ui-accent-line`}>
@@ -175,7 +180,7 @@ export function FilterBar(props: FilterBarProps) {
               <Save size={13} /> {t("filter.saveAsTab")}
             </button>
           )}
-          <button type="button" onClick={() => setCollapsed(!collapsed)} title={collapsed ? t("filter.expand") : t("filter.collapse")} className="rounded-[7px] p-[6px] text-ui-text-3 hover:bg-ui-surface-2 hover:text-ui-text">
+          <button type="button" data-command="filterBar.toggle" onClick={() => onCollapse(!collapsed)} title={collapsed ? t("filter.expand") : t("filter.collapse")} className="rounded-[7px] p-[6px] text-ui-text-3 hover:bg-ui-surface-2 hover:text-ui-text">
             {collapsed ? <ChevronsUpDown size={14} /> : <ChevronsDownUp size={14} />}
           </button>
         </div>
@@ -199,7 +204,7 @@ export function FilterBar(props: FilterBarProps) {
           />
         )}
       </div>
-      {save && <SaveAsTab key={save.query} save={save} onConfirm={onSaveConfirm} onCancel={onSaveCancel} onGoTo={onGoTo} />}
+      {saveForm}
     </>
   );
 }

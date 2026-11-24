@@ -536,5 +536,6 @@
   "addflow.addPaused": "Añadir en pausa",
   "addflow.addAnyway": "Añadir de todos modos",
   "addflow.addAnywayPaused": "Añadir de todos modos, en pausa",
-  "addflow.added": "«{name}» añadido."
+  "addflow.added": "«{name}» añadido.",
+  "cmd.filterBar.toggle": "Mostrar / ocultar la barra de filtros"
 }

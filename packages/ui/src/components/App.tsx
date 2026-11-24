@@ -31,6 +31,7 @@ import { ShortcutSheet } from "./ShortcutSheet";
 
 const NO_TABS: Tab[] = [];
 const DENSITY_KEY = "tx-density";
+const FILTER_BAR_KEY = "tx-filter-bar";
 const UNDO_SAVE_MS = 6000;
 
 const isUnauthorized = (e: unknown) => e instanceof ApiError && e.kind === "unauthorized";
@@ -68,6 +69,11 @@ export function App() {
   const [saved, setSaved] = useState<{ tab: Tab; from: string; lens: Lens } | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [compact, setCompact] = useState(() => localStorage.getItem(DENSITY_KEY) === "compact");
+  const [filterCollapsed, setFilterCollapsedState] = useState(() => localStorage.getItem(FILTER_BAR_KEY) === "collapsed");
+  const setFilterCollapsed = (collapsed: boolean) => {
+    localStorage.setItem(FILTER_BAR_KEY, collapsed ? "collapsed" : "open");
+    setFilterCollapsedState(collapsed);
+  };
   // Selection (many rows), the keyboard row cursor, and the torrent whose details are open.
   const [selection, setSelection] = useState<string[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
@@ -346,8 +352,16 @@ export function App() {
     "tab.moveUp": handler(() => activeTab && patchTab(activeTab.id, { order: Math.max(activeTab.order - 1, 0) })),
     "tab.moveDown": handler(() => activeTab && patchTab(activeTab.id, { order: activeTab.order + 1 })),
     "sidebar.toggle": handler(() => setSidebarCollapsed((c) => !c)),
-    "filter.focus": handler(() => document.getElementById("tx-fuzzy")?.focus()),
-    "builder.open": handler(() => setBuilderOpen(true)),
+    "filterBar.toggle": handler(() => setFilterCollapsed(!filterCollapsed)),
+    // Both need the expanded bar; the input mounts on the next render.
+    "filter.focus": handler(() => {
+      setFilterCollapsed(false);
+      requestAnimationFrame(() => document.getElementById("tx-fuzzy")?.focus());
+    }),
+    "builder.open": handler(() => {
+      setFilterCollapsed(false);
+      setBuilderOpen(true);
+    }),
     "lens.clear": handler(() => setLens(NO_LENS), hasLens(lens) ? null : t("cmd.needLens")),
     "lens.undo": handler(undoLens, undo.length > 0 ? null : t("cmd.nothingToUndo")),
     "list.down": handler(() => moveCursor(1, false)),
@@ -467,7 +481,6 @@ export function App() {
               onDelete={deleteTab}
               onTrigger={() => setPalette({ input: "" })}
               onSaveLens={hasLens(lens) ? () => setSaveOpen(true) : null}
-              onCollapse={() => setSidebarCollapsed(true)}
               renameRequest={renameRequest}
             />
           )
@@ -481,6 +494,8 @@ export function App() {
             onCollapseSidebar={() => setSidebarCollapsed(true)}
             compact={compact}
             onToggleDensity={toggleDensity}
+            filterBarOpen={!filterCollapsed}
+            onToggleFilterBar={() => setFilterCollapsed(!filterCollapsed)}
             terminalOpen={terminalOpen}
             onToggleTerminal={() => setTerminalOpen(!terminalOpen)}
             onOpenSettings={() => setSettingsOpen(true)}
@@ -519,6 +534,8 @@ export function App() {
           onSaveConfirm={(name) => void confirmSave(name)}
           onSaveCancel={() => setSaveOpen(false)}
           onGoTo={navigate}
+          collapsed={filterCollapsed}
+          onCollapse={setFilterCollapsed}
         />
         {updates.notice && (
           <div className={banner}>
@@ -557,7 +574,10 @@ export function App() {
             tabError={tabParsed.error}
             tabQuery={activeTab?.query ?? ""}
             tabName={activeTab ? tabLabel(activeTab) : ""}
-            onOpenBuilder={() => setBuilderOpen(true)}
+            onOpenBuilder={() => {
+              setFilterCollapsed(false);
+              setBuilderOpen(true);
+            }}
             onSearchAll={() => {
               // Same lens, whole library: the All tab.
               onSwitch.current = { snapshot: true, next: lens };

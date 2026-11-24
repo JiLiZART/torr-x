@@ -536,5 +536,6 @@
   "addflow.addPaused": "Pausiert hinzufügen",
   "addflow.addAnyway": "Trotzdem hinzufügen",
   "addflow.addAnywayPaused": "Trotzdem pausiert hinzufügen",
-  "addflow.added": "„{name}“ hinzugefügt."
+  "addflow.added": "„{name}“ hinzugefügt.",
+  "cmd.filterBar.toggle": "Filterleiste ein-/ausblenden"
 }

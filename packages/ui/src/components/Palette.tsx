@@ -400,7 +400,7 @@ export function Palette(props: PaletteProps) {
             className={`min-w-0 flex-1 bg-transparent text-ui-text caret-ui-accent placeholder-ui-text-3 focus:outline-none ${mode.kind === "query" ? "font-code text-[17px]" : "text-[18px]"}`}
           />
           )}
-          {!addSource && <span className="hidden shrink-0 font-code text-[10px] text-ui-text-3 lg:block">{t("palette.hint")}</span>}
+          {!addSource && text.trim() !== "" && <span className="hidden shrink-0 font-code text-[10px] text-ui-text-3 xl:block">{t("palette.hint")}</span>}
           <button
             type="button"
             data-command="torrent.add"

@@ -2,6 +2,7 @@ import {
     ChevronLeft,
     ChevronRight,
     Funnel,
+    ListFilter,
     LogOut,
     PanelLeftClose,
     PanelLeftOpen,
@@ -21,6 +22,8 @@ interface TopBarProps {
   onCollapseSidebar: () => void;
   compact: boolean;
   onToggleDensity: () => void;
+  filterBarOpen: boolean;
+  onToggleFilterBar: () => void;
   terminalOpen: boolean;
   onToggleTerminal: () => void;
   onOpenSettings: () => void;
@@ -34,7 +37,7 @@ const on = "border-ui-accent-line bg-ui-accent-soft text-ui-accent";
 
 // data-tauri-drag-region only applies to the element carrying it, so the empty areas are tagged
 // and the controls are not.
-export function TopBar({ title, lensCount, sidebarCollapsed, onExpandSidebar, onCollapseSidebar, compact, onToggleDensity, terminalOpen, onToggleTerminal, onOpenSettings, onLogout }: TopBarProps) {
+export function TopBar({ title, lensCount, sidebarCollapsed, onExpandSidebar, onCollapseSidebar, compact, onToggleDensity, filterBarOpen, onToggleFilterBar, terminalOpen, onToggleTerminal, onOpenSettings, onLogout }: TopBarProps) {
   const { t } = useUi();
   return (
     <header data-tauri-drag-region className="flex h-[54px] shrink-0 items-center gap-[10px] border-b border-ui-border px-[14px]">
@@ -72,6 +75,9 @@ export function TopBar({ title, lensCount, sidebarCollapsed, onExpandSidebar, on
       )}
       <span data-tauri-drag-region className="flex-1 self-stretch" />
       <div className="flex items-center gap-[4px]">
+        <button data-command="filterBar.toggle" className={`${action} ${filterBarOpen ? on : off}`} onClick={onToggleFilterBar} title={t("cmd.filterBar.toggle")} aria-pressed={filterBarOpen}>
+          <ListFilter size={16} />
+        </button>
         <button data-command="density.toggle" className={`${action} ${compact ? on : off}`} onClick={onToggleDensity} title={t("top.density")} aria-pressed={compact}>
           <Rows3 size={16} />
         </button>

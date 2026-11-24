@@ -536,5 +536,6 @@
   "addflow.addPaused": "暂停添加",
   "addflow.addAnyway": "仍然添加",
   "addflow.addAnywayPaused": "仍然暂停添加",
-  "addflow.added": "已添加“{name}”。"
+  "addflow.added": "已添加“{name}”。",
+  "cmd.filterBar.toggle": "显示 / 隐藏筛选栏"
 }
