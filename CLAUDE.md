@@ -129,6 +129,11 @@ TORRENTX_TEST_TRANSMISSION=http://127.0.0.1:9091/transmission/rpc \
   `preferences.appearance {mode: system|light|dark, accent}`; legacy `theme`/`useSystemTheme` convert on load.
 - Adding a torrent happens in the Spotlight panel (`AddFlow`): a magnet / `.torrent` URL in the input, the
   "Add .torrent" button or ⌘O, or a file dropped on the window. There is no add dialog.
+- Spotlight input state is a chip stack plus text (`lib/palette.ts`, pure and tested): `>` = commands, `@␣` = file
+  search across torrents (`GET /files`, fetched once per palette, evaluated with `FILE_SEARCH_SCOPE`), and in file
+  mode `torrent:␣` picks a torrent and becomes a scope chip bound to its id. On a torrent page `@␣` starts scoped to
+  it; Backspace on an empty input pops the last chip. ⏎ on a file opens its Files section with the row highlighted
+  (in-memory `focusFile` in `App.tsx`, never in the address). File rows reuse `FileCells` from `FilesSection`.
 - Every GUI command is registered in `lib/commands.ts` (tag its button with `data-command`); keys come from there.
 - Errors: API calls are awaited in `try/catch` and routed to one `handleError` in `packages/ui/src/components/App.tsx`.
 - Tests: Rust `cargo test --workspace` (API tests via tower `oneshot`); JS only for pure logic via
@@ -151,6 +156,8 @@ TORRENTX_TEST_TRANSMISSION=http://127.0.0.1:9091/transmission/rpc \
 
 - The query fields `category:` and `done:` have no data source yet.
 - No list virtualization — fine for hundreds of torrents, revisit at thousands.
+- `GET /files` returns every file of every torrent in one response (~120 B per file); page it or index server-side if
+  libraries reach tens of thousands of files.
 - Release binaries are unsigned (macOS Gatekeeper / Windows SmartScreen warn on first launch).
 - Features no engine offers stay disabled: OS cache, super seeding, anonymous mode, WebSocket trackers,
   HTTP/SOCKS4 proxy.

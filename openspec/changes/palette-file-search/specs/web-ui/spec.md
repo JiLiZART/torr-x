@@ -30,7 +30,8 @@ chip SHALL return to the normal palette. File mode SHALL NOT change the list, th
 In file mode, typing `torrent:` followed by Space SHALL switch the palette to choosing a torrent: the input
 shows a pending `torrent:` chip, results are the torrents ranked by name across all torrents (not only the
 active tab), and `⏎` on a torrent SHALL replace the pending chip with a `torrent:<name>` scope chip bound to
-that torrent's id, clear the input and return to file search within that torrent only. With a scope chip and
+that torrent's id, put back any file query typed before `torrent:` (empty otherwise) and return to file search
+within that torrent only. With a scope chip and
 an empty query, the palette SHALL list that torrent's files in the torrent's own file order. Escape or Backspace
 on an empty picker input SHALL drop the pending chip and return to file search. Typing `torrent:<text>` without
 the trailing Space SHALL be an ordinary predicate on the torrent name.

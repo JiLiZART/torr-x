@@ -419,6 +419,14 @@ export function App() {
   };
   const onAction = (tor: Torrent, action: TorrentAction) => selectionHandlers([tor])[COMMAND_FOR_ACTION[action]].run();
 
+  // A file opened from the palette: its torrent's Files section, scrolled to it, highlighted for a moment.
+  const [focusFile, setFocusFile] = useState<{ torrentId: string; index: number } | null>(null);
+  const clearFocus = useCallback(() => setFocusFile(null), []);
+  const openFile = (torrentId: string, index: number) => {
+    openedFromList.current = !detailView;
+    openTorrent(torrentId, "files");
+    setFocusFile({ torrentId, index });
+  };
   const jumpTorrent = (id: string) => {
     setSelection([id]);
     setCursor(id);
@@ -627,6 +635,8 @@ export function App() {
               onError={handleError}
               onPollError={onPollError}
               onNotice={setNotice}
+              focusFile={focusFile?.torrentId === detailView.id ? focusFile.index : null}
+              onFocused={clearFocus}
             />
           )}
           {terminalOpen && (
@@ -664,6 +674,9 @@ export function App() {
             onApply={applyFromPalette}
             onJumpTab={navigate}
             onJumpTorrent={jumpTorrent}
+            here={detailView ? { id: detailView.id, name: list.find((row) => row.id === detailView.id)?.name ?? detailView.id } : null}
+            onOpenFile={openFile}
+            onError={handleError}
             onCreateTab={(query) => void createFromPalette(query)}
             onSheet={() => {
               setPalette(null);

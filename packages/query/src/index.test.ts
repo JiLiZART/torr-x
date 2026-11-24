@@ -284,3 +284,20 @@ test("section scopes: files, peers, trackers, web seeds", async () => {
   assert.deepEqual(run(WEBSEED_SCOPE, "type:bep17", seeds, "url"), ["https://c/"]);
   assert.deepEqual(complete("type:", 5, {}, WEBSEED_SCOPE).options, ["bep19", "bep17"]);
 });
+
+test("file-search scope: file fields plus the torrent name", async () => {
+  const { FILE_SEARCH_SCOPE } = await import("./index.ts");
+  const hits = [
+    { name: "e01.mkv", ext: "mkv", torrentName: "The Expanse S01", size: 1, done: 0, priority: "normal" },
+    { name: "e01.srt", ext: "srt", torrentName: "The Expanse S01", size: 1, done: 0, priority: "normal" },
+    { name: "x.mkv", ext: "mkv", torrentName: "Other", size: 1, done: 0, priority: "normal" },
+  ];
+  const run = (query: string) => {
+    const { ast, error } = parse(query, FILE_SEARCH_SCOPE);
+    assert.equal(error, null, `${query}: ${error?.message}`);
+    return hits.filter((h) => evaluate(ast!, h)).map((h) => h.name);
+  };
+  assert.deepEqual(run("torrent:expanse ext:mkv"), ["e01.mkv"]);
+  assert.deepEqual(run("e01"), ["e01.mkv", "e01.srt"], "a bare word searches the file name");
+  assert.equal(parse("seeds:>5", FILE_SEARCH_SCOPE).error?.message, 'unknown field "seeds"', "torrent fields do not leak");
+});

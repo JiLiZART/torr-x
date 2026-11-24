@@ -31,6 +31,21 @@ export function rate(n: number): string {
   return `${num}${NBSP}${UNITS[i].padEnd(2, NBSP)}/s`;
 }
 
+/**
+ * `name` in at most `max` chars, cut in the middle with `…`: the start stays, and so does the end the user
+ * looks for — the extension, or everything from an `SxxEyy` code when it sits in the last 24 chars.
+ * Character-based, for monospace cells.
+ */
+export function trimMiddle(name: string, max: number): string {
+  if (name.length <= max) return name;
+  const end = name.slice(-24);
+  const code = /s\d{1,2}e\d{1,3}/i.exec(end);
+  let tail = code ? end.slice(code.index) : (/\.[a-z0-9]{1,5}$/i.exec(name)?.[0] ?? "");
+  const room = Math.floor(max / 2);
+  if (tail.length > room) tail = tail.slice(-room);
+  return `${name.slice(0, max - 1 - tail.length)}…${tail}`;
+}
+
 export function percent(p: number): string {
   return `${Math.floor(p * 1000) / 10}%`;
 }

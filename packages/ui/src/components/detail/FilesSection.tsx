@@ -1,9 +1,9 @@
-import { useMemo, useState, type ReactElement } from "react";
+import { useEffect, useMemo, useState, type ReactElement } from "react";
 import { Cast, ClipboardCopy, Disc3, Eye, ExternalLink, File, Film, FolderOpen, HardDriveDownload, LayoutList, Library, Play, Tv } from "lucide-react";
 import { api, type FileInfo, type TorrentDetails } from "@torrentx/api-client";
 import { compare, evaluate, FILE_PRIORITIES, FILE_SCOPE, parse, sortKeys } from "@torrentx/query";
 import { useUi } from "../../lib/context";
-import { bytes } from "../../lib/format";
+import { bytes, trimMiddle } from "../../lib/format";
 import { clickSort } from "../../lib/lens";
 import { FILE_ACTIONS, fileActionBlock, fileClass, fileRow, joinPath, type FileAction, type FilePriorityWord, type FileRow } from "../../lib/detail";
 import { episodeCode, episodeState, mediaEpisodes, type EpisodeFile } from "../../lib/media";
@@ -16,7 +16,12 @@ interface FilesSectionProps {
   onQuery: (query: string) => void;
   onError: (e: unknown) => void;
   onNotice: (message: string) => void;
+  /** A file opened from the palette: scrolled into view and highlighted briefly. */
+  focusFile?: number | null;
+  onFocused?: () => void;
 }
+
+const FOCUS_MS = 2000;
 
 const ACTION_ICON: Record<FileAction, typeof Play> = {
   play: Play,
@@ -36,8 +41,14 @@ const small = "rounded-[6px] border border-ui-border bg-ui-surface-2 p-[5px] tex
 /** The browser runs on the machine that runs TorrentX: open / reveal can work. */
 const isLocal = () => ["localhost", "127.0.0.1", "[::1]", "::1"].includes(window.location.hostname) || "__TAURI_INTERNALS__" in window;
 
-export function FilesSection({ d, query, onQuery, onError, onNotice }: FilesSectionProps) {
+export function FilesSection({ d, query, onQuery, onError, onNotice, focusFile = null, onFocused }: FilesSectionProps) {
   const { t, gate, caps } = useUi();
+  useEffect(() => {
+    if (focusFile === null) return;
+    document.getElementById(`file-${focusFile}`)?.scrollIntoView({ block: "center" });
+    const timer = setTimeout(() => onFocused?.(), FOCUS_MS);
+    return () => clearTimeout(timer);
+  }, [focusFile, onFocused]);
   const engine = caps?.engine ?? "";
   const rows = useMemo(() => d.files.map(fileRow), [d.files]);
   const episodes = useMemo(() => mediaEpisodes(d.files), [d.files]);
@@ -48,7 +59,8 @@ export function FilesSection({ d, query, onQuery, onError, onNotice }: FilesSect
       return "list";
     }
   });
-  const media = view === "media" && episodes !== null;
+  // A file opened from the palette is shown in the list, where every file has a row.
+  const media = view === "media" && episodes !== null && focusFile === null;
   const setView = (next: "list" | "media") => {
     setViewState(next);
     try {
@@ -142,10 +154,13 @@ export function FilesSection({ d, query, onQuery, onError, onNotice }: FilesSect
           <div className="flex flex-col gap-[1px] px-[14px] py-[8px]">
             {shown.length === 0 && <SectionEmpty>{rows.length === 0 ? t("detail.empty.files") : t("detail.empty.lens")}</SectionEmpty>}
             {shown.map((row) => {
-              const cls = fileClass(row.ext);
-              const Icon = cls === "video" ? Film : cls === "disc" ? Disc3 : File;
+              const focused = row.index === focusFile;
               return (
-                <div key={row.index} className="flex items-center gap-[10px] rounded-[8px] px-[8px] py-[8px] hover:bg-ui-surface-2">
+                <div
+                  key={row.index}
+                  id={`file-${row.index}`}
+                  className={`flex items-center gap-[10px] rounded-[8px] px-[8px] py-[8px] hover:bg-ui-surface-2 ${focused ? "bg-ui-accent-soft ring-1 ring-ui-accent-line" : ""}`}
+                >
                   <input
                     type="checkbox"
                     className="h-[15px] w-[15px] shrink-0 accent-ui-accent"
@@ -155,14 +170,7 @@ export function FilesSection({ d, query, onQuery, onError, onNotice }: FilesSect
                     aria-label={t("detail.wanted", { name: row.name })}
                     onChange={() => void toggleWanted(row)}
                   />
-                  <Icon size={13} className="shrink-0 text-ui-text-3" />
-                  <span className="min-w-0 flex-1 truncate font-code text-[11px] text-ui-text" title={row.path}>
-                    {row.path}
-                  </span>
-                  <span className="w-[80px] shrink-0 text-right font-code text-[11px] text-ui-text-2">{bytes(row.size)}</span>
-                  <span className="w-[130px] shrink-0">
-                    <MiniBar value={row.done} tone={row.priority === "skip" ? "bg-ui-text-3" : "bg-ui-accent"} />
-                  </span>
+                  <FileCells row={row} />
                   <select
                     className={`w-[104px] shrink-0 rounded-[6px] border border-ui-border bg-ui-surface-2 px-[7px] py-[4px] font-code text-[10px] focus:outline-none ${PRIORITY_TONE[row.priority]}`}
                     value={row.priority}
@@ -185,6 +193,56 @@ export function FilesSection({ d, query, onQuery, onError, onNotice }: FilesSect
     </>
   );
 }
+
+interface FileCellsProps {
+  row: FileRow;
+  /** The palette's one-line form: middle-trimmed name, optional torrent name, priority word. */
+  compact?: boolean;
+  /** Compact only: shown when the search is not scoped to one torrent. */
+  torrentName?: string;
+}
+
+/** The Files section's row cells: icon, name, size, done. Shared with the palette's file results. */
+export function FileCells({ row, compact = false, torrentName }: FileCellsProps) {
+  const { t } = useUi();
+  const cls = fileClass(row.ext);
+  const Icon = cls === "video" ? Film : cls === "disc" ? Disc3 : File;
+  const done = <MiniBar value={row.done} tone={row.priority === "skip" ? "bg-ui-text-3" : "bg-ui-accent"} />;
+  if (!compact) {
+    return (
+      <>
+        <Icon size={13} className="shrink-0 text-ui-text-3" />
+        <span className="min-w-0 flex-1 truncate font-code text-[11px] text-ui-text" title={row.path}>
+          {row.path}
+        </span>
+        <span className="w-[80px] shrink-0 text-right font-code text-[11px] text-ui-text-2">{bytes(row.size)}</span>
+        <span className="w-[130px] shrink-0">{done}</span>
+      </>
+    );
+  }
+  const where = torrentName ? `${torrentName} · ${row.path}` : row.path;
+  return (
+    <>
+      <Icon size={13} className="shrink-0 text-ui-text-3" />
+      <span className="min-w-0 flex-1 overflow-hidden whitespace-nowrap font-code text-[11px] text-ui-text" title={where}>
+        {trimMiddle(row.name, torrentName === undefined ? COMPACT_NAME_WIDE : COMPACT_NAME)}
+      </span>
+      {torrentName !== undefined && (
+        <span className="w-[170px] shrink-0 overflow-hidden whitespace-nowrap font-code text-[10px] text-ui-text-3" title={torrentName}>
+          {trimMiddle(torrentName, COMPACT_TORRENT)}
+        </span>
+      )}
+      <span className="w-[64px] shrink-0 whitespace-nowrap text-right font-code text-[10px] text-ui-text-2">{bytes(row.size)}</span>
+      <span className="w-[90px] shrink-0">{done}</span>
+      <span className={`w-[52px] shrink-0 whitespace-nowrap font-code text-[10px] ${PRIORITY_TONE[row.priority]}`}>{t(`detail.priority.${row.priority}`)}</span>
+    </>
+  );
+}
+
+/** Compact cells, in monospace characters, sized to the palette width (with and without the torrent column). */
+const COMPACT_NAME = 34;
+const COMPACT_NAME_WIDE = 60;
+const COMPACT_TORRENT = 24;
 
 interface MediaViewProps {
   d: TorrentDetails;

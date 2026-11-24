@@ -18,6 +18,9 @@ interface DetailPageProps {
   onError: (e: unknown) => void;
   onPollError: (e: unknown) => void;
   onNotice: (message: string) => void;
+  /** Files section: a file to scroll to and highlight (opened from the palette). */
+  focusFile?: number | null;
+  onFocused?: () => void;
 }
 
 const HISTORY = 44;
@@ -35,7 +38,7 @@ function Item({ icon, label, value }: { icon: ReactNode; label: string; value: R
 }
 
 /** A torrent as a page: hero, then one section at a time, each with its own address and lens. */
-export function DetailPage({ id, section, onSection, onAction, onError, onPollError, onNotice }: DetailPageProps) {
+export function DetailPage({ id, section, onSection, onAction, onError, onPollError, onNotice, focusFile = null, onFocused }: DetailPageProps) {
   const { t, gate, date } = useUi();
   const want = { peers: section === "peers" && !gate("peerList"), pieces: section === "pieces" && !gate("pieces") };
   const { details, peers, pieces } = useDetails(id, want, { onError: onPollError });
@@ -82,7 +85,7 @@ export function DetailPage({ id, section, onSection, onAction, onError, onPollEr
         <span className="hidden pb-[8px] font-code text-[9px] text-ui-text-3 xl:block">{t("detail.sectionNote")}</span>
       </nav>
       <div className="flex flex-col bg-ui-surface">
-        {section === "files" && <FilesSection d={d} query={query} onQuery={setQuery} onError={onError} onNotice={onNotice} />}
+        {section === "files" && <FilesSection d={d} query={query} onQuery={setQuery} onError={onError} onNotice={onNotice} focusFile={focusFile} onFocused={onFocused} />}
         {section === "peers" && <PeersSection d={d} query={query} onQuery={setQuery} peers={peers.data} error={peers.error?.message ?? null} />}
         {section === "trackers" && <TrackersSection d={d} query={query} onQuery={setQuery} onError={onError} onReload={reload} />}
         {section === "webseeds" && <WebSeedsSection d={d} query={query} onQuery={setQuery} onReload={reload} />}

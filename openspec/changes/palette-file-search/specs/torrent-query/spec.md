@@ -12,4 +12,4 @@ in every other scope.
 
 #### Scenario: Unknown field
 - **WHEN** the file-search query is `seeds:>5`
-- **THEN** parsing fails with an unknown-field error naming the valid file-search fields
+- **THEN** parsing fails with the unknown-field error for `seeds`; torrent fields are not part of the scope

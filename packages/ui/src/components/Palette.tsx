@@ -1,18 +1,19 @@
 import { useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent, type ReactNode } from "react";
-import { FilePlus, Funnel, Globe, Hash, Link2, Pin, Save, Search } from "lucide-react";
-import type { Settings, Tab, Torrent } from "@torrentx/api-client";
+import { FilePlus, Files, Funnel, Globe, Hash, Link2, Pin, Save, Search } from "lucide-react";
+import { api, type FileHit, type Settings, type Tab, type Torrent } from "@torrentx/api-client";
 import { chips, evaluate, topItems } from "@torrentx/query";
 import { useUi } from "../lib/context";
 import { COMMANDS, QUERY_DEFAULT_ACTIONS, type CommandDef, type Handlers } from "../lib/commands";
 import { IS_MAC, keyCaps, usableKeys } from "../lib/keymap";
 import { canonical, NO_LENS, type Lens } from "../lib/lens";
-import { detectMode, rank } from "../lib/palette";
-import { percent, rate, rowState, STATE_STYLE } from "../lib/format";
+import { dropChip, fileResults, paletteMode, pickTorrent, rank, typeInto, type FileResult, type PaletteChip, type PaletteInput, type TorrentRef } from "../lib/palette";
+import { percent, rate, rowState, STATE_STYLE, trimMiddle } from "../lib/format";
 import { HTTP_URL, isTorrentLink, type AddSource } from "../lib/addFlow";
 import { usePreview } from "../lib/preview";
 import { AddFlow } from "./AddFlow";
 import { Chip } from "./Chip";
 import { CommandIcon } from "./CommandIcon";
+import { FileCells } from "./detail/FilesSection";
 import { KeyCaps } from "./KeyCaps";
 
 interface PaletteProps {
@@ -41,10 +42,15 @@ interface PaletteProps {
   diskFree: number | null;
   /** A torrent was added: the palette closes, the active tab and lens stay. */
   onAdded: (id: string, name: string) => void;
+  /** The torrent whose page is open: file mode (`@ `) starts scoped to it. */
+  here?: TorrentRef | null;
+  /** Opens the torrent's Files section with the file in view. */
+  onOpenFile: (torrentId: string, index: number) => void;
+  onError: (e: unknown) => void;
   onClose: () => void;
 }
 
-type Kind = "action" | "filter" | "filterAll" | "jump" | "create" | "all" | "add";
+type Kind = "action" | "filter" | "filterAll" | "jump" | "create" | "all" | "add" | "file" | "pick";
 
 interface Row {
   key: string;
@@ -56,6 +62,8 @@ interface Row {
   binding?: string;
   meta?: { text: string; className: string };
   disabled?: string | null;
+  /** File mode: drawn as the Files section's compact row. */
+  file?: FileResult;
   run: () => void;
 }
 
@@ -68,20 +76,24 @@ interface Section {
 
 const MAX_TORRENTS = 6;
 const MAX_TABS = 5;
+const MAX_PICKS = 20;
 const iconBox = (node: ReactNode, tone = "bg-ui-surface-2 text-ui-text-2") => (
   <span className={`flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-[7px] ${tone}`}>{node}</span>
 );
 
 /** ⌘T: one surface to jump, filter and act. `>` switches to commands only. */
 export function Palette(props: PaletteProps) {
-  const { initial, tabs, counts, activeTab, tabLabel, all, tabRows, handlers, desktop, onApply, onJumpTab, onJumpTorrent, onCreateTab, onSheet, initialAdd, settings, diskFree, onAdded, onClose } = props;
+  const { initial, tabs, counts, activeTab, tabLabel, all, tabRows, handlers, desktop, onApply, onJumpTab, onJumpTorrent, onCreateTab, onSheet, initialAdd, settings, diskFree, onAdded, here = null, onOpenFile, onError, onClose } = props;
   const { t, gate } = useUi();
   // Add mode: the same panel grows downward into the add flow; Escape returns to the input.
   const [addSource, setAddSource] = useState<AddSource | null>(initialAdd ?? null);
   const canPreview = !gate("addPreview");
   const previewState = usePreview(addSource, canPreview);
-  const [command, setCommand] = useState(initial.startsWith(">"));
-  const [text, setText] = useState(initial.replace(/^>/, ""));
+  const [input, setInput] = useState<PaletteInput>(() => typeInto({ chips: [], text: "" }, initial, here));
+  const text = input.text;
+  const setText = (value: string) => setInput({ ...input, text: value });
+  // File mode: every torrent's files, fetched once per palette when file mode is first entered.
+  const [hits, setHits] = useState<FileHit[] | null>(null);
   const [cursor, setCursor] = useState({ section: 0, row: 0 });
   const listRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -102,7 +114,25 @@ export function Palette(props: PaletteProps) {
     return () => previous?.focus?.();
   }, []);
 
-  const mode = command ? ({ kind: "command", text } as const) : detectMode(text);
+  const mode = paletteMode(input);
+  const command = mode.kind === "command";
+  const plain = input.chips.length === 0;
+  const fileMode = mode.kind === "files" || mode.kind === "pickTorrent";
+  useEffect(() => {
+    if (!fileMode || hits !== null) return;
+    let live = true;
+    api.files().then(
+      (all) => live && setHits(all),
+      (e) => {
+        if (!live) return;
+        setHits([]);
+        onError(e);
+      },
+    );
+    return () => {
+      live = false;
+    };
+  }, [fileMode, hits, onError]);
   const tabName = activeTab ? tabLabel(activeTab) : "";
   const now = Date.now() / 1000;
 
@@ -169,7 +199,48 @@ export function Palette(props: PaletteProps) {
   const sections = useMemo((): Section[] => {
     // A pasted magnet link or URL is an add, nothing else.
     const pasted = text.trim();
-    if (!command && HTTP_URL.test(pasted)) {
+    if (mode.kind === "pickTorrent") {
+      const picks = (mode.text.trim() ? rank(all, mode.text, (row) => [row.name]) : all).slice(0, MAX_PICKS);
+      return [
+        {
+          id: "pick",
+          label: t("palette.pickTorrent"),
+          right: t("palette.matches", { n: picks.length }),
+          rows: picks.map((torrent) => ({
+            key: `pick:${torrent.id}`,
+            kind: "pick" as Kind,
+            icon: iconBox(<Hash size={14} />),
+            title: torrent.name,
+            sub: t("palette.pickSub"),
+            binding: "Enter",
+            run: () => setInput(pickTorrent(input, { id: torrent.id, name: torrent.name })),
+          })),
+        },
+      ];
+    }
+    if (mode.kind === "files") {
+      const found = hits ? fileResults(hits, mode) : null;
+      if (!found) return [];
+      return [
+        {
+          id: "files",
+          label: mode.scope ? t("palette.filesIn", { torrent: trimMiddle(mode.scope.name, 40) }) : t("palette.filesAll"),
+          right: found.more > 0 ? t("palette.filesMore", { n: found.more }) : t("palette.matches", { n: found.rows.length }),
+          rows: found.rows.map((file) => ({
+            key: `file:${file.torrentId}:${file.index}`,
+            kind: "file" as Kind,
+            icon: null,
+            title: file.path,
+            file,
+            run: () => {
+              onClose();
+              onOpenFile(file.torrentId, file.index);
+            },
+          })),
+        },
+      ];
+    }
+    if (plain && HTTP_URL.test(pasted)) {
       return [
         {
           id: "add",
@@ -302,14 +373,14 @@ export function Palette(props: PaletteProps) {
     ].filter((s) => s.rows.length > 0);
     // Handlers and labels change every render; recomputing is cheap next to the list itself.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode.kind, mode.text, command, tabs, counts, all, tabRows, handlers, tabName]);
+  }, [mode.kind, mode.text, input, hits, tabs, counts, all, tabRows, handlers, tabName]);
 
   const at = sections[Math.min(cursor.section, sections.length - 1)];
   const current = at?.rows[Math.min(cursor.row, at.rows.length - 1)];
   const flat = sections.flatMap((s, si) => s.rows.map((r, ri) => ({ ...r, si, ri })));
   const findRow = (kind: Kind) => flat.find((r) => r.kind === kind);
 
-  useEffect(() => setCursor({ section: 0, row: 0 }), [text, command]);
+  useEffect(() => setCursor({ section: 0, row: 0 }), [input]);
   useEffect(() => {
     listRef.current?.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: "nearest" });
   }, [cursor]);
@@ -320,8 +391,11 @@ export function Palette(props: PaletteProps) {
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (addSource) return; // the add flow owns its keys
     const mod = e.metaKey || e.ctrlKey;
-    if (e.key === "Escape") onClose();
-    else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+    // Escape while picking a torrent drops the pick, not the palette.
+    if (e.key === "Escape") {
+      if (mode.kind === "pickTorrent") setInput(dropChip(input));
+      else onClose();
+    } else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       if (!at) return;
       const step = e.key === "ArrowDown" ? 1 : -1;
       setCursor({ section: cursor.section, row: (cursor.row + step + at.rows.length) % at.rows.length });
@@ -336,10 +410,20 @@ export function Palette(props: PaletteProps) {
     } else if (mod && e.key.toLowerCase() === "s" && mode.kind === "query") runRow(findRow("create"));
     else if (mod && e.key.toLowerCase() === "k") onSheet();
     else if (mod && e.key.toLowerCase() === "o") pickFile();
-    else if (e.key === "Backspace" && command && text === "") setCommand(false);
+    else if (e.key === "Backspace" && !plain && text === "") setInput(dropChip(input));
     else return;
     e.preventDefault();
   };
+
+  // Why the list is empty: loading files, nothing typed yet in file mode, a parse error, or no match.
+  const emptyLine =
+    fileMode && hits === null
+      ? t("palette.filesLoading")
+      : mode.kind === "files" && mode.error
+        ? mode.error.message
+        : mode.kind === "files" && !mode.scope && mode.text.trim() === ""
+          ? t("palette.filesHint")
+          : t("palette.nothing");
 
   const hint = (keys: string, label: string) => (
     <span className="flex shrink-0 items-center gap-[5px] whitespace-nowrap">
@@ -362,7 +446,14 @@ export function Palette(props: PaletteProps) {
         className={`absolute left-1/2 top-[96px] flex ${dropping ? "ring-2 ring-ui-accent" : ""} max-h-[calc(100vh-120px)] ${addSource ? "w-[860px]" : "w-[720px]"} max-w-[calc(100vw-32px)] -translate-x-1/2 flex-col overflow-hidden rounded-[18px] border border-ui-border-strong bg-ui-surface font-ui shadow-[0_24px_60px_rgba(0,0,0,0.66)]`}
       >
         <div className="flex h-[66px] shrink-0 items-center gap-[12px] border-b border-ui-border px-[18px]">
-          {command ? <span className="font-code text-[18px] font-semibold text-ui-accent">&gt;</span> : <Search size={18} className="text-ui-text-3" />}
+          {command ? (
+            <span className="font-code text-[18px] font-semibold text-ui-accent">&gt;</span>
+          ) : fileMode ? (
+            <Files size={18} className="shrink-0 text-ui-accent" />
+          ) : (
+            <Search size={18} className="shrink-0 text-ui-text-3" />
+          )}
+          {!addSource && input.chips.filter((c) => c.kind !== "command").map((chip, i) => <InputChip key={i} chip={chip} />)}
           {addSource ? (
             <span className="flex min-w-0 flex-1 items-center gap-[8px]">
               <span className="min-w-0 flex-1 truncate font-code text-[14px] text-ui-text-2" title={addSource.kind === "file" ? addSource.file.name : addSource.uri}>
@@ -386,21 +477,28 @@ export function Palette(props: PaletteProps) {
             value={text}
             onChange={(e) => {
               const value = e.target.value;
-              if (!command && text === "" && value.startsWith(">")) {
-                setCommand(true);
-                setText(value.slice(1));
-              } else if (!command && isTorrentLink(value.trim())) {
+              if (plain && isTorrentLink(value.trim())) {
                 setText(value);
                 setAddSource({ kind: "uri", uri: value.trim() });
-              } else setText(value);
+              } else setInput(typeInto(input, value, here));
             }}
             onKeyDown={handleKeyDown}
-            placeholder={command ? t("palette.placeholderCommand") : t("palette.placeholder")}
+            placeholder={
+              command
+                ? t("palette.placeholderCommand")
+                : mode.kind === "pickTorrent"
+                  ? t("palette.placeholderPick")
+                  : mode.kind === "files"
+                    ? mode.scope
+                      ? t("palette.placeholderFilesIn")
+                      : t("palette.placeholderFiles")
+                    : t("palette.placeholder")
+            }
             aria-label={t("palette.title")}
-            className={`min-w-0 flex-1 bg-transparent text-ui-text caret-ui-accent placeholder-ui-text-3 focus:outline-none ${mode.kind === "query" ? "font-code text-[17px]" : "text-[18px]"}`}
+            className={`min-w-[120px] flex-1 bg-transparent text-ui-text caret-ui-accent placeholder-ui-text-3 focus:outline-none ${mode.kind === "query" || mode.kind === "files" ? "font-code text-[17px]" : "text-[18px]"}`}
           />
           )}
-          {!addSource && text.trim() !== "" && <span className="hidden shrink-0 font-code text-[10px] text-ui-text-3 xl:block">{t("palette.hint")}</span>}
+          {!addSource && plain && text.trim() !== "" && <span className="hidden shrink-0 font-code text-[10px] text-ui-text-3 xl:block">{t("palette.hint")}</span>}
           <button
             type="button"
             data-command="torrent.add"
@@ -449,7 +547,7 @@ export function Palette(props: PaletteProps) {
             </div>
           )}
           <div ref={listRef} className="flex min-h-0 flex-col gap-[2px] overflow-y-auto px-[4px] pb-[10px] pt-[6px]" role="listbox">
-            {sections.length === 0 && <p className="px-[18px] py-[16px] text-[12px] text-ui-text-3">{t("palette.nothing")}</p>}
+            {sections.length === 0 && <p className="px-[18px] py-[16px] text-[12px] text-ui-text-3">{emptyLine}</p>}
             {sections.map((section, si) => (
               <div key={section.id} className="flex flex-col gap-[2px]">
                 {section.label && (
@@ -472,6 +570,22 @@ export function Palette(props: PaletteProps) {
                       : all
                         ? "border-ui-border bg-ui-surface-2/60"
                         : "border-transparent";
+                  if (row.file) {
+                    const file = row.file;
+                    return (
+                      <button
+                        key={row.key}
+                        role="option"
+                        aria-selected={selected}
+                        aria-label={`${file.path} · ${file.torrentName}`}
+                        onMouseMove={() => !selected && setCursor({ section: si, row: ri })}
+                        onClick={() => runRow(row)}
+                        className={`flex h-[34px] w-full shrink-0 items-center gap-[10px] rounded-[8px] border px-[12px] text-left ${frame}`}
+                      >
+                        <FileCells row={file} compact torrentName={mode.kind === "files" && mode.scope ? undefined : file.torrentName} />
+                      </button>
+                    );
+                  }
                   return (
                     <button
                       key={row.key}
@@ -502,6 +616,7 @@ export function Palette(props: PaletteProps) {
             {hint("⇥", mode.kind === "jump" ? t("palette.filterInstead") : t("palette.switchSection"))}
             {hint(keyCaps("Mod+K", IS_MAC).join(IS_MAC ? "" : "+"), t("palette.sheet"))}
             {hint("esc", t("palette.dismiss"))}
+            {plain && hint("@ ␣", t("palette.filesShortcut"))}
             <span className="flex-1" />
             <span className="hidden truncate font-code text-[10px] text-ui-text-3 xl:block">{t("palette.brand")}</span>
           </div>
@@ -512,3 +627,20 @@ export function Palette(props: PaletteProps) {
   );
 }
 
+
+/** A chip before the palette input: file mode, the torrent it is scoped to, or a pending `torrent:`. */
+function InputChip({ chip }: { chip: PaletteChip }) {
+  const { t } = useUi();
+  const base = "flex shrink-0 items-center gap-[5px] rounded-[7px] border px-[8px] py-[4px] font-code text-[11px]";
+  if (chip.kind === "files") return <span className={`${base} border-ui-accent-line bg-ui-accent-soft text-ui-accent`}>@ {t("palette.chipFiles")}</span>;
+  if (chip.kind === "torrentPending") return <span className={`${base} border-dashed border-ui-border-strong text-ui-text-2`}>torrent:</span>;
+  if (chip.kind === "torrent") {
+    return (
+      <span className={`${base} border-ui-border bg-ui-surface-2 text-ui-text`} title={chip.name}>
+        <span className="text-ui-text-3">torrent:</span>
+        {trimMiddle(chip.name, 24)}
+      </span>
+    );
+  }
+  return null;
+}

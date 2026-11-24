@@ -616,6 +616,13 @@ export const FILE_SCOPE: Scope = {
   read: lookup,
 };
 
+/** Palette file search across torrents: file rows plus `torrent`, the owning torrent's name. */
+export const FILE_SEARCH_SCOPE: Scope = {
+  ...FILE_SCOPE,
+  fields: { ...FILE_SCOPE.fields, torrent: "text" },
+  read: (field, row) => (field === "torrent" ? (row.torrentName ?? null) : lookup(field, row)),
+};
+
 /** Detail page, Peers: rows `{address, country, client, flags (words), progress (0–100), down, up}`. */
 export const PEER_SCOPE: Scope = {
   fields: { address: "text", country: "exact", client: "text", flags: "enum", progress: "percent", down: "speed", up: "speed" },

@@ -6,6 +6,12 @@ import { IS_MAC, keyCaps, usableKeys } from "../lib/keymap";
 import { KeyCaps } from "./KeyCaps";
 
 const GROUPS: Group[] = ["palette", "tabs", "lens", "list", "navigation"];
+/** What typing at the start of the palette input does. */
+const PREFIXES = [
+  [">", "commands"],
+  ["@ ␣", "files"],
+  ["torrent: ␣", "pickTorrent"],
+] as const;
 
 /** ⌘K: every binding, grouped by surface, as it works where the UI runs. */
 export function ShortcutSheet({ desktop, onClose }: { desktop: boolean; onClose: () => void }) {
@@ -53,6 +59,14 @@ export function ShortcutSheet({ desktop, onClose }: { desktop: boolean; onClose:
                   </div>
                 );
               })}
+              {group === "palette" &&
+                PREFIXES.map(([typed, key]) => (
+                  <div key={key} className="flex items-center gap-[10px] rounded-[8px] px-[8px] py-[5px] hover:bg-ui-surface-2">
+                    <span className="min-w-0 flex-1 truncate text-[12px] text-ui-text">{t(`sheet.prefix.${key}`)}</span>
+                    <span className="shrink-0 font-code text-[9px] text-ui-text-3">{t("sheet.where.typed")}</span>
+                    <span className="shrink-0 rounded-[5px] border border-ui-border bg-ui-surface-2 px-[6px] py-[2px] font-code text-[10px] text-ui-text-2">{typed}</span>
+                  </div>
+                ))}
             </section>
           ))}
         </div>

@@ -114,3 +114,50 @@ test("jump ranking: prefix, then word prefix, then substring", () => {
   );
   assert.equal(rank(names, "", (n) => [n]).length, 4);
 });
+
+test("palette chips: @ files, torrent picker, scope and Backspace", async () => {
+  const { dropChip, fileResults, paletteMode, pickTorrent, typeInto } = await import("./palette.ts");
+  const empty = { chips: [], text: "" };
+  // `@` then Space enters file mode; `@` elsewhere is text.
+  let s = typeInto(typeInto(empty, "@"), "@ ");
+  assert.deepEqual(s, { chips: [{ kind: "files" }], text: "" });
+  assert.equal(paletteMode(s).kind, "files");
+  assert.deepEqual(typeInto({ chips: [], text: "foo " }, "foo @ "), { chips: [], text: "foo @ " });
+  assert.equal(paletteMode(typeInto(empty, "@")).kind, "jump", "a lone @ is still text");
+  // `>` keeps working.
+  assert.deepEqual(typeInto(empty, ">pa"), { chips: [{ kind: "command" }], text: "pa" });
+
+  // `torrent:` + Space opens the picker and keeps the file query for later.
+  s = typeInto(s, "s01 torrent: ");
+  assert.deepEqual(s.chips.at(-1), { kind: "torrentPending", rest: "s01" });
+  assert.equal(paletteMode(s).kind, "pickTorrent");
+  const picked = pickTorrent(typeInto(s, "exp"), { id: "ab", name: "The Expanse S01" });
+  assert.deepEqual(picked, { chips: [{ kind: "files" }, { kind: "torrent", id: "ab", name: "The Expanse S01" }], text: "s01" });
+  const mode = paletteMode(picked);
+  assert.ok(mode.kind === "files" && mode.scope?.id === "ab");
+  // Without the Space it is a predicate, not the picker.
+  assert.equal(typeInto({ chips: [{ kind: "files" }], text: "" }, "torrent:ubuntu").chips.length, 1);
+
+  // Backspace on empty pops chips in order; dropping the picker gives the query back.
+  assert.deepEqual(dropChip(s), { chips: [{ kind: "files" }], text: "s01" });
+  assert.deepEqual(dropChip({ ...picked, text: "" }), { chips: [{ kind: "files" }], text: "" });
+  assert.deepEqual(dropChip({ chips: [{ kind: "files" }], text: "" }), empty);
+
+  // On a torrent's page, file mode starts scoped to it.
+  const here = typeInto(empty, "@ ", { id: "cd", name: "Ubuntu" });
+  assert.deepEqual(here.chips, [{ kind: "files" }, { kind: "torrent", id: "cd", name: "Ubuntu" }]);
+  assert.deepEqual(dropChip(here).chips, [{ kind: "files" }], "Backspace widens to all torrents");
+
+  // Results: hint without scope or query, file order when scoped, name score ranking, cap.
+  const hit = (torrentId: string, index: number, path: string) => ({ torrentId, torrentName: torrentId === "ab" ? "The Expanse S01" : "Other", index, path, size: 1, progress: 0, wanted: true, priority: "normal" as const });
+  const hits = [hit("ab", 0, "S01/e04.srt"), hit("ab", 1, "S01/x-e04.mkv"), hit("cd", 0, "e04-other.mkv")];
+  const files = (input: { chips: never[] | object[]; text: string }) => paletteMode(input as never) as Extract<ReturnType<typeof paletteMode>, { kind: "files" }>;
+  assert.equal(fileResults(hits, files({ chips: [{ kind: "files" }], text: "" })), null);
+  assert.deepEqual(fileResults(hits, files({ ...picked, text: "" }))!.rows.map((r) => r.index), [0, 1]);
+  assert.deepEqual(fileResults(hits, files({ chips: [{ kind: "files" }], text: "e04" }))!.rows.map((r) => r.name), ["e04.srt", "e04-other.mkv", "x-e04.mkv"]);
+  assert.deepEqual(fileResults(hits, files({ chips: [{ kind: "files" }], text: "e04 ext:mkv" }))!.rows.map((r) => r.torrentId), ["cd", "ab"]);
+  const many = Array.from({ length: 60 }, (_, i) => hit("ab", i, `f${i}.txt`));
+  const capped = fileResults(many, files({ chips: [{ kind: "files" }], text: "f" }))!;
+  assert.equal(capped.rows.length, 50);
+  assert.equal(capped.more, 10);
+});
