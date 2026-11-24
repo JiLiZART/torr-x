@@ -119,6 +119,9 @@ async fn fixture_fields_ops_relocate_verify() {
     assert_eq!(d.created_by.as_deref(), Some("torrentx-test"));
     assert_eq!(d.trackers[0].url, "udp://tracker.example:80");
     assert!(d.files.iter().all(|f| f.wanted && f.progress == 1.0));
+    // All files in one call match the per-torrent view.
+    let all = e.files_all().await.unwrap();
+    assert_eq!(all, [(id.clone(), d.files.clone())]);
     assert_eq!(e.torrent_file(&id).await.unwrap(), bytes);
     let pieces = e.pieces(&id).await.unwrap();
     assert_eq!(pieces.count, 3);

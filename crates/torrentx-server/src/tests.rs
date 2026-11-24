@@ -33,6 +33,9 @@ fn test_config(dir: &std::path::Path) -> Config {
     let mut c = Config::default();
     c.engine.rqbit.download_dir = dir.join("dl");
     c.engine.transmission.port = 1;
+    // Offline: a running TorrentX already holds the default DHT port.
+    c.advanced.dht = false;
+    c.network.upnp = false;
     c
 }
 
@@ -616,4 +619,89 @@ async fn start_reports_addr_in_use() {
         Err(e) => panic!("unexpected error {e}"),
         Ok(_) => panic!("started on a taken port"),
     }
+}
+
+/// A Transmission daemon stub answering every RPC with the recorded `torrent-get` fixture plus one
+/// magnet without metadata: enough for `list` and `files_all`.
+async fn transmission_stub() -> String {
+    let mut out: Value = serde_json::from_str(include_str!(
+        "../../torrentx-transmission/tests/fixtures/torrent-get.json"
+    ))
+    .unwrap();
+    let mut magnet = out["arguments"]["torrents"][0].clone();
+    magnet["hashString"] = json!("b".repeat(40));
+    magnet["name"] = json!("unresolved magnet");
+    magnet["files"] = json!([]);
+    magnet["fileStats"] = json!([]);
+    out["arguments"]["torrents"].as_array_mut().unwrap().push(magnet);
+    let body = out.to_string();
+    let app = axum::Router::new().route(
+        "/transmission/rpc",
+        axum::routing::post(move || {
+            let body = body.clone();
+            async move { ([(header::CONTENT_TYPE, "application/json")], body) }
+        }),
+    );
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let url = format!("http://{}/transmission/rpc", listener.local_addr().unwrap());
+    tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+    url
+}
+
+async fn files_state(name: &str) -> Arc<AppState> {
+    let dir = tmpdir(name);
+    let url = transmission_stub().await;
+    let engine = torrentx_transmission::TransmissionEngine::new(&url, "", "");
+    state_with(
+        &dir,
+        test_config(&dir),
+        Ok(Arc::new(engine::Engine::Transmission(engine))),
+        HOST.parse().unwrap(),
+    )
+}
+
+#[tokio::test]
+async fn files_flattens_every_torrent_and_skips_unresolved() {
+    let s = files_state("files").await;
+    let (status, _, body) = get(&s, "/api/v1/files").await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    let hits = body.as_array().unwrap();
+    // The fixture torrent has 3 files; the magnet without metadata contributes none.
+    assert_eq!(hits.len(), 3, "{body}");
+    let id = "c14331f3bdd54f0a6e393e867756f7fe332839d0";
+    assert!(hits.iter().all(|h| h["torrentId"] == id));
+    assert_eq!(
+        hits.iter().map(|h| h["index"].as_u64().unwrap()).collect::<Vec<_>>(),
+        [0, 1, 2]
+    );
+    assert_eq!(hits[0]["path"], "tx-fixture/a.txt");
+    assert_eq!(hits[1]["wanted"], false);
+    assert_eq!(hits[1]["priority"], "low");
+}
+
+#[tokio::test]
+async fn files_carry_the_rename_override() {
+    let s = files_state("files-renamed").await;
+    s.store
+        .set_name("c14331f3bdd54f0a6e393e867756f7fe332839d0", "Renamed")
+        .unwrap();
+    let (_, _, body) = get(&s, "/api/v1/files").await;
+    assert!(body.as_array().unwrap().iter().all(|h| h["torrentName"] == "Renamed"), "{body}");
+}
+
+#[tokio::test]
+async fn files_needs_auth_and_an_engine() {
+    let s = files_state("files-auth").await;
+    s.config.write().await.auth = config::AuthConfig {
+        enabled: true,
+        username: "admin".into(),
+        password_hash: auth::hash_password("pw"),
+    };
+    let (status, _, _) = get(&s, "/api/v1/files").await;
+    assert_eq!(status, StatusCode::UNAUTHORIZED);
+
+    let (s, _) = state("files-noengine");
+    let (status, _, body) = get(&s, "/api/v1/files").await;
+    assert_eq!(status, StatusCode::SERVICE_UNAVAILABLE);
+    assert_eq!(body["error"]["kind"], "engine_unavailable");
 }

@@ -48,6 +48,12 @@ export interface FileInfo {
   priority: Priority;
 }
 
+/** One file of one torrent, flattened for searching across torrents (`GET /files`). */
+export interface FileHit extends FileInfo {
+  torrentId: string;
+  torrentName: string;
+}
+
 export interface Tracker {
   /** Announce URL; `[DHT]` / `[PeX]` for the pseudo-rows. */
   url: string;
@@ -340,6 +346,7 @@ export const api = {
 
   list: () => request<Torrent[]>("GET", "/torrents"),
   get: (id: string) => request<TorrentDetails>("GET", `/torrents/${enc(id)}`),
+  files: () => request<FileHit[]>("GET", "/files"),
   peers: (id: string) => request<Peer[]>("GET", `/torrents/${enc(id)}/peers`),
   pieces: (id: string) => request<Pieces>("GET", `/torrents/${enc(id)}/pieces`),
   /** Magnet link or http(s) URL to a .torrent. Resolves to the torrent id. */

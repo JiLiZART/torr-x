@@ -17,7 +17,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use torrentx_core::{
     AddOptions, AddSource, AdvancedSettings, Capabilities, DownloadSettings, EngineError,
-    NetworkSettings, Peer, Preview, Priority, Status, Torrent, TorrentDetails, Via, parse_id,
+    FileHit, NetworkSettings, Peer, Preview, Priority, Status, Torrent, TorrentDetails, Via, parse_id,
 };
 
 use crate::config::{Config, EngineKind, Preferences};
@@ -88,6 +88,7 @@ pub fn router(state: Arc<AppState>) -> Router {
     let protected = Router::new()
         .route("/torrents", get(list).post(add))
         .route("/torrents/preview", post(preview))
+        .route("/files", get(files))
         .route("/torrents/{id}", get(details).delete(remove))
         .route("/torrents/{id}/pause", post(pause))
         .route("/torrents/{id}/resume", post(resume))
@@ -168,6 +169,26 @@ async fn list(State(state): State<Arc<AppState>>) -> ApiResult<Json<Vec<Torrent>
     let mut all = engine(&state).await?.list().await?;
     all.iter_mut().for_each(|t| decorate(&state, t));
     Ok(Json(all))
+}
+
+/// Every file of every torrent with metadata, flat, in list order. Queries run in the UI.
+async fn files(State(state): State<Arc<AppState>>) -> ApiResult<Json<Vec<FileHit>>> {
+    let engine = engine(&state).await?;
+    let (torrents, mut files) = tokio::try_join!(engine.list(), engine.files_all())?;
+    let mut hits = Vec::new();
+    for mut t in torrents {
+        let Some(at) = files.iter().position(|(id, _)| *id == t.id) else {
+            continue;
+        };
+        decorate(&state, &mut t);
+        let (_, list) = files.swap_remove(at);
+        hits.extend(list.into_iter().map(|file| FileHit {
+            torrent_id: t.id.clone(),
+            torrent_name: t.name.clone(),
+            file,
+        }));
+    }
+    Ok(Json(hits))
 }
 
 async fn details(

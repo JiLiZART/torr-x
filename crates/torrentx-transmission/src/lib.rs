@@ -347,28 +347,44 @@ impl RawTorrent {
     }
 }
 
+fn file_infos(files: Vec<RawFile>, stats: &[RawFileStat]) -> Vec<FileInfo> {
+    files
+        .into_iter()
+        .enumerate()
+        .map(|(i, f)| {
+            let stat = stats.get(i);
+            FileInfo {
+                index: i as u32,
+                progress: if f.length == 0 {
+                    1.0
+                } else {
+                    f.bytes_completed as f64 / f.length as f64
+                },
+                path: f.name,
+                size: f.length,
+                wanted: stat.is_none_or(|s| s.wanted.as_bool() == Some(true) || s.wanted == 1),
+                priority: stat.map_or(Priority::Normal, |s| map_priority(s.priority)),
+            }
+        })
+        .collect()
+}
+
+/// `torrent-get` with only what `files_all` needs.
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RawFiles {
+    hash_string: String,
+    #[serde(default)]
+    files: Vec<RawFile>,
+    #[serde(default)]
+    file_stats: Vec<RawFileStat>,
+}
+
+const FILES_FIELDS: &[&str] = &["hashString", "files", "fileStats"];
+
 impl RawDetails {
     fn into_details(self) -> TorrentDetails {
-        let files = self
-            .files
-            .into_iter()
-            .enumerate()
-            .map(|(i, f)| {
-                let stat = self.file_stats.get(i);
-                FileInfo {
-                    index: i as u32,
-                    progress: if f.length == 0 {
-                        1.0
-                    } else {
-                        f.bytes_completed as f64 / f.length as f64
-                    },
-                    path: f.name,
-                    size: f.length,
-                    wanted: stat.is_none_or(|s| s.wanted.as_bool() == Some(true) || s.wanted == 1),
-                    priority: stat.map_or(Priority::Normal, |s| map_priority(s.priority)),
-                }
-            })
-            .collect();
+        let files = file_infos(self.files, &self.file_stats);
         let want = self.base.size_when_done;
         // Share of wanted data that we have or peers offer (Transmission's "availability").
         let availability = (want > 0).then(|| {
@@ -611,6 +627,17 @@ impl TransmissionEngine {
             .await?
             .into_iter()
             .map(RawTorrent::into_torrent)
+            .collect())
+    }
+
+    /// Every torrent's files keyed by id, in one RPC; torrents without metadata are left out.
+    pub async fn files_all(&self) -> EngineResult<Vec<(String, Vec<FileInfo>)>> {
+        Ok(self
+            .fetch::<RawFiles>(None, FILES_FIELDS)
+            .await?
+            .into_iter()
+            .filter(|t| !t.files.is_empty())
+            .map(|t| (t.hash_string, file_infos(t.files, &t.file_stats)))
             .collect())
     }
 
@@ -961,6 +988,67 @@ mod tests {
     use super::*;
 
     const TORRENT_GET: &str = include_str!("../tests/fixtures/torrent-get.json");
+
+    /// A one-response-per-connection HTTP stub answering every request with `body`; counts requests.
+    async fn stub(body: String) -> (String, std::sync::Arc<std::sync::atomic::AtomicUsize>) {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let url = format!("http://{}/transmission/rpc", listener.local_addr().unwrap());
+        let count = std::sync::Arc::new(AtomicUsize::new(0));
+        let seen = count.clone();
+        tokio::spawn(async move {
+            while let Ok((mut sock, _)) = listener.accept().await {
+                // Read the headers, then the body by Content-Length.
+                let mut req = Vec::new();
+                let mut buf = [0u8; 4096];
+                loop {
+                    let n = sock.read(&mut buf).await.unwrap_or(0);
+                    if n == 0 {
+                        break;
+                    }
+                    req.extend_from_slice(&buf[..n]);
+                    let text = String::from_utf8_lossy(&req);
+                    if let Some(end) = text.find("\r\n\r\n") {
+                        let len: usize = text[..end]
+                            .lines()
+                            .find_map(|l| {
+                                let l = l.to_ascii_lowercase();
+                                l.strip_prefix("content-length:").map(|v| v.trim().parse().unwrap_or(0))
+                            })
+                            .unwrap_or(0);
+                        if req.len() >= end + 4 + len {
+                            break;
+                        }
+                    }
+                }
+                seen.fetch_add(1, Ordering::SeqCst);
+                let resp = format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                    body.len()
+                );
+                let _ = sock.write_all(resp.as_bytes()).await;
+            }
+        });
+        (url, count)
+    }
+
+    #[tokio::test]
+    async fn files_all_is_one_rpc_and_skips_torrents_without_metadata() {
+        let mut out: Value = serde_json::from_str(TORRENT_GET).unwrap();
+        let first = out["arguments"]["torrents"][0].clone();
+        out["arguments"]["torrents"] =
+            json!([first, { "hashString": "b".repeat(40), "files": [], "fileStats": [] }]);
+        let (url, count) = stub(out.to_string()).await;
+        let all = TransmissionEngine::new(&url, "", "").files_all().await.unwrap();
+        assert_eq!(count.load(std::sync::atomic::Ordering::SeqCst), 1);
+        let [(id, files)] = &all[..] else {
+            panic!("one torrent with metadata, got {all:?}")
+        };
+        assert_eq!(id, "c14331f3bdd54f0a6e393e867756f7fe332839d0");
+        assert_eq!(files.len(), 3);
+        assert_eq!((files[1].wanted, files[1].priority), (false, Priority::Low));
+    }
 
     #[test]
     fn status_mapping_covers_every_code() {

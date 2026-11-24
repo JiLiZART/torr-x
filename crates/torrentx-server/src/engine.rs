@@ -3,8 +3,8 @@
 use std::path::Path;
 
 use torrentx_core::{
-    AddOptions, AddSource, Capabilities, EngineResult, EngineTuning, Peer, Pieces, Preview,
-    Priority, Torrent, TorrentDetails,
+    AddOptions, AddSource, Capabilities, EngineResult, EngineTuning, FileInfo, Peer, Pieces,
+    Preview, Priority, Torrent, TorrentDetails,
 };
 use torrentx_rqbit::RqbitEngine;
 use torrentx_transmission::TransmissionEngine;
@@ -60,6 +60,11 @@ impl Engine {
 
     pub async fn get(&self, id: &str) -> EngineResult<TorrentDetails> {
         dispatch!(self, e => e.get(id).await)
+    }
+
+    /// Every torrent's files keyed by id; torrents without metadata are left out.
+    pub async fn files_all(&self) -> EngineResult<Vec<(String, Vec<FileInfo>)>> {
+        dispatch!(self, e => e.files_all().await)
     }
 
     pub async fn add(&self, source: AddSource, opts: &AddOptions) -> EngineResult<String> {

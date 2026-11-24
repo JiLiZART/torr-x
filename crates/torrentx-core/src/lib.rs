@@ -66,6 +66,16 @@ pub struct FileInfo {
     pub priority: Priority,
 }
 
+/// One file of one torrent, flattened for searching across torrents (`GET /files`).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FileHit {
+    pub torrent_id: String,
+    pub torrent_name: String,
+    #[serde(flatten)]
+    pub file: FileInfo,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Tracker {

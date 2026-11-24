@@ -345,11 +345,46 @@ impl RqbitEngine {
             .with_torrents(|all| all.map(|(_, t)| self.to_torrent(t)).collect()))
     }
 
+    /// None while a magnet's metadata is unresolved.
+    fn files_of(handle: &ManagedTorrent) -> Option<Vec<FileInfo>> {
+        let progress = handle.stats().file_progress;
+        let only = handle.only_files();
+        handle
+            .with_metadata(|m| {
+                m.file_infos
+                    .iter()
+                    .enumerate()
+                    .map(|(i, f)| {
+                        let done = progress.get(i).copied().unwrap_or(0);
+                        FileInfo {
+                            index: i as u32,
+                            path: f.relative_filename.to_string_lossy().into_owned(),
+                            size: f.len,
+                            progress: if f.len == 0 {
+                                1.0
+                            } else {
+                                done as f64 / f.len as f64
+                            },
+                            wanted: only.as_ref().is_none_or(|o| o.contains(&i)),
+                            priority: Priority::Normal,
+                        }
+                    })
+                    .collect()
+            })
+            .ok()
+    }
+
+    /// Every torrent's files keyed by id; torrents without metadata are left out.
+    pub async fn files_all(&self) -> EngineResult<Vec<(String, Vec<FileInfo>)>> {
+        Ok(self.session.with_torrents(|all| {
+            all.filter_map(|(_, t)| Some((t.info_hash().as_string(), Self::files_of(t)?)))
+                .collect()
+        }))
+    }
+
     pub async fn get(&self, id: &str) -> EngineResult<TorrentDetails> {
         let handle = self.handle(id)?;
         let torrent = self.to_torrent(&handle);
-        let progress = handle.stats().file_progress;
-        let only = handle.only_files();
         let mut details = TorrentDetails {
             torrent,
             piece_size: None,
@@ -389,27 +424,8 @@ impl RqbitEngine {
                     downloaded: None,
                 })
                 .collect();
-            details.files = m
-                .file_infos
-                .iter()
-                .enumerate()
-                .map(|(i, f)| {
-                    let done = progress.get(i).copied().unwrap_or(0);
-                    FileInfo {
-                        index: i as u32,
-                        path: f.relative_filename.to_string_lossy().into_owned(),
-                        size: f.len,
-                        progress: if f.len == 0 {
-                            1.0
-                        } else {
-                            done as f64 / f.len as f64
-                        },
-                        wanted: only.as_ref().is_none_or(|o| o.contains(&i)),
-                        priority: Priority::Normal,
-                    }
-                })
-                .collect();
         });
+        details.files = Self::files_of(&handle).unwrap_or_default();
         Ok(details)
     }
 

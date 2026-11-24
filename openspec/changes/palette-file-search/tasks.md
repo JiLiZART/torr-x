@@ -1,15 +1,15 @@
 ## 1. Server
 
-- [ ] 1.1 `torrentx-core`: `FileHit {torrent_id, torrent_name, index, path, size, progress, wanted, priority}`;
+- [x] 1.1 `torrentx-core`: `FileHit {torrent_id, torrent_name, index, path, size, progress, wanted, priority}`;
       mirror in `packages/api-client` (`FileHit`, `api.files()`); verify `cargo test -p torrentx-core` and
       `pnpm typecheck`
-- [ ] 1.2 Engine method `files_all()`: rqbit from the session, Transmission with one `torrent-get`
+- [x] 1.2 Engine method `files_all()`: rqbit from the session, Transmission with one `torrent-get`
       (`hashString`, `files`, `fileStats`); dispatch in `engine.rs`; verify a Transmission fixture test asserts a
       single RPC call and the rqbit path skips torrents without metadata
-- [ ] 1.3 `GET /api/v1/files` in `api.rs`: join decorated names from `list()`, flatten in list and file order,
+- [x] 1.3 `GET /api/v1/files` in `api.rs`: join decorated names from `list()`, flatten in list and file order,
       `engine_unavailable` like the list; verify tower `oneshot` tests for the three `http-api` scenarios
       (all files, unresolved magnet, renamed torrent) and that it sits behind the auth guard
-- [ ] 1.4 Verify `cargo test --workspace` passes
+- [x] 1.4 Verify `cargo test --workspace` passes
 
 ## 2. Query and pure logic
 
