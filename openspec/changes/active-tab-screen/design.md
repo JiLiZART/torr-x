@@ -1,5 +1,10 @@
 ## Context
 
+- HTML reference (HTML + Tailwind export of the canvas frames, in `pen/nodes/`): `active-tab.html` (01, dark);
+  `active-tab-light.html` (14, light); `filter-builder.html` (05, filter builder popover);
+  `active-tab-zero-results.html` (06, zero results); `scope-lens-query.html` (board A); `query-reference.html`
+  (board E). Read it for layout, spacing and copy; each element carries its canvas name in `data-pencil-name`.
+  Colors there are resolved hex values: map them back to theme tokens, never copy the hex.
 - Source of truth: screen 01 (`NaQpo`), the `Row / Torrent (Browser)` component (`IRlhx`, 14 overridable
   parts), the `Chip` and `Tab` component variants, board E (query reference card), board A (scope/lens/query).
 - Current code: `TabBar.tsx` (membership tabs), `TorrentList.tsx` (own search/sort state), `Header.tsx`

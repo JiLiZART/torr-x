@@ -1,5 +1,9 @@
 ## Context
 
+- HTML reference (HTML + Tailwind export of the canvas frames, in `pen/nodes/`): `spotlight-add-torrent.html`
+  (04, the add flow this change extends). Read it for layout, spacing and copy; each element carries its
+  canvas name in `data-pencil-name`. Colors there are resolved hex values: map them back to theme tokens,
+  never copy the hex.
 - Boards: THE DAY stops 02 and 04, STRUCTURE moves 2 and 4, REQUIREMENTS R7 (P1), UC2/UC5.
 - The add flow (`add-flow-and-theming`) already shows free space next to the save path, fed by
   the stats disk-free readout — which only covers the configured download dir, not an arbitrary chosen path.

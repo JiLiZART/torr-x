@@ -1,5 +1,11 @@
 ## Context
 
+- HTML reference (HTML + Tailwind export of the canvas frames, in `pen/nodes/`): `detail-view.html` (09,
+  files); `detail-view-media-mode.html` (10, media mode); `detail-view-peers.html` (11, peers);
+  `detail-view-trackers-seeds.html` (12, trackers + web seeds); `detail-view-light.html` (15, light). Read it
+  for layout, spacing and copy; each element carries its canvas name in `data-pencil-name`. Colors there are
+  resolved hex values: map them back to theme tokens, never copy the hex. Boards C and H have no export; use
+  `pen/untitled.pen` for those.
 - Source of truth: screens 09 (`YpnAn`), 10 (`U264ly`), 11 (`SeBYT`), 12 (`xfkVA`); board C "Torrent detail",
   board H "Modal torrent details" anti-pattern.
 - `active-tab-screen` provides the shell, navigation slots, `@torrentx/query` and the lens mechanics.

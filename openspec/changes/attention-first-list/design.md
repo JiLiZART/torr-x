@@ -1,5 +1,9 @@
 ## Context
 
+- HTML reference (HTML + Tailwind export of the canvas frames, in `pen/nodes/`): `active-tab.html` (01, the
+  list this change regroups); `active-tab-zero-results.html` (06). Read it for layout, spacing and copy; each
+  element carries its canvas name in `data-pencil-name`. Colors there are resolved hex values: map them back
+  to theme tokens, never copy the hex.
 - Research boards: THE DAY stop 03 ("why is this one stuck at 94%?"), STRUCTURE ("group the list by obligation,
   not by status", "say the diagnosis out loud"), HOUSE RULES 02/05/07, REQUIREMENTS R3 (P0), R10 (P0), N1,
   UC3/UC4/UC8.

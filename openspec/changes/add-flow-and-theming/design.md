@@ -1,5 +1,10 @@
 ## Context
 
+- HTML reference (HTML + Tailwind export of the canvas frames, in `pen/nodes/`): `spotlight-add-torrent.html`
+  (04); `spotlight-light.html` (13); `active-tab-light.html` (14); `detail-view-light.html` (15);
+  `active-tab-terminal-expanded-light.html` (16). Read it for layout, spacing and copy; each element carries
+  its canvas name in `data-pencil-name`. Colors there are resolved hex values: map them back to theme tokens,
+  never copy the hex. Board B has no export; use `pen/untitled.pen` for it.
 - Source frames: 04 (Spotlight → Add Torrent expanded), 13–16 (light parity); board B
   (the six-frame transform wireframes).
 - `active-tab-screen` provides the shell, tokens usage, query and file-scoped fields; `command-palette-screen`

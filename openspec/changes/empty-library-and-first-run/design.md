@@ -1,5 +1,8 @@
 ## Context
 
+- HTML reference (HTML + Tailwind export of the canvas frames, in `pen/nodes/`): `empty-library.html` (17);
+  `first-run.html` (18). Read it for layout, spacing and copy; each element carries its canvas name in
+  `data-pencil-name`. Colors there are resolved hex values: map them back to theme tokens, never copy the hex.
 - Source frames: 17 (`X2irCa`) and 18 (`CnhUq`); house rule 01 (defaults that need no attention).
 - `active-tab-screen` provides the shell and tabs-as-queries; `add-flow-and-theming` provides the add flow
   the empty state's actions open; the zero-results state already owns the filtered-empty case.

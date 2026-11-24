@@ -1,5 +1,11 @@
 ## Context
 
+- HTML reference (HTML + Tailwind export of the canvas frames, in `pen/nodes/`):
+  `active-tab-terminal-expanded.html` (07); `components.html` (board D, output row kinds);
+  `active-tab-terminal-expanded-light.html` (16, light); `keymap.html` (board F). Read it for layout, spacing
+  and copy; each element carries its canvas name in `data-pencil-name`. Colors there are resolved hex values:
+  map them back to theme tokens, never copy the hex. Boards C, G, H have no export; use `pen/untitled.pen` for
+  those.
 - `Terminal.tsx` (74 lines) + `lib/terminal.ts`: `run(input, deps)` splits on whitespace and switches on
   `help | list | status | add | pause | resume | remove | clear | exit`; it has `node --test` coverage. The
   panel is hidden while details are open.

@@ -1,5 +1,8 @@
 ## Context
 
+- HTML reference (HTML + Tailwind export of the canvas frames, in `pen/nodes/`): `query-reference.html` (board
+  E); `keymap.html` (board F). Read it for layout, spacing and copy; each element carries its canvas name in
+  `data-pencil-name`. Colors there are resolved hex values: map them back to theme tokens, never copy the hex.
 - Source boards: E (`e54dm`, a reusable component on the canvas) and F (`vxoQM`).
 - `active-tab-screen` defines the grammar and registry; `command-palette-screen` defines the registry of
   commands and a keymap module; `terminal-drawer` renders the same card in its FIELDS popover.

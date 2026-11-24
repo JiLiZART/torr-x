@@ -1,5 +1,10 @@
 ## Context
 
+- HTML reference (HTML + Tailwind export of the canvas frames, in `pen/nodes/`): `components.html` (board D);
+  `active-tab-zero-results.html` (06, zero-after-filter); `empty-library.html` (17, empty). Read it for
+  layout, spacing and copy; each element carries its canvas name in `data-pencil-name`. Colors there are
+  resolved hex values: map them back to theme tokens, never copy the hex. Board H has no export; use
+  `pen/untitled.pen` for it.
 - Source: board D (component states) and board H's surface × state table. Chips and tabs exist as real
   component variants on the canvas (`H6eV4` Chip, `q4CKq` Tab).
 - Earlier changes define behaviors; this one fixes the visual/state contract each shared component honors.

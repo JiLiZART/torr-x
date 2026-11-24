@@ -1,0 +1,1006 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+        tailwind = { config: { corePlugins: { preflight: false } } };
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+            href="https://fonts.googleapis.com/css2?family=Inter%3Awght%40100..900&family=JetBrains+Mono%3Awght%40100..800&display=swap"
+            rel="stylesheet"
+    />
+    <style>
+        *, ::before, ::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+        }
+    </style>
+
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body style="background-color: #0E1110">
+<div
+        data-pencil-name="A · IA — Scope / Lens / Query"
+        class="box-border w-[2560px] h-fit flex flex-col gap-[26px] p-[34px] justify-start items-start bg-[#0E1110] [border:1px_solid_#232B28] rounded-[18px]"
+>
+    <div
+            data-pencil-name="Board Head"
+            class="box-border w-full h-fit shrink-0 flex flex-col gap-[7px] justify-start items-start"
+    >
+        <div
+                data-pencil-name="Kicker"
+                class="text-[10px]/[normal] box-border text-[#3FE07F] font-['JetBrains_Mono',system-ui,sans-serif] font-normal tracking-[1.6px] text-left [white-space:nowrap]"
+        >
+            INFORMATION ARCHITECTURE
+        </div>
+        <div
+                data-pencil-name="Title"
+                class="text-[30px]/[normal] box-border text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-semibold text-left [white-space:nowrap]"
+        >
+            Scope, Lens and Query are three different things
+        </div>
+        <div
+                data-pencil-name="Sub"
+                class="text-[13px]/[20px] box-border w-full text-[#93A69C] font-[Inter,system-ui,sans-serif] font-normal text-left"
+        >
+            Three layers, one language. The sidebar holds scope, the tab holds a lens, and every
+            surface speaks the same query. Nothing in this diagram lets a filter write to the sidebar
+            except an explicit “Save as tab”.
+        </div>
+    </div>
+    <div
+            data-pencil-name="Three Layers"
+            class="box-border w-full h-fit shrink-0 flex flex-row gap-[20px] justify-start items-start"
+    >
+        <div
+                data-pencil-name="Layer Scope"
+                class="box-border [flex:1_1_0] h-fit flex flex-col gap-[14px] p-[22px] justify-start items-start bg-[#151A18] [border:1px_solid_#3FE07F] rounded-[14px]"
+        >
+            <div
+                    data-pencil-name="Head"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[10px] justify-start items-center"
+            >
+                <div
+                        data-pencil-name="Title"
+                        class="text-[20px]/[normal] box-border text-[#3FE07F] font-[Inter,system-ui,sans-serif] font-semibold text-left [white-space:nowrap]"
+                >
+                    Scope
+                </div>
+                <div
+                        data-pencil-name="Word"
+                        class="box-border w-fit shrink-0 h-fit flex flex-row gap-0 p-[3px_8px] justify-start items-start bg-[#1C2321] rounded-[6px]"
+                >
+                    <div
+                            data-pencil-name="Label"
+                            class="text-[10px]/[normal] box-border text-[#93A69C] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+                    >
+                        a tab in the sidebar
+                    </div>
+                </div>
+            </div>
+            <div
+                    data-pencil-name="Row WHAT"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[12px] justify-start items-start"
+            >
+                <div
+                        data-pencil-name="K"
+                        class="text-[10px]/[normal] box-border w-[118px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal tracking-[0.6px] text-left"
+                >
+                    WHAT
+                </div>
+                <div
+                        data-pencil-name="V"
+                        class="text-[12px]/[19px] box-border [flex:1_1_0] text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                >
+                    A saved query that defines which torrents exist in this view.
+                </div>
+            </div>
+            <div
+                    data-pencil-name="Row LIFETIME"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[12px] justify-start items-start"
+            >
+                <div
+                        data-pencil-name="K"
+                        class="text-[10px]/[normal] box-border w-[118px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal tracking-[0.6px] text-left"
+                >
+                    LIFETIME
+                </div>
+                <div
+                        data-pencil-name="V"
+                        class="text-[12px]/[19px] box-border [flex:1_1_0] text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                >
+                    Persistent. Survives restarts, sync and tab switches.
+                </div>
+            </div>
+            <div
+                    data-pencil-name="Row LIVES IN"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[12px] justify-start items-start"
+            >
+                <div
+                        data-pencil-name="K"
+                        class="text-[10px]/[normal] box-border w-[118px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal tracking-[0.6px] text-left"
+                >
+                    LIVES IN
+                </div>
+                <div
+                        data-pencil-name="V"
+                        class="text-[12px]/[19px] box-border [flex:1_1_0] text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                >
+                    Left sidebar. Pinned, ad-hoc, grouped, reorderable.
+                </div>
+            </div>
+            <div
+                    data-pencil-name="Row CREATED BY"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[12px] justify-start items-start"
+            >
+                <div
+                        data-pencil-name="K"
+                        class="text-[10px]/[normal] box-border w-[118px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal tracking-[0.6px] text-left"
+                >
+                    CREATED BY
+                </div>
+                <div
+                        data-pencil-name="V"
+                        class="text-[12px]/[19px] box-border [flex:1_1_0] text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                >
+                    “Save as tab” only — from the filter bar, builder, palette, Spotlight or terminal.
+                </div>
+            </div>
+            <div
+                    data-pencil-name="Row EXAMPLE"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[12px] justify-start items-start"
+            >
+                <div
+                        data-pencil-name="K"
+                        class="text-[10px]/[normal] box-border w-[118px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal tracking-[0.6px] text-left"
+                >
+                    EXAMPLE
+                </div>
+                <div
+                        data-pencil-name="V"
+                        class="text-[12px]/[19px] box-border [flex:1_1_0] text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                >
+                    state:active tag:4k · tracker:xyz · added:&gt;7d
+                </div>
+            </div>
+        </div>
+        <div
+                data-pencil-name="Layer Lens"
+                class="box-border [flex:1_1_0] h-fit flex flex-col gap-[14px] p-[22px] justify-start items-start bg-[#151A18] [border:1px_solid_#E3B341] rounded-[14px]"
+        >
+            <div
+                    data-pencil-name="Head"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[10px] justify-start items-center"
+            >
+                <div
+                        data-pencil-name="Title"
+                        class="text-[20px]/[normal] box-border text-[#E3B341] font-[Inter,system-ui,sans-serif] font-semibold text-left [white-space:nowrap]"
+                >
+                    Lens
+                </div>
+                <div
+                        data-pencil-name="Word"
+                        class="box-border w-fit shrink-0 h-fit flex flex-row gap-0 p-[3px_8px] justify-start items-start bg-[#1C2321] rounded-[6px]"
+                >
+                    <div
+                            data-pencil-name="Label"
+                            class="text-[10px]/[normal] box-border text-[#93A69C] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+                    >
+                        an ephemeral filter
+                    </div>
+                </div>
+            </div>
+            <div
+                    data-pencil-name="Row WHAT"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[12px] justify-start items-start"
+            >
+                <div
+                        data-pencil-name="K"
+                        class="text-[10px]/[normal] box-border w-[118px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal tracking-[0.6px] text-left"
+                >
+                    WHAT
+                </div>
+                <div
+                        data-pencil-name="V"
+                        class="text-[12px]/[19px] box-border [flex:1_1_0] text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                >
+                    An extra query ANDed onto the active tab's query.
+                </div>
+            </div>
+            <div
+                    data-pencil-name="Row LIFETIME"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[12px] justify-start items-start"
+            >
+                <div
+                        data-pencil-name="K"
+                        class="text-[10px]/[normal] box-border w-[118px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal tracking-[0.6px] text-left"
+                >
+                    LIFETIME
+                </div>
+                <div
+                        data-pencil-name="V"
+                        class="text-[12px]/[19px] box-border [flex:1_1_0] text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                >
+                    Ephemeral. Cleared when you switch tabs. Never written to the sidebar.
+                </div>
+            </div>
+            <div
+                    data-pencil-name="Row LIVES IN"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[12px] justify-start items-start"
+            >
+                <div
+                        data-pencil-name="K"
+                        class="text-[10px]/[normal] box-border w-[118px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal tracking-[0.6px] text-left"
+                >
+                    LIVES IN
+                </div>
+                <div
+                        data-pencil-name="V"
+                        class="text-[12px]/[19px] box-border [flex:1_1_0] text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                >
+                    The tab's filter bar, as chips that are always visible.
+                </div>
+            </div>
+            <div
+                    data-pencil-name="Row CREATED BY"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[12px] justify-start items-start"
+            >
+                <div
+                        data-pencil-name="K"
+                        class="text-[10px]/[normal] box-border w-[118px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal tracking-[0.6px] text-left"
+                >
+                    CREATED BY
+                </div>
+                <div
+                        data-pencil-name="V"
+                        class="text-[12px]/[19px] box-border [flex:1_1_0] text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                >
+                    Fuzzy input, filter builder, ⌘T “filter” results, terminal.
+                </div>
+            </div>
+            <div
+                    data-pencil-name="Row EXAMPLE"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[12px] justify-start items-start"
+            >
+                <div
+                        data-pencil-name="K"
+                        class="text-[10px]/[normal] box-border w-[118px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal tracking-[0.6px] text-left"
+                >
+                    EXAMPLE
+                </div>
+                <div
+                        data-pencil-name="V"
+                        class="text-[12px]/[19px] box-border [flex:1_1_0] text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                >
+                    + size:&gt;4GB sort:ratio desc (inside tab “Active”)
+                </div>
+            </div>
+        </div>
+        <div
+                data-pencil-name="Layer Query"
+                class="box-border [flex:1_1_0] h-fit flex flex-col gap-[14px] p-[22px] justify-start items-start bg-[#151A18] [border:1px_solid_#45C8D8] rounded-[14px]"
+        >
+            <div
+                    data-pencil-name="Head"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[10px] justify-start items-center"
+            >
+                <div
+                        data-pencil-name="Title"
+                        class="text-[20px]/[normal] box-border text-[#45C8D8] font-[Inter,system-ui,sans-serif] font-semibold text-left [white-space:nowrap]"
+                >
+                    Query
+                </div>
+                <div
+                        data-pencil-name="Word"
+                        class="box-border w-fit shrink-0 h-fit flex flex-row gap-0 p-[3px_8px] justify-start items-start bg-[#1C2321] rounded-[6px]"
+                >
+                    <div
+                            data-pencil-name="Label"
+                            class="text-[10px]/[normal] box-border text-[#93A69C] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+                    >
+                        one shared language
+                    </div>
+                </div>
+            </div>
+            <div
+                    data-pencil-name="Row WHAT"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[12px] justify-start items-start"
+            >
+                <div
+                        data-pencil-name="K"
+                        class="text-[10px]/[normal] box-border w-[118px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal tracking-[0.6px] text-left"
+                >
+                    WHAT
+                </div>
+                <div
+                        data-pencil-name="V"
+                        class="text-[12px]/[19px] box-border [flex:1_1_0] text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                >
+                    field:value predicates, AND/OR, negation, and sort — as text.
+                </div>
+            </div>
+            <div
+                    data-pencil-name="Row LIFETIME"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[12px] justify-start items-start"
+            >
+                <div
+                        data-pencil-name="K"
+                        class="text-[10px]/[normal] box-border w-[118px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal tracking-[0.6px] text-left"
+                >
+                    LIFETIME
+                </div>
+                <div
+                        data-pencil-name="V"
+                        class="text-[12px]/[19px] box-border [flex:1_1_0] text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                >
+                    None. It is a value: typed, parsed, rendered as chips, copied.
+                </div>
+            </div>
+            <div
+                    data-pencil-name="Row LIVES IN"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[12px] justify-start items-start"
+            >
+                <div
+                        data-pencil-name="K"
+                        class="text-[10px]/[normal] box-border w-[118px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal tracking-[0.6px] text-left"
+                >
+                    LIVES IN
+                </div>
+                <div
+                        data-pencil-name="V"
+                        class="text-[12px]/[19px] box-border [flex:1_1_0] text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                >
+                    Tabs, lens, builder, Spotlight, terminal, CLI, deep links.
+                </div>
+            </div>
+            <div
+                    data-pencil-name="Row GUARANTEE"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[12px] justify-start items-start"
+            >
+                <div
+                        data-pencil-name="K"
+                        class="text-[10px]/[normal] box-border w-[118px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal tracking-[0.6px] text-left"
+                >
+                    GUARANTEE
+                </div>
+                <div
+                        data-pencil-name="V"
+                        class="text-[12px]/[19px] box-border [flex:1_1_0] text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                >
+                    One parser, one error model, one autocomplete source, one chip rendering.
+                </div>
+            </div>
+            <div
+                    data-pencil-name="Row EXAMPLE"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[12px] justify-start items-start"
+            >
+                <div
+                        data-pencil-name="K"
+                        class="text-[10px]/[normal] box-border w-[118px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal tracking-[0.6px] text-left"
+                >
+                    EXAMPLE
+                </div>
+                <div
+                        data-pencil-name="V"
+                        class="text-[12px]/[19px] box-border [flex:1_1_0] text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                >
+                    state:active tag:4k size:&gt;4GB sort:ratio desc
+                </div>
+            </div>
+        </div>
+    </div>
+    <div
+            data-pencil-name="Query Flow"
+            class="box-border w-full h-fit shrink-0 flex flex-col gap-0 justify-start items-start"
+    >
+        <div
+                data-pencil-name="Surfaces"
+                class="box-border w-full h-fit shrink-0 flex flex-row gap-[16px] justify-start items-start"
+        >
+            <div
+                    data-pencil-name="Surface Sidebar tab"
+                    class="box-border [flex:1_1_0] h-fit flex flex-col gap-0 justify-start items-center"
+            >
+                <div
+                        data-pencil-name="Card"
+                        class="box-border w-full h-fit shrink-0 flex flex-col gap-[9px] p-[16px] justify-start items-start bg-[#151A18] [border:1px_solid_#232B28] rounded-[12px]"
+                >
+                    <div
+                            data-pencil-name="Head"
+                            class="box-border w-full h-fit shrink-0 flex flex-row gap-[8px] justify-start items-center"
+                    >
+                        <svg
+                                data-pencil-name="Icon"
+                                viewBox="0 0 15 15"
+                                preserveAspectRatio="xMidYMid meet"
+                                data-icon-name="panel-left"
+                                data-icon-set="lucide"
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="box-border w-[15px] shrink-0 h-[15px] overflow-visible"
+                        >
+                            <path
+                                    d="M2.791 1.289q-.542 .092-.942 .469-.395 .373-.545 .926-.03 .092-.03 .766l-.014 4.05 .014 4.05q0 .674 .03 .766 .15 .523 .501 .879 .356 .351 .879 .501 .092 .03 .766 .03l4.05 .014 4.05-.014q.674 0 .766-.03 .523-.15 .875-.501 .355-.356 .505-.879 .03-.092 .03-.766l.014-4.05-.014-4.05q0-.674-.03-.766-.135-.523-.49-.875-.352-.355-.861-.505l-.15-.044h-4.636q-4.648 0-4.768 .029zM5.01 7.5v5.01h-.945q-.945 0-1.051-.03-.315-.062-.465-.358l-.044-.107v-9.03l.044-.107q.077-.15 .201-.245 .128-.099 .279-.128 .091 0 1.036-.015h.945zM12.122 2.549q.223 .106 .329 .329l.044 .107v9.03l-.044 .107q-.15 .296-.465 .358-.106 .03-2.926 .03h-2.82v-10.02l5.775 .015z"
+                                    fill="#3fe07f"
+                            />
+                        </svg>
+                        <div
+                                data-pencil-name="Name"
+                                class="text-[13px]/[normal] box-border [flex:1_1_0] text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-semibold text-left"
+                        >
+                            Sidebar tab
+                        </div>
+                    </div>
+                    <div
+                            data-pencil-name="Role"
+                            class="text-[10px]/[15px] box-border w-full text-[#3FE07F] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                    >
+                        reads + writes scope
+                    </div>
+                    <div
+                            data-pencil-name="Note"
+                            class="text-[10px]/[15px] box-border w-full text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                    >
+                        ⌘1…9 · drag to reorder
+                    </div>
+                </div>
+                <div
+                        data-pencil-name="Stub"
+                        class="box-border w-[2px] h-[26px] shrink-0 bg-[#36423D]"
+                ></div>
+            </div>
+            <div
+                    data-pencil-name="Surface Filter bar + chips"
+                    class="box-border [flex:1_1_0] h-fit flex flex-col gap-0 justify-start items-center"
+            >
+                <div
+                        data-pencil-name="Card"
+                        class="box-border w-full h-fit shrink-0 flex flex-col gap-[9px] p-[16px] justify-start items-start bg-[#151A18] [border:1px_solid_#232B28] rounded-[12px]"
+                >
+                    <div
+                            data-pencil-name="Head"
+                            class="box-border w-full h-fit shrink-0 flex flex-row gap-[8px] justify-start items-center"
+                    >
+                        <svg
+                                data-pencil-name="Icon"
+                                viewBox="0 0 15 15"
+                                preserveAspectRatio="xMidYMid meet"
+                                data-icon-name="funnel"
+                                data-icon-set="lucide"
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="box-border w-[15px] shrink-0 h-[15px] overflow-visible"
+                        >
+                            <path
+                                    d="M1.56 1.289q-.315 .092-.557 .33-.15 .15-.208 .241-.194 .359-.165 .744 .029 .381 .286 .696 .087 .091 2.343 2.589 2.26 2.497 2.307 2.6l.044 .106 .03 3.706q0 .374 .029 .509 .015 .106 .077 .209l.015 .047q.135 .253 .358 .418 .121 .106 .839 .458 .721 .351 .85 .392 .128 .036 .3 .036 .172 0 .3-.029 .128-.029 .293-.11 .165-.084 .253-.176 .242-.223 .362-.542l.044-.146 .03-4.772 .044-.106q.047-.103 .164-.224l4.457-4.936q.315-.359 .315-.824 0-.286-.135-.571-.088-.165-.231-.315-.143-.151-.308-.224l-.062-.029q-.102-.062-.3-.077-.268-.029-1.231-.029h-9.642q-.795 .014-.901 .029zM13.066 2.563q-.047 .048-2.131 2.355l-2.311 2.567q-.417 .465-.479 1.037-.03 .165-.03 2.384v2.219l-1.23-.615v-1.905q0-1.918-.03-2.083-.062-.572-.479-1.051l-4.501-4.981h11.265z"
+                                    fill="#e3b341"
+                            />
+                        </svg>
+                        <div
+                                data-pencil-name="Name"
+                                class="text-[13px]/[normal] box-border [flex:1_1_0] text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-semibold text-left"
+                        >
+                            Filter bar + chips
+                        </div>
+                    </div>
+                    <div
+                            data-pencil-name="Role"
+                            class="text-[10px]/[15px] box-border w-full text-[#E3B341] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                    >
+                        writes lens
+                    </div>
+                    <div
+                            data-pencil-name="Note"
+                            class="text-[10px]/[15px] box-border w-full text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                    >
+                        always visible, per tab
+                    </div>
+                </div>
+                <div
+                        data-pencil-name="Stub"
+                        class="box-border w-[2px] h-[26px] shrink-0 bg-[#36423D]"
+                ></div>
+            </div>
+            <div
+                    data-pencil-name="Surface Filter builder"
+                    class="box-border [flex:1_1_0] h-fit flex flex-col gap-0 justify-start items-center"
+            >
+                <div
+                        data-pencil-name="Card"
+                        class="box-border w-full h-fit shrink-0 flex flex-col gap-[9px] p-[16px] justify-start items-start bg-[#151A18] [border:1px_solid_#232B28] rounded-[12px]"
+                >
+                    <div
+                            data-pencil-name="Head"
+                            class="box-border w-full h-fit shrink-0 flex flex-row gap-[8px] justify-start items-center"
+                    >
+                        <svg
+                                data-pencil-name="Icon"
+                                viewBox="0 0 15 15"
+                                preserveAspectRatio="xMidYMid meet"
+                                data-icon-name="sliders-horizontal"
+                                data-icon-set="lucide"
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="box-border w-[15px] shrink-0 h-[15px] overflow-visible"
+                        >
+                            <path
+                                    d="M8.551 1.289q-.256 .092-.377 .363-.029 .058-.044 .238l-.015 1.172q0 1.303 .015 1.409 .059 .268 .267 .411 .213 .142 .469 .098 .103-.014 .176-.051 .077-.04 .15-.121 .077-.084 .113-.164 .041-.085 .048-.151 .007-.069 .022-.351v-.392l3.915-.015 .106-.044q.286-.135 .344-.45 .059-.315-.165-.542-.15-.15-.358-.179-.121-.03-1.982-.03h-1.86v-.392q-.015-.282-.022-.348-.007-.069-.048-.15-.036-.084-.135-.172-.095-.091-.194-.128-.095-.04-.224-.04-.128 0-.201 .029zM1.769 2.52q-.194 .029-.344 .179-.224 .227-.165 .542 .058 .315 .344 .45l.106 .044h4.695l.106-.044q.088-.047 .169-.12 .084-.077 .121-.151 .04-.077 .054-.194 .044-.212-.054-.392-.096-.179-.304-.285l-.107-.044h-2.266q-2.264-.015-2.355 .015zM4.845 5.64q-.15 .044-.278 .172-.129 .128-.165 .263-.037 .136-.037 .48v.33h-2.669l-.092 .058q-.194 .107-.3 .286-.044 .092-.044 .271 0 .179 .044 .264 .047 .08 .135 .172 .092 .088 .165 .135l.092 .044h2.669v.33q0 .344 .037 .48 .036 .135 .157 .256 .213 .209 .495 .187 .285-.022 .45-.264l.015-.015q.062-.073 .077-.161 .014-.091 .029-.377v-2.087q-.015-.301-.029-.389-.015-.091-.077-.164v-.015q-.103-.15-.3-.223-.195-.077-.374-.033zM7.335 6.899q-.121 .03-.234 .129-.11 .098-.165 .197-.051 .096-.051 .275 0 .179 .044 .264 .047 .08 .135 .172 .092 .088 .165 .135l.092 .044h5.984l.091-.044q.073-.047 .161-.135 .092-.092 .136-.172 .047-.085 .047-.264 0-.179-.044-.271-.106-.179-.3-.286l-.091-.058h-2.97q-2.956 0-3 .014zM9.884 10.02q-.135 .014-.264 .113-.124 .095-.186 .231l-.044 .106v2.82l.044 .106q.135 .286 .45 .337 .315 .051 .542-.158 .088-.091 .15-.194 .03-.091 .037-.157 .007-.07 .022-.341v-.373l2.626-.015 .12-.044q.224-.121 .312-.344 .091-.227 .007-.45-.081-.228-.304-.348l-.106-.044-2.655-.015v-.315q0-.315-.029-.421-.044-.253-.25-.396-.201-.142-.472-.098zM1.725 11.265q-.136 .029-.256 .142-.118 .114-.18 .25-.073 .223 .015 .457 .091 .231 .315 .337l.121 .044h5.896l.12-.044q.224-.121 .312-.344 .091-.227 .007-.45-.081-.228-.304-.348l-.106-.044-2.926-.015q-2.923 0-3.014 .015z"
+                                    fill="#e3b341"
+                            />
+                        </svg>
+                        <div
+                                data-pencil-name="Name"
+                                class="text-[13px]/[normal] box-border [flex:1_1_0] text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-semibold text-left"
+                        >
+                            Filter builder
+                        </div>
+                    </div>
+                    <div
+                            data-pencil-name="Role"
+                            class="text-[10px]/[15px] box-border w-full text-[#E3B341] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                    >
+                        writes lens
+                    </div>
+                    <div
+                            data-pencil-name="Note"
+                            class="text-[10px]/[15px] box-border w-full text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                    >
+                        AND/OR + sort
+                    </div>
+                </div>
+                <div
+                        data-pencil-name="Stub"
+                        class="box-border w-[2px] h-[26px] shrink-0 bg-[#36423D]"
+                ></div>
+            </div>
+            <div
+                    data-pencil-name="Surface Spotlight ⌘T / Palette"
+                    class="box-border [flex:1_1_0] h-fit flex flex-col gap-0 justify-start items-center"
+            >
+                <div
+                        data-pencil-name="Card"
+                        class="box-border w-full h-fit shrink-0 flex flex-col gap-[9px] p-[16px] justify-start items-start bg-[#151A18] [border:1px_solid_#232B28] rounded-[12px]"
+                >
+                    <div
+                            data-pencil-name="Head"
+                            class="box-border w-full h-fit shrink-0 flex flex-row gap-[8px] justify-start items-center"
+                    >
+                        <svg
+                                data-pencil-name="Icon"
+                                viewBox="0 0 15 15"
+                                preserveAspectRatio="xMidYMid meet"
+                                data-icon-name="search"
+                                data-icon-set="lucide"
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="box-border w-[15px] shrink-0 h-[15px] overflow-visible"
+                        >
+                            <path
+                                    d="M6.434 1.26q-.044 .014-.252 .029-.616 .077-1.245 .311-.63 .231-1.172 .59-.421 .286-.802 .655-.381 .367-.667 .755-.692 .989-.93 2.175-.062 .3-.084 .495-.022 .194-.022 .615 0 .465 .029 .729 .029 .26 .136 .637 .208 .809 .644 1.538 .436 .725 1.036 1.267 .436 .388 .876 .644 .443 .257 .985 .466 1.139 .421 2.377 .314 1.237-.106 2.303-.706 .136-.074 .359-.224 .223-.15 .315-.227l.058-.058 1.187 1.186q1.201 1.183 1.289 1.238 .092 .051 .256 .051 .165 0 .253-.036 .092-.041 .194-.143 .106-.106 .143-.194 .04-.092 .04-.257 0-.164-.055-.252-.051-.092-1.234-1.293l-1.186-1.187 .058-.073q.063-.058 .213-.271 .882-1.318 .956-2.9 .076-1.582-.685-2.963-.572-1.036-1.524-1.761-.952-.729-2.094-1-.315-.073-.579-.103-.26-.033-.648-.047-.465 0-.528 0zM7.229 2.52q.407 .014 .85 .15 .443 .135 .846 .344 .794 .421 1.38 1.157 .586 .733 .81 1.604 .076 .3 .098 .535 .022 .231 .022 .545 0 .751-.208 1.396-.421 1.245-1.436 2.047-1.011 .802-2.314 .937-.213 .015-.528 .008-.315-.008-.523-.037-.572-.091-1.114-.33-.538-.241-1.003-.6-.15-.136-.377-.366-.224-.235-.356-.399-.615-.824-.794-1.817-.092-.465-.07-.974 .022-.509 .128-.96 .315-1.23 1.275-2.098 .959-.871 2.204-1.099 .195-.029 .451-.043 .256-.015 .373-.015z"
+                                    fill="#45c8d8"
+                            />
+                        </svg>
+                        <div
+                                data-pencil-name="Name"
+                                class="text-[13px]/[normal] box-border [flex:1_1_0] text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-semibold text-left"
+                        >
+                            Spotlight ⌘T / Palette
+                        </div>
+                    </div>
+                    <div
+                            data-pencil-name="Role"
+                            class="text-[10px]/[15px] box-border w-full text-[#45C8D8] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                    >
+                        jump · filter · act · create tab
+                    </div>
+                    <div
+                            data-pencil-name="Note"
+                            class="text-[10px]/[15px] box-border w-full text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                    >
+                        global, never auto-filters
+                    </div>
+                </div>
+                <div
+                        data-pencil-name="Stub"
+                        class="box-border w-[2px] h-[26px] shrink-0 bg-[#36423D]"
+                ></div>
+            </div>
+            <div
+                    data-pencil-name="Surface Terminal ⌃`"
+                    class="box-border [flex:1_1_0] h-fit flex flex-col gap-0 justify-start items-center"
+            >
+                <div
+                        data-pencil-name="Card"
+                        class="box-border w-full h-fit shrink-0 flex flex-col gap-[9px] p-[16px] justify-start items-start bg-[#151A18] [border:1px_solid_#232B28] rounded-[12px]"
+                >
+                    <div
+                            data-pencil-name="Head"
+                            class="box-border w-full h-fit shrink-0 flex flex-row gap-[8px] justify-start items-center"
+                    >
+                        <svg
+                                data-pencil-name="Icon"
+                                viewBox="0 0 15 15"
+                                preserveAspectRatio="xMidYMid meet"
+                                data-icon-name="square-terminal"
+                                data-icon-set="lucide"
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="box-border w-[15px] shrink-0 h-[15px] overflow-visible"
+                        >
+                            <path
+                                    d="M2.791 1.289q-.542 .092-.942 .469-.395 .373-.545 .926-.03 .092-.03 .766l-.014 4.05 .014 4.05q0 .674 .03 .766 .15 .523 .501 .879 .356 .351 .879 .501 .092 .03 .766 .03l4.05 .014 4.05-.014q.674 0 .766-.03 .523-.15 .875-.501 .355-.356 .505-.879 .03-.092 .03-.766l.014-4.05-.014-4.05q0-.674-.03-.766-.135-.523-.49-.875-.352-.355-.861-.505l-.15-.044h-4.636q-4.648 0-4.768 .029zM12.122 2.549q.223 .106 .329 .329l.044 .107v9.03l-.044 .107q-.15 .296-.465 .358-.106 .03-4.486 .03-4.38 0-4.486-.03-.315-.062-.465-.358l-.044-.107v-9.03l.044-.107q.077-.15 .201-.245 .128-.099 .279-.128 .091 0 4.53 0h4.456zM4.23 3.765q-.209 .058-.352 .249-.143 .186-.128 .395 .015 .165 .095 .293 .084 .128 .443 .487l.436 .436-.417 .436q-.286 .271-.378 .377-.087 .103-.12 .176-.118 .256-.015 .498 .106 .238 .344 .344 .242 .103 .498-.015 .073-.033 .216-.164 .143-.136 .594-.586l.044-.044q.421-.421 .523-.542 .15-.165 .187-.238 .04-.077 .04-.227v-.03q0-.15-.04-.223-.037-.077-.187-.242-.102-.121-.523-.542l-.044-.044q-.436-.45-.586-.582-.151-.135-.227-.165-.074-.033-.195-.047-.117-.015-.208 0zM6.72 7.515q-.15 .044-.286 .179-.179 .165-.186 .399-.008 .231 .135 .421 .143 .187 .396 .231 .106 .015 1.41 0h1.322l.12-.044q.224-.121 .312-.344 .091-.227 .007-.451-.081-.227-.304-.347l-.106-.044-1.381-.015q-1.366 0-1.439 .015z"
+                                    fill="#45c8d8"
+                            />
+                        </svg>
+                        <div
+                                data-pencil-name="Name"
+                                class="text-[13px]/[normal] box-border [flex:1_1_0] text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-semibold text-left"
+                        >
+                            Terminal ⌃`
+                        </div>
+                    </div>
+                    <div
+                            data-pencil-name="Role"
+                            class="text-[10px]/[15px] box-border w-full text-[#45C8D8] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                    >
+                        writes lens · prints result sets
+                    </div>
+                    <div
+                            data-pencil-name="Note"
+                            class="text-[10px]/[15px] box-border w-full text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                    >
+                        human + --json
+                    </div>
+                </div>
+                <div
+                        data-pencil-name="Stub"
+                        class="box-border w-[2px] h-[26px] shrink-0 bg-[#36423D]"
+                ></div>
+            </div>
+            <div
+                    data-pencil-name="Surface CLI &amp; deep links"
+                    class="box-border [flex:1_1_0] h-fit flex flex-col gap-0 justify-start items-center"
+            >
+                <div
+                        data-pencil-name="Card"
+                        class="box-border w-full h-fit shrink-0 flex flex-col gap-[9px] p-[16px] justify-start items-start bg-[#151A18] [border:1px_solid_#232B28] rounded-[12px]"
+                >
+                    <div
+                            data-pencil-name="Head"
+                            class="box-border w-full h-fit shrink-0 flex flex-row gap-[8px] justify-start items-center"
+                    >
+                        <svg
+                                data-pencil-name="Icon"
+                                viewBox="0 0 15 15"
+                                preserveAspectRatio="xMidYMid meet"
+                                data-icon-name="link"
+                                data-icon-set="lucide"
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="box-border w-[15px] shrink-0 h-[15px] overflow-visible"
+                        >
+                            <path
+                                    d="M10.034 .721q-.567 .074-1.065 .315-.359 .18-.674 .418-.18 .135-.824 .78-.645 .644-.678 .721-.102 .194-.066 .392 .037 .194 .18 .337 .143 .139 .351 .172 .213 .029 .392-.077 .059-.029 .689-.652 .63-.622 .78-.728 .586-.403 1.259-.465 .737-.059 1.366 .271 .63 .329 1.008 .974 .3 .512 .329 1.128 .029 .611-.227 1.168-.102 .194-.179 .315-.107 .15-.359 .421-.194 .194-.843 .839-1.076 1.095-1.212 1.186-.377 .3-.857 .429-.479 .124-.93 .065-1.003-.12-1.648-.9-.135-.151-.22-.209-.08-.062-.186-.092-.238-.073-.465 .048-.224 .117-.301 .359-.044 .179-.007 .329 .037 .151 .172 .33 .692 .872 1.74 1.216 1.051 .344 2.116 .073 .78-.209 1.44-.718 .135-.106 1.208-1.179 1.073-1.073 1.176-1.208 .629-.78 .794-1.799 .048-.194 .048-.56 0-.37-.048-.564-.208-1.26-1.076-2.102-.436-.436-.978-.703-.539-.271-1.154-.344-.227-.033-.542-.033-.315 0-.509 .047zM5.731 5.039q-.992 .136-1.802 .751-.135 .121-1.186 1.164-1.047 1.04-1.212 1.22-.542 .663-.751 1.472-.059 .267-.084 .458-.022 .187-.022 .487 0 .3 .014 .48 .019 .179 .092 .45 .194 .78 .725 1.425 .535 .644 1.256 1.003 .78 .377 1.634 .377 .9 0 1.68-.392 .359-.179 .605-.373 .249-.194 .835-.795 .465-.465 .578-.578 .114-.114 .143-.187 .073-.242-.011-.465-.08-.227-.304-.33-.106-.062-.256-.062h-.015q-.15 0-.227 .033-.073 .029-.223 .165-.106 .102-.48 .479l-.029 .03q-.645 .629-.78 .736-.378 .267-.828 .395-.447 .128-.883 .084-.629-.062-1.135-.377-.502-.315-.809-.838-.308-.528-.337-1.147-.029-.622 .227-1.179 .103-.194 .179-.315 .107-.15 .359-.421 .194-.194 .824-.839 1.081-1.08 1.216-1.186 .571-.432 1.322-.509 .601-.044 1.168 .198 .572 .238 .975 .732 .12 .136 .201 .198 .084 .058 .19 .088 .165 .044 .33 0 .165-.044 .293-.172 .128-.129 .157-.315 .03-.191-.044-.356-.033-.087-.175-.26-.139-.172-.29-.322-.435-.421-.992-.681-.553-.264-1.168-.341-.15-.014-.48-.014-.33 0-.48 .029z"
+                                    fill="#45c8d8"
+                            />
+                        </svg>
+                        <div
+                                data-pencil-name="Name"
+                                class="text-[13px]/[normal] box-border [flex:1_1_0] text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-semibold text-left"
+                        >
+                            CLI &amp; deep links
+                        </div>
+                    </div>
+                    <div
+                            data-pencil-name="Role"
+                            class="text-[10px]/[15px] box-border w-full text-[#45C8D8] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                    >
+                        hydrates scope or lens
+                    </div>
+                    <div
+                            data-pencil-name="Note"
+                            class="text-[10px]/[15px] box-border w-full text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                    >
+                        torrentx ls / tx://q/…
+                    </div>
+                </div>
+                <div
+                        data-pencil-name="Stub"
+                        class="box-border w-[2px] h-[26px] shrink-0 bg-[#36423D]"
+                ></div>
+            </div>
+        </div>
+        <div
+                data-pencil-name="Parser Bus"
+                class="box-border w-full h-fit shrink-0 flex flex-row gap-[14px] p-[16px_22px] justify-start items-center bg-[#15321F] [border:1px_solid_#2A5E3C] rounded-[12px]"
+        >
+            <svg
+                    data-pencil-name="Icon"
+                    viewBox="0 0 18 18"
+                    preserveAspectRatio="xMidYMid meet"
+                    data-icon-name="braces"
+                    data-icon-set="lucide"
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="box-border w-[18px] shrink-0 h-[18px] overflow-visible"
+            >
+                <path
+                        d="M4.79 1.547q-.65 .145-1.121 .606-.465 .457-.628 1.143-.018 .105-.035 .466l-.018 3.942-.052 .109q-.128 .251-.378 .361-.11 .053-.326 .088-.325 .035-.505 .215-.123 .127-.171 .237-.044 .106-.044 .286 0 .18 .044 .29 .048 .106 .162 .224 .119 .114 .224 .163 .11 .044 .334 .079 .224 .035 .312 .083 .093 .044 .189 .145 .101 .097 .159 .203l.052 .109 .018 3.942q.017 .361 .035 .466 .145 .598 .541 1.046 .395 .448 .953 .628 .216 .075 .404 .093 .189 .017 .642 .017 .396 0 .492-.008 .101-.009 .189-.027 .273-.11 .418-.378 .052-.127 .052-.325 0-.198-.052-.325-.128-.251-.378-.361-.075-.035-.176-.043-.097-.009-.475-.009-.558-.018-.668-.062-.105-.048-.241-.162-.132-.119-.172-.242l-.052-.11-.036-4.302-.052-.216q-.128-.413-.361-.738l-.127-.18 .127-.18q.233-.325 .361-.738l.052-.216 .036-4.302 .052-.128q.163-.36 .558-.413 .145-.035 .576-.035 .29 0 .387-.009 .101-.008 .171-.026 .273-.11 .418-.378 .052-.127 .052-.325 0-.127-.008-.18-.009-.053-.044-.145-.057-.106-.176-.211-.114-.11-.242-.167-.088-.018-.198-.027-.105-.008-.5-.008-.576 0-.774 .035zM11.738 1.547q-.128 .057-.246 .167-.115 .105-.163 .206-.044 .097-.053 .15-.008 .053-.008 .18 0 .198 .052 .325 .145 .268 .418 .378 .07 .018 .167 .026 .101 .009 .391 .009 .356 0 .536 .027 .18 .026 .273 .083 .215 .123 .325 .338l.052 .128 .036 4.302 .052 .216q.128 .413 .361 .755l.127 .163-.11 .163q-.14 .18-.224 .36-.079 .18-.171 .448-.035 .128-.035 .431l-.036 4.034-.052 .128q-.057 .105-.15 .206-.088 .097-.175 .154-.181 .088-.791 .088-.308 0-.4 .009-.088 .008-.176 .026-.128 .057-.246 .167-.115 .105-.172 .211-.035 .092-.044 .145-.008 .053-.008 .18 0 .198 .052 .325 .145 .268 .418 .378 .088 .035 .193 .035 .11 0 .576 0 .47 0 .584-.017 .119-.018 .264-.053 .611-.18 1.033-.628 .426-.453 .571-1.086 .018-.105 .035-.466l.018-3.942 .053-.109q.057-.106 .153-.203 .101-.101 .189-.145 .093-.048 .317-.083 .224-.035 .329-.079 .11-.049 .224-.163 .119-.118 .163-.224 .048-.11 .048-.29 0-.18-.048-.286-.044-.11-.167-.237-.18-.18-.505-.215-.216-.035-.326-.088-.25-.11-.377-.361l-.053-.109-.018-3.942q-.017-.361-.035-.466-.145-.576-.505-.998-.361-.426-.884-.641-.233-.093-.448-.119-.215-.026-.703-.026-.396 0-.505 .008-.106 .009-.176 .027z"
+                        fill="#3fe07f"
+                />
+            </svg>
+            <div
+                    data-pencil-name="Title"
+                    class="text-[14px]/[normal] box-border text-[#3FE07F] font-['JetBrains_Mono',system-ui,sans-serif] font-semibold tracking-[1.4px] text-left [white-space:nowrap]"
+            >
+                ONE QUERY PARSER
+            </div>
+            <div
+                    data-pencil-name="Body"
+                    class="text-[11px]/[normal] box-border [flex:1_1_0] text-[#3FE07F] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+            >
+                same grammar · same validation errors · same autocomplete source · same chip rendering ·
+                sort is a predicate
+            </div>
+            <div
+                    data-pencil-name="Sample"
+                    class="box-border w-fit shrink-0 h-fit flex flex-row gap-0 p-[5px_9px] justify-start items-start bg-[#151A18] rounded-[7px]"
+            >
+                <div
+                        data-pencil-name="Label"
+                        class="text-[11px]/[normal] box-border text-[#3FE07F] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+                >
+                    state:active tag:4k size:&gt;4GB sort:ratio desc
+                </div>
+            </div>
+        </div>
+        <div
+                data-pencil-name="Outputs"
+                class="box-border w-full h-fit shrink-0 flex flex-row gap-[16px] justify-start items-start"
+        >
+            <div
+                    data-pencil-name="Out Scope store"
+                    class="box-border [flex:1_1_0] h-fit flex flex-col gap-0 justify-start items-center"
+            >
+                <div
+                        data-pencil-name="Stub"
+                        class="box-border w-[2px] h-[26px] shrink-0 bg-[#36423D]"
+                ></div>
+                <div
+                        data-pencil-name="Card"
+                        class="box-border w-full h-fit shrink-0 flex flex-col gap-[9px] p-[18px] justify-start items-start bg-[#151A18] [border:1px_solid_#3FE07F] rounded-[12px]"
+                >
+                    <div
+                            data-pencil-name="Head"
+                            class="box-border w-full h-fit shrink-0 flex flex-row gap-[9px] justify-start items-center"
+                    >
+                        <svg
+                                data-pencil-name="Icon"
+                                viewBox="0 0 15 15"
+                                preserveAspectRatio="xMidYMid meet"
+                                data-icon-name="bookmark"
+                                data-icon-set="lucide"
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="box-border w-[15px] shrink-0 h-[15px] overflow-visible"
+                        >
+                            <path
+                                    d="M3.992 1.289q-.601 .136-1 .579-.396 .443-.472 1.058-.03 .165-.03 4.882 0 4.716 .03 4.852 .043 .392 .3 .677 .256 .282 .63 .374 .194 .044 .425 .022 .234-.022 .413-.114 .107-.044 1.494-.838 1.388-.795 1.476-.839 .092-.047 .235-.047 .143 0 .223 .04 .084 .036 1.487 .838 1.403 .802 1.509 .846 .238 .121 .538 .121 .465 0 .817-.307 .351-.308 .414-.758 .029-.151 .029-4.867 0-4.717-.029-4.882-.077-.615-.484-1.066-.403-.45-1.003-.571-.117-.029-.616-.029h-2.893-2.863q-.513 .014-.63 .029zM10.726 2.52q.33 .043 .465 .344l.044 .106 .015 4.753q0 4.772-.029 4.757l-1.439-.823q-1.429-.813-1.575-.872-.348-.15-.766-.136-.241 .015-.391 .055-.151 .037-.315 .114-.165 .073-1.546 .868l-1.41 .794q-.014 .015-.029-.871l.015-8.639 .044-.106q.062-.136 .179-.231 .121-.099 .249-.121 .128-.022 3.248-.022 3.121 0 3.241 .03z"
+                                    fill="#3fe07f"
+                            />
+                        </svg>
+                        <div
+                                data-pencil-name="Name"
+                                class="text-[14px]/[normal] box-border [flex:1_1_0] text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-semibold text-left"
+                        >
+                            Scope store
+                        </div>
+                        <div
+                                data-pencil-name="Life"
+                                class="text-[10px]/[normal] box-border text-[#3FE07F] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+                        >
+                            persistent
+                        </div>
+                    </div>
+                    <div
+                            data-pencil-name="Body"
+                            class="text-[12px]/[19px] box-border w-full text-[#93A69C] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                    >
+                        Written only by “Save as tab”. One entry per sidebar tab. Rename, pin, group,
+                        reorder, sync.
+                    </div>
+                </div>
+            </div>
+            <div
+                    data-pencil-name="Out Lens state"
+                    class="box-border [flex:1_1_0] h-fit flex flex-col gap-0 justify-start items-center"
+            >
+                <div
+                        data-pencil-name="Stub"
+                        class="box-border w-[2px] h-[26px] shrink-0 bg-[#36423D]"
+                ></div>
+                <div
+                        data-pencil-name="Card"
+                        class="box-border w-full h-fit shrink-0 flex flex-col gap-[9px] p-[18px] justify-start items-start bg-[#151A18] [border:1px_solid_#E3B341] rounded-[12px]"
+                >
+                    <div
+                            data-pencil-name="Head"
+                            class="box-border w-full h-fit shrink-0 flex flex-row gap-[9px] justify-start items-center"
+                    >
+                        <svg
+                                data-pencil-name="Icon"
+                                viewBox="0 0 15 15"
+                                preserveAspectRatio="xMidYMid meet"
+                                data-icon-name="funnel"
+                                data-icon-set="lucide"
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="box-border w-[15px] shrink-0 h-[15px] overflow-visible"
+                        >
+                            <path
+                                    d="M1.56 1.289q-.315 .092-.557 .33-.15 .15-.208 .241-.194 .359-.165 .744 .029 .381 .286 .696 .087 .091 2.343 2.589 2.26 2.497 2.307 2.6l.044 .106 .03 3.706q0 .374 .029 .509 .015 .106 .077 .209l.015 .047q.135 .253 .358 .418 .121 .106 .839 .458 .721 .351 .85 .392 .128 .036 .3 .036 .172 0 .3-.029 .128-.029 .293-.11 .165-.084 .253-.176 .242-.223 .362-.542l.044-.146 .03-4.772 .044-.106q.047-.103 .164-.224l4.457-4.936q.315-.359 .315-.824 0-.286-.135-.571-.088-.165-.231-.315-.143-.151-.308-.224l-.062-.029q-.102-.062-.3-.077-.268-.029-1.231-.029h-9.642q-.795 .014-.901 .029zM13.066 2.563q-.047 .048-2.131 2.355l-2.311 2.567q-.417 .465-.479 1.037-.03 .165-.03 2.384v2.219l-1.23-.615v-1.905q0-1.918-.03-2.083-.062-.572-.479-1.051l-4.501-4.981h11.265z"
+                                    fill="#e3b341"
+                            />
+                        </svg>
+                        <div
+                                data-pencil-name="Name"
+                                class="text-[14px]/[normal] box-border [flex:1_1_0] text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-semibold text-left"
+                        >
+                            Lens state
+                        </div>
+                        <div
+                                data-pencil-name="Life"
+                                class="text-[10px]/[normal] box-border text-[#E3B341] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+                        >
+                            per tab, in memory
+                        </div>
+                    </div>
+                    <div
+                            data-pencil-name="Body"
+                            class="text-[12px]/[19px] box-border w-full text-[#93A69C] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                    >
+                        Dropped on tab switch unless saved. Rendered as chips next to the tab title.
+                        Undo-able.
+                    </div>
+                </div>
+            </div>
+            <div
+                    data-pencil-name="Out Result set"
+                    class="box-border [flex:1_1_0] h-fit flex flex-col gap-0 justify-start items-center"
+            >
+                <div
+                        data-pencil-name="Stub"
+                        class="box-border w-[2px] h-[26px] shrink-0 bg-[#36423D]"
+                ></div>
+                <div
+                        data-pencil-name="Card"
+                        class="box-border w-full h-fit shrink-0 flex flex-col gap-[9px] p-[18px] justify-start items-start bg-[#151A18] [border:1px_solid_#45C8D8] rounded-[12px]"
+                >
+                    <div
+                            data-pencil-name="Head"
+                            class="box-border w-full h-fit shrink-0 flex flex-row gap-[9px] justify-start items-center"
+                    >
+                        <svg
+                                data-pencil-name="Icon"
+                                viewBox="0 0 15 15"
+                                preserveAspectRatio="xMidYMid meet"
+                                data-icon-name="list"
+                                data-icon-set="lucide"
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="box-border w-[15px] shrink-0 h-[15px] overflow-visible"
+                        >
+                            <path
+                                    d="M1.769 2.52q-.194 .029-.344 .179-.224 .227-.165 .542 .058 .315 .344 .45 .106 .044 .271 .044 .271 0 .45-.179 .136-.136 .165-.315 .059-.33-.168-.553-.224-.227-.553-.168zM4.904 2.505q-.253 .044-.411 .264-.157 .216-.098 .472 .014 .102 .051 .179 .04 .074 .121 .151 .084 .073 .172 .12l.106 .044h8.445l.106-.044q.286-.135 .344-.45 .059-.315-.165-.542-.15-.15-.358-.179-.107-.03-4.157-.03-4.05 0-4.156 .015zM1.71 6.899q-.271 .092-.406 .33-.044 .092-.044 .256 0 .165 .036 .257 .041 .088 .143 .194 .165 .165 .429 .179 .263 .015 .45-.172 .187-.187 .187-.443 0-.256-.18-.428-.179-.173-.421-.187-.15 0-.194 .014zM4.801 6.914q-.256 .092-.37 .348-.11 .253-.007 .494 .062 .103 .15 .194 .092 .088 .198 .136l.102 .029h8.431l.091-.044q.073-.047 .161-.135 .092-.092 .136-.172 .047-.085 .047-.264 0-.179-.044-.271-.106-.179-.3-.286l-.091-.058h-4.216q-4.229 0-4.288 .029zM1.725 11.265q-.136 .029-.256 .142-.118 .114-.18 .25-.102 .267 .048 .523 .15 .257 .446 .308 .301 .051 .531-.172 .235-.227 .176-.542-.029-.194-.165-.33-.12-.121-.278-.165-.157-.044-.322-.014zM4.845 11.265q-.15 .044-.286 .179-.179 .165-.186 .399-.008 .231 .135 .421 .143 .187 .381 .231 .106 .015 4.244 0h4.128l.12-.044q.224-.121 .312-.344 .091-.227 .007-.45-.081-.228-.304-.348l-.106-.044-4.186-.015q-4.186 0-4.259 .015z"
+                                    fill="#45c8d8"
+                            />
+                        </svg>
+                        <div
+                                data-pencil-name="Name"
+                                class="text-[14px]/[normal] box-border [flex:1_1_0] text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-semibold text-left"
+                        >
+                            Result set
+                        </div>
+                        <div
+                                data-pencil-name="Life"
+                                class="text-[10px]/[normal] box-border text-[#45C8D8] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+                        >
+                            derived
+                        </div>
+                    </div>
+                    <div
+                            data-pencil-name="Body"
+                            class="text-[12px]/[19px] box-border w-full text-[#93A69C] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                    >
+                        tab query AND lens → rows. Terminal prints the same rows the list shows.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div
+            data-pencil-name="Rules"
+            class="box-border w-full h-fit shrink-0 flex flex-row gap-[16px] justify-start items-start"
+    >
+        <div
+                data-pencil-name="Rule Golden rule"
+                class="box-border [flex:1_1_0] h-fit flex flex-row gap-[12px] p-[18px] justify-start items-start bg-[#15321F] [border:1px_solid_#3FE07F] rounded-[12px]"
+        >
+            <svg
+                    data-pencil-name="Icon"
+                    viewBox="0 0 17 17"
+                    preserveAspectRatio="xMidYMid meet"
+                    data-icon-name="key-round"
+                    data-icon-set="lucide"
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="box-border w-[17px] shrink-0 h-[17px] overflow-visible"
+            >
+                <path
+                        d="M10.542 .697q-.735 .067-1.378 .307-.39 .154-.818 .399-.423 .245-.763 .535-.494 .424-.884 .967-.39 .544-.631 1.142-.187 .477-.274 .884-.083 .406-.1 .917-.016 .631 .121 1.241l.05 .22-2.296 2.295q-2.295 2.279-2.432 2.449-.236 .323-.357 .714-.05 .203-.066 .477-.017 .27 0 .984v.751q.016 .187 .033 .27 .12 .356 .382 .63 .266 .27 .639 .374 .083 .017 .307 .033h1.104 1.121q.224-.016 .307-.033 .29-.087 .535-.282 .245-.195 .382-.465 .087-.191 .112-.332 .025-.145 .025-.519l.017-.477 .477-.017q.374 0 .515-.025 .145-.025 .336-.112 .27-.137 .465-.373 .195-.237 .282-.527 .033-.137 .033-.594l.017-.477 .257-.017q.44-.05 .789-.22 .348-.17 .672-.51l.17-.17 .237 .049q.614 .137 1.299 .112 .689-.025 1.303-.211 1.104-.341 1.972-1.108 .917-.797 1.394-1.901 .423-1.021 .415-2.117-.008-1.1-.448-2.133-.34-.768-.946-1.42-.602-.656-1.387-1.083-.253-.133-.626-.278-.374-.145-.681-.212-.374-.087-.859-.128-.486-.042-.822-.009zM11.509 2.142q.967 .12 1.747 .68 .785 .561 1.229 1.411 .187 .407 .286 .764 .071 .291 .096 .477 .025 .187 .025 .544-.017 .307-.025 .428-.009 .116-.042 .303-.137 .647-.444 1.174-.51 .917-1.419 1.436-.909 .519-1.947 .519-.34 0-.589-.033-.245-.038-.581-.137-.395-.121-.631-.017-.104 .05-.477 .415-.374 .365-.503 .436-.124 .066-.431 .083-.237 .017-.374 .05-.137 .033-.299 .112-.161 .075-.348 .261-.187 .187-.253 .341-.104 .203-.121 .332-.016 .128-.033 .535v.494h-.494q-.407 .017-.544 .042-.137 .024-.34 .128-.153 .067-.34 .253-.187 .187-.253 .341-.104 .203-.121 .332-.016 .128-.033 .535v.494h-2.125v-.851q.017-.643 .017-.763 0-.121 .041-.204 .046-.087 .469-.527 .423-.444 2.109-2.125 1.734-1.751 2.133-2.158 .398-.411 .415-.477 .054-.137 .054-.229 0-.095-.038-.249l-.099-.357q-.104-.44-.104-.942 0-.502 .12-.963 .254-1.054 1.034-1.818 .784-.763 1.855-1.004 .664-.166 1.378-.066zM11.405 4.283q-.269 .071-.473 .282-.203 .212-.274 .486-.099 .39 .087 .764 .05 .099 .195 .245 .146 .145 .245 .195 .241 .12 .503 .12 .261 0 .502-.12 .099-.05 .245-.195 .145-.146 .195-.245 .153-.307 .112-.639-.042-.333-.282-.569-.32-.357-.781-.357-.12 0-.274 .033z"
+                        fill="#3fe07f"
+                />
+            </svg>
+            <div
+                    data-pencil-name="Text"
+                    class="box-border [flex:1_1_0] h-fit flex flex-col gap-[5px] justify-start items-start"
+            >
+                <div
+                        data-pencil-name="Title"
+                        class="text-[13px]/[normal] box-border w-full text-[#3FE07F] font-[Inter,system-ui,sans-serif] font-semibold text-left"
+                >
+                    Golden rule
+                </div>
+                <div
+                        data-pencil-name="Body"
+                        class="text-[12px]/[19px] box-border w-full text-[#93A69C] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                >
+                    A lens always scopes to the active tab. Global filtering happens only through ⌘T or
+                    the pinned “All” tab. Switching tabs clears the lens.
+                </div>
+            </div>
+        </div>
+        <div
+                data-pencil-name="Rule Never"
+                class="box-border [flex:1_1_0] h-fit flex flex-row gap-[12px] p-[18px] justify-start items-start bg-[#331715] [border:1px_solid_#FF6E60] rounded-[12px]"
+        >
+            <svg
+                    data-pencil-name="Icon"
+                    viewBox="0 0 17 17"
+                    preserveAspectRatio="xMidYMid meet"
+                    data-icon-name="ban"
+                    data-icon-set="lucide"
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="box-border w-[17px] shrink-0 h-[17px] overflow-visible"
+            >
+                <path
+                        d="M8.127 .73q-1.412 .05-2.707 .615-1.29 .56-2.311 1.539-1.017 .976-1.631 2.25-.594 1.224-.731 2.619-.033 .236-.033 .747 0 .51 .033 .747 .137 1.395 .731 2.619 .801 1.702 2.303 2.839 1.507 1.137 3.341 1.461 .648 .12 1.378 .12 .917 0 1.739-.187 .826-.186 1.644-.577 1.531-.751 2.627-2.066 1.096-1.316 1.523-2.968 .357-1.357 .22-2.735-.137-1.378-.73-2.636-.714-1.461-1.968-2.531-1.249-1.071-2.81-1.548-1.224-.374-2.618-.308zM9.301 2.175q1.307 .17 2.42 .826 1.112 .655 1.896 1.71 1.005 1.34 1.225 3.092 .016 .203 .016 .697 0 .494-.016 .697-.22 1.735-1.225 3.092l-.136 .187-8.957-8.956 .05-.034q.68-.543 1.527-.884 .851-.34 1.685-.427l.307-.033q.117-.017 .577 0 .461 .016 .631 .033zM12.41 13.53q-.291 .241-.764 .511-1.021 .581-2.262 .768-.324 .049-.884 .049-.56 0-.901-.049-1.29-.187-2.361-.835-1.071-.647-1.855-1.685-1.005-1.34-1.225-3.092-.016-.203-.016-.697 0-.494 .016-.697 .22-1.735 1.191-3.059l.171-.22 8.956 8.956z"
+                        fill="#ff6e60"
+                />
+            </svg>
+            <div
+                    data-pencil-name="Text"
+                    class="box-border [flex:1_1_0] h-fit flex flex-col gap-[5px] justify-start items-start"
+            >
+                <div
+                        data-pencil-name="Title"
+                        class="text-[13px]/[normal] box-border w-full text-[#FF6E60] font-[Inter,system-ui,sans-serif] font-semibold text-left"
+                >
+                    Never
+                </div>
+                <div
+                        data-pencil-name="Body"
+                        class="text-[12px]/[19px] box-border w-full text-[#93A69C] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                >
+                    Filtering must not mutate the sidebar. No hidden active filters. Sort is never a
+                    separate header control. Spotlight never mixes actions and filters inside one section.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

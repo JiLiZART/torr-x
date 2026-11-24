@@ -1,0 +1,1196 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+        tailwind = { config: { corePlugins: { preflight: false } } };
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+            href="https://fonts.googleapis.com/css2?family=Inter%3Awght%40100..900&family=JetBrains+Mono%3Awght%40100..800&display=swap"
+            rel="stylesheet"
+    />
+    <style>
+        *, ::before, ::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+        }
+    </style>
+
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body style="background-color: #0E1110">
+<div
+        data-pencil-name="17 · Empty library — no torrents yet"
+        class="box-border w-[1440px] h-[960px] flex flex-row gap-0 justify-start items-start bg-[#0E1110] [border:1px_solid_#232B28] rounded-[14px] overflow-hidden"
+>
+    <div
+            data-pencil-name="Sidebar"
+            class="box-border w-[248px] shrink-0 h-full flex flex-col gap-[8px] p-[12px_10px] justify-start items-start bg-[#141817] [border-width:0px_1px_0px_0px] [border-style:solid] [border-color:#232B28]"
+    >
+        <div
+                data-pencil-name="Window Controls"
+                class="box-border w-full h-fit shrink-0 flex flex-row gap-[7px] p-[4px_2px] justify-start items-center"
+        >
+            <div
+                    data-pencil-name="Dot"
+                    class="box-border w-[11px] shrink-0 h-[11px] bg-[#FF5F57] rounded-[50%]"
+            ></div>
+            <div
+                    data-pencil-name="Dot"
+                    class="box-border w-[11px] shrink-0 h-[11px] bg-[#FEBC2E] rounded-[50%]"
+            ></div>
+            <div
+                    data-pencil-name="Dot"
+                    class="box-border w-[11px] shrink-0 h-[11px] bg-[#28C840] rounded-[50%]"
+            ></div>
+            <div
+                    data-pencil-name="Spacer"
+                    class="box-border [flex:1_1_0] h-[1px] flex flex-row gap-0 justify-start items-start bg-[#00000000]"
+            ></div>
+            <svg
+                    data-pencil-name="Collapse Sidebar"
+                    viewBox="0 0 15 15"
+                    preserveAspectRatio="xMidYMid meet"
+                    data-icon-name="panel-left-close"
+                    data-icon-set="lucide"
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="box-border w-[15px] shrink-0 h-[15px] overflow-visible"
+            >
+                <path
+                        d="M2.791 1.289q-.542 .092-.942 .469-.395 .373-.545 .926-.03 .092-.03 .766l-.014 4.05 .014 4.05q0 .674 .03 .766 .15 .523 .501 .879 .356 .351 .879 .501 .092 .03 .766 .03l4.05 .014 4.05-.014q.674 0 .766-.03 .523-.15 .875-.501 .355-.356 .505-.879 .03-.092 .03-.766l.014-4.05-.014-4.05q0-.674-.03-.766-.135-.523-.49-.875-.352-.355-.861-.505l-.15-.044h-4.636q-4.648 0-4.768 .029zM5.01 7.5v5.01h-.945q-.945 0-1.051-.03-.315-.062-.465-.358l-.044-.107v-9.03l.044-.107q.077-.15 .201-.245 .128-.099 .279-.128 .091 0 1.036-.015h.945zM12.122 2.549q.223 .106 .329 .329l.044 .107v9.03l-.044 .107q-.15 .296-.465 .358-.106 .03-2.926 .03h-2.82v-10.02l5.775 .015zM9.763 5.039q-.058 .029-.238 .205-.179 .172-.886 .861l-.103 .106q-.571 .568-.721 .732-.209 .227-.256 .319-.044 .088-.044 .209v.058q0 .121 .044 .213 .047 .088 .256 .315 .15 .164 .707 .717l.117 .121q.721 .722 .894 .879 .172 .158 .249 .187 .164 .059 .344 .022 .179-.037 .3-.158 .194-.194 .194-.45 0-.15-.04-.231-.037-.084-.216-.278-.117-.136-.601-.615l-.747-.751 .747-.751q.484-.479 .601-.615 .179-.194 .216-.275 .04-.084 .04-.234 0-.136-.044-.256-.106-.209-.315-.315-.091-.044-.241-.044-.151 0-.257 .029z"
+                        fill="#5d6d65"
+                />
+            </svg>
+        </div>
+        <div
+                data-pencil-name="Spotlight Trigger"
+                class="box-border w-full h-fit shrink-0 flex flex-row gap-[8px] p-[9px_10px] justify-start items-center bg-[#1C2321] [border:1px_solid_#232B28] rounded-[10px]"
+        >
+            <svg
+                    data-pencil-name="Search Icon"
+                    viewBox="0 0 14 14"
+                    preserveAspectRatio="xMidYMid meet"
+                    data-icon-name="search"
+                    data-icon-set="lucide"
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="box-border w-[14px] shrink-0 h-[14px] overflow-visible"
+            >
+                <path
+                        d="M6.005 1.176q-.041 .013-.235 .027-.575 .072-1.163 .291-.587 .215-1.093 .55-.393 .267-.749 .612-.355 .342-.622 .704-.646 .923-.868 2.03-.058 .28-.079 .462-.02 .181-.02 .574 0 .434 .027 .68 .027 .243 .127 .595 .194 .755 .601 1.435 .407 .677 .967 1.183 .407 .362 .817 .601 .414 .24 .92 .435 1.063 .393 2.218 .293 1.155-.099 2.15-.659 .126-.069 .335-.209 .208-.14 .294-.212l.055-.054 1.107 1.107q1.121 1.104 1.203 1.155 .086 .048 .239 .048 .154 0 .236-.034 .086-.038 .181-.133 .099-.099 .134-.181 .037-.086 .037-.24 0-.153-.051-.235-.048-.086-1.152-1.207l-1.107-1.107 .054-.069q.059-.055 .199-.253 .823-1.23 .892-2.707 .072-1.476-.639-2.765-.534-.967-1.422-1.644-.889-.68-1.955-.933-.294-.068-.54-.096-.243-.031-.605-.044-.434 0-.493 0zM6.747 2.352q.379 .013 .793 .14 .414 .126 .79 .321 .741 .393 1.288 1.08 .547 .684 .756 1.497 .071 .28 .092 .499 .02 .215 .02 .509 0 .701-.194 1.303-.394 1.162-1.34 1.91-.944 .749-2.16 .875-.199 .014-.493 .007-.294-.007-.488-.034-.534-.085-1.039-.308-.503-.225-.937-.56-.14-.127-.352-.342-.209-.219-.332-.373-.574-.769-.741-1.695-.086-.434-.065-.909 .02-.475 .119-.896 .294-1.148 1.19-1.958 .895-.814 2.057-1.025 .182-.028 .421-.041 .239-.014 .348-.014z"
+                        fill="#5d6d65"
+                />
+            </svg>
+            <div
+                    data-pencil-name="Placeholder"
+                    class="text-[12px]/[normal] box-border [flex:1_1_0] text-[#5D6D65] font-[Inter,system-ui,sans-serif] font-normal text-left"
+            >
+                Search or paste magnet
+            </div>
+            <div
+                    data-pencil-name="Shortcut"
+                    class="text-[10px]/[normal] box-border text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+            >
+                ⌘T
+            </div>
+        </div>
+        <div
+                data-pencil-name="Section PINNED"
+                class="box-border w-full h-fit shrink-0 flex flex-row gap-0 p-[10px_8px_4px_8px] justify-start items-start"
+        >
+            <div
+                    data-pencil-name="Label"
+                    class="text-[9px]/[normal] box-border text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal tracking-[1.2px] text-left [white-space:nowrap]"
+            >
+                PINNED
+            </div>
+        </div>
+        <div
+                data-pencil-name="Tab · All"
+                class="box-border w-full h-fit shrink-0 flex flex-row gap-[8px] p-[7px_9px] justify-start items-center bg-[#00000000] [border:1px_solid_#00000000] rounded-[8px]"
+        >
+            <svg
+                    data-pencil-name="Tab Icon"
+                    viewBox="0 0 14 14"
+                    preserveAspectRatio="xMidYMid meet"
+                    data-icon-name="globe"
+                    data-icon-set="lucide"
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="box-border w-[14px] shrink-0 h-[14px] overflow-visible"
+            >
+                <path
+                        d="M6.761 .588q-1.846 .099-3.329 1.094-1.009 .67-1.703 1.657-.693 .988-.974 2.164-.167 .714-.167 1.497 0 .615 .096 1.169 .099 .554 .324 1.128 .475 1.244 1.439 2.218 .968 .974 2.215 1.463 .588 .226 1.142 .332 .553 .102 1.196 .102 .755 0 1.432-.154 .68-.153 1.354-.475 1.261-.618 2.163-1.702 .903-1.083 1.251-2.434 .352-1.353 .12-2.724-.229-1.374-1.015-2.522-.81-1.19-2.051-1.924-1.237-.735-2.666-.862-.489-.041-.827-.027zM5.612 1.976q-1.09 1.623-1.398 3.527-.041 .167-.071 .441-.028 .273-.028 .342v.027q0 .072-.034 .085-.034 .014-.219 .028h-2.085l.014-.099q.085-.643 .342-1.286 .26-.646 .653-1.162 1.008-1.36 2.645-1.89l.198-.058q.014 0-.017 .045zM8.863 2.099q1.035 .379 1.846 1.192 .813 .811 1.206 1.846 .222 .602 .294 1.19l.014 .099h-2.089q-.181-.014-.215-.028-.034-.013-.034-.085v-.027q0-.069-.031-.342-.027-.274-.068-.455-.308-1.89-1.385-3.513l-.044-.045 .154 .045q.14 .041 .352 .123zM7.14 2.239q.643 .827 1.049 1.856 .407 1.029 .506 2.023l.028 .308h-3.459l.041-.294q.085-.909 .42-1.832 .339-.926 .882-1.709 .113-.168 .246-.349 .133-.184 .147-.178 .014 .007 .14 .175zM4.102 7.602q.013 .027 .013 .106 0 .075 .028 .348 .03 .274 .071 .441 .308 1.904 1.385 3.527l.044 .045-.154-.045q-1.668-.502-2.703-1.903-.393-.516-.653-1.159-.257-.646-.342-1.289l-.014-.099 2.13 .014q.181 0 .195 .014zM8.723 7.629q-.014 .058-.028 .239-.071 .756-.331 1.555-.257 .797-.65 1.484-.153 .266-.42 .646-.267 .376-.294 .376-.027 0-.294-.376-.267-.38-.42-.646-.393-.687-.653-1.484-.257-.799-.328-1.555l-.041-.294h3.459zM12.209 7.673q-.167 1.33-.988 2.444-.82 1.111-2.051 1.672-.239 .099-.526 .198-.287 .096-.273 .068l.071-.099q.421-.643 .763-1.456 .341-.813 .512-1.624 .069-.28 .117-.649 .051-.373 .051-.513v-.027q0-.072 .034-.085 .034-.014 .215-.028h2.089z"
+                        fill="#3fe07f"
+                />
+            </svg>
+            <div
+                    data-pencil-name="Label"
+                    class="text-[13px]/[normal] box-border [flex:1_1_0] text-[#93A69C] font-[Inter,system-ui,sans-serif] font-medium text-left"
+            >
+                All
+            </div>
+            <div
+                    data-pencil-name="Count"
+                    class="text-[11px]/[normal] box-border text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+            >
+                0
+            </div>
+        </div>
+        <div
+                data-pencil-name="Tab · Downloading"
+                class="box-border w-full h-fit shrink-0 flex flex-row gap-[8px] p-[7px_9px] justify-start items-center bg-[#00000000] [border:1px_solid_#00000000] rounded-[8px]"
+        >
+            <svg
+                    data-pencil-name="Tab Icon"
+                    viewBox="0 0 14 14"
+                    preserveAspectRatio="xMidYMid meet"
+                    data-icon-name="arrow-down-to-line"
+                    data-icon-set="lucide"
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="box-border w-[14px] shrink-0 h-[14px] overflow-visible"
+            >
+                <path
+                        d="M6.846 1.189q-.253 .086-.379 .308l-.041 .085v6.929l-1.289-1.285q-1.302-1.289-1.37-1.333-.113-.055-.267-.055-.154 0-.267 .055-.082 .044-.16 .136-.075 .089-.113 .188-.034 .096-.034 .222 0 .127 .054 .226 .018 .055 .366 .414 .349 .355 1.497 1.504 1.149 1.148 1.504 1.5 .359 .349 .414 .362 .099 .055 .239 .055 .14 0 .239-.041 .055-.027 .41-.376 .359-.352 1.508-1.5 1.148-1.149 1.497-1.504 .348-.359 .366-.414 .054-.099 .054-.226 0-.126-.037-.222-.035-.099-.113-.188-.075-.092-.157-.136-.113-.055-.267-.055-.154 0-.267 .055-.068 .044-1.37 1.333l-1.289 1.285v-6.929l-.041-.085q-.099-.181-.28-.267-.085-.041-.226-.047-.14-.007-.181 .006zM2.731 11.703q-.239 .086-.345 .325-.103 .236-.007 .461 .058 .096 .14 .181 .086 .082 .185 .127l.095 .027h8.402l.095-.027q.1-.045 .182-.127 .085-.085 .133-.188 .051-.106 .051-.232 0-.126-.041-.239-.099-.195-.294-.294l-.085-.041h-4.228q-4.228 0-4.283 .027z"
+                        fill="#3fe07f"
+                />
+            </svg>
+            <div
+                    data-pencil-name="Label"
+                    class="text-[13px]/[normal] box-border [flex:1_1_0] text-[#93A69C] font-[Inter,system-ui,sans-serif] font-medium text-left"
+            >
+                Downloading
+            </div>
+            <div
+                    data-pencil-name="Count"
+                    class="text-[11px]/[normal] box-border text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+            >
+                0
+            </div>
+        </div>
+        <div
+                data-pencil-name="Section SMART TABS"
+                class="box-border w-full h-fit shrink-0 flex flex-row gap-0 p-[10px_8px_4px_8px] justify-start items-start"
+        >
+            <div
+                    data-pencil-name="Label"
+                    class="text-[9px]/[normal] box-border text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal tracking-[1.2px] text-left [white-space:nowrap]"
+            >
+                SMART TABS
+            </div>
+        </div>
+        <div
+                data-pencil-name="Tab · Active"
+                class="box-border w-full h-fit shrink-0 flex flex-row gap-[8px] p-[7px_9px] justify-start items-center bg-[#00000000] [border:1px_solid_#00000000] rounded-[8px]"
+        >
+            <svg
+                    data-pencil-name="Tab Icon"
+                    viewBox="0 0 14 14"
+                    preserveAspectRatio="xMidYMid meet"
+                    data-icon-name="activity"
+                    data-icon-set="lucide"
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="box-border w-[14px] shrink-0 h-[14px] overflow-visible"
+            >
+                <path
+                        d="M5.137 .602q-.095 .013-.188 .058-.092 .041-.198 .133-.103 .089-.147 .174-.041 .082-.742 2.574-.697 2.492-.735 2.563-.034 .069-.133 .161-.096 .092-.16 .113-.062 .02-.216 .034l-1.61 .014-.085 .041q-.222 .113-.301 .338-.075 .222 .007 .434 .058 .096 .14 .181 .085 .082 .168 .12 .085 .034 .225 .034h.769q.715 0 .896-.013 .184-.014 .379-.086 .321-.113 .602-.369 .28-.26 .406-.567 .041-.113 .154-.493l.533-1.873q.335-1.22 .349-1.22 .014 0 1.405 4.98 1.394 4.977 1.435 5.072 .072 .141 .226 .26 .154 .12 .321 .147 .226 .027 .434-.075 .212-.106 .308-.304 .058-.082 .748-2.56 .694-2.478 .729-2.554 .037-.078 .119-.16 .086-.086 .185-.13l.095-.041 1.638-.027q.126 0 .194-.035 .072-.037 .154-.119 .086-.086 .127-.181 .044-.1 .044-.226 0-.126-.041-.239-.099-.195-.294-.294l-.085-.041h-.896q-.629 0-.793 0-.16 0-.27 .027-.448 .099-.813 .407-.099 .085-.219 .232-.116 .147-.174 .274-.055 .123-.154 .434-.096 .307-.475 1.651-.434 1.596-.448 1.596-.014 0-1.415-4.984-1.398-4.986-1.442-5.075-.041-.093-.134-.181-.089-.093-.174-.134-.195-.112-.448-.071z"
+                        fill="#5d6d65"
+                />
+            </svg>
+            <div
+                    data-pencil-name="Label"
+                    class="text-[13px]/[normal] box-border [flex:1_1_0] text-[#93A69C] font-[Inter,system-ui,sans-serif] font-medium text-left"
+            >
+                Active
+            </div>
+            <div
+                    data-pencil-name="Count"
+                    class="text-[11px]/[normal] box-border text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+            >
+                0
+            </div>
+        </div>
+        <div
+                data-pencil-name="Tab · Seeding"
+                class="box-border w-full h-fit shrink-0 flex flex-row gap-[8px] p-[7px_9px] justify-start items-center bg-[#00000000] [border:1px_solid_#00000000] rounded-[8px]"
+        >
+            <svg
+                    data-pencil-name="Tab Icon"
+                    viewBox="0 0 14 14"
+                    preserveAspectRatio="xMidYMid meet"
+                    data-icon-name="arrow-up-from-line"
+                    data-icon-set="lucide"
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="box-border w-[14px] shrink-0 h-[14px] overflow-visible"
+            >
+                <path
+                        d="M6.805 1.189q-.072 .028-.137 .079-.061 .048-1.852 1.849-1.791 1.798-1.842 1.883-.048 .083-.048 .236 0 .154 .034 .24 .038 .082 .133 .181 .099 .095 .181 .133 .086 .034 .24 .034 .153 0 .236-.041 .085-.044 1.387-1.329l1.289-1.289v6.86l.027 .096q.086 .212 .294 .324 .099 .041 .253 .041 .154 0 .253-.041 .208-.112 .294-.324l.027-.096v-6.86l1.289 1.289q1.302 1.285 1.384 1.329 .086 .041 .239 .041 .154 0 .236-.034 .086-.038 .181-.133 .099-.099 .134-.181 .037-.086 .037-.24 0-.153-.051-.236-.048-.085-1.87-1.91-1.818-1.829-1.897-1.863-.075-.038-.229-.051-.153-.014-.222 .013zM2.731 11.703q-.239 .086-.345 .325-.103 .236-.007 .461 .058 .096 .14 .181 .086 .082 .185 .127l.095 .027h8.402l.095-.027q.1-.045 .182-.127 .085-.085 .133-.188 .051-.106 .051-.232 0-.126-.041-.239-.099-.195-.294-.294l-.085-.041h-4.228q-4.228 0-4.283 .027z"
+                        fill="#5d6d65"
+                />
+            </svg>
+            <div
+                    data-pencil-name="Label"
+                    class="text-[13px]/[normal] box-border [flex:1_1_0] text-[#93A69C] font-[Inter,system-ui,sans-serif] font-medium text-left"
+            >
+                Seeding
+            </div>
+            <div
+                    data-pencil-name="Count"
+                    class="text-[11px]/[normal] box-border text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+            >
+                0
+            </div>
+        </div>
+        <div
+                data-pencil-name="Tab · Stalled"
+                class="box-border w-full h-fit shrink-0 flex flex-row gap-[8px] p-[7px_9px] justify-start items-center bg-[#00000000] [border:1px_solid_#00000000] rounded-[8px]"
+        >
+            <svg
+                    data-pencil-name="Tab Icon"
+                    viewBox="0 0 14 14"
+                    preserveAspectRatio="xMidYMid meet"
+                    data-icon-name="pause"
+                    data-icon-set="lucide"
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="box-border w-[14px] shrink-0 h-[14px] overflow-visible"
+            >
+                <path
+                        d="M3.22 1.203q-.281 .058-.533 .308-.124 .126-.195 .232-.069 .106-.113 .274l-.041 .126v9.714l.041 .126q.044 .168 .113 .274 .071 .106 .195 .232 .239 .236 .533 .308 .126 .027 1.155 .027 1.029 0 1.155-.027 .294-.072 .534-.308 .123-.126 .191-.232 .072-.106 .116-.274l.041-.126v-9.714l-.041-.126q-.044-.168-.116-.274-.068-.106-.191-.232-.253-.25-.547-.308-.127-.027-1.149-.027-1.022 0-1.148 .027zM8.47 1.203q-.281 .058-.533 .308-.123 .126-.195 .232-.069 .106-.113 .274l-.041 .126v9.714l.041 .126q.044 .168 .113 .274 .072 .106 .195 .232 .239 .236 .533 .308 .126 .027 1.155 .027 1.029 0 1.155-.027 .294-.072 .534-.308 .123-.126 .191-.232 .072-.106 .116-.274l.041-.126v-9.714l-.041-.126q-.044-.168-.116-.274-.068-.106-.191-.232-.253-.25-.547-.308-.127-.027-1.149-.027-1.022 0-1.148 .027zM5.25 7v4.676h-1.75v-9.352h1.75zM10.5 7v4.676h-1.75v-9.352h1.75z"
+                        fill="#5d6d65"
+                />
+            </svg>
+            <div
+                    data-pencil-name="Label"
+                    class="text-[13px]/[normal] box-border [flex:1_1_0] text-[#93A69C] font-[Inter,system-ui,sans-serif] font-medium text-left"
+            >
+                Stalled
+            </div>
+            <div
+                    data-pencil-name="Count"
+                    class="text-[11px]/[normal] box-border text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+            >
+                0
+            </div>
+        </div>
+        <div
+                data-pencil-name="Group · Media"
+                class="box-border w-full h-fit shrink-0 flex flex-col gap-[2px] justify-start items-start"
+        >
+            <div
+                    data-pencil-name="Group Header"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[6px] p-[8px_8px_4px_8px] justify-start items-center"
+            >
+                <svg
+                        data-pencil-name="Chevron"
+                        viewBox="0 0 12 12"
+                        preserveAspectRatio="xMidYMid meet"
+                        data-icon-name="chevron-down"
+                        data-icon-set="lucide"
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="box-border w-[12px] shrink-0 h-[12px] overflow-visible"
+                >
+                    <path
+                            d="M2.868 4.02q-.217 .073-.325 .263-.035 .073-.035 .217 0 .144 .041 .223 .044 .076 1.597 1.631 1.555 1.553 1.631 1.597 .079 .041 .223 .041 .144 0 .22-.041 .079-.044 1.632-1.597 1.555-1.555 1.596-1.631 .044-.079 .044-.223 0-.144-.035-.217-.085-.143-.24-.228-.05-.024-.085-.035-.035-.012-.132-.012-.097 0-.132 .012-.035 .011-.096 .035-.085 .049-1.427 1.394l-1.345 1.342-2.423-2.411q-.266-.252-.36-.325-.073-.047-.17-.047h-.024q-.12 0-.155 .012z"
+                            fill="#5d6d65"
+                    />
+                </svg>
+                <div
+                        data-pencil-name="Group Label"
+                        class="text-[9px]/[normal] box-border [flex:1_1_0] text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal tracking-[1.2px] text-left"
+                >
+                    Media
+                </div>
+                <svg
+                        data-pencil-name="Group Menu"
+                        viewBox="0 0 12 12"
+                        preserveAspectRatio="xMidYMid meet"
+                        data-icon-name="ellipsis"
+                        data-icon-set="lucide"
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="box-border w-[12px] shrink-0 h-[12px] overflow-visible"
+                >
+                    <path
+                            d="M2.376 5.016q-.229 .011-.431 .155-.29 .193-.392 .513-.1 .316 .006 .635 .108 .317 .398 .522 .226 .155 .539 .155 .217 0 .378-.064 .161-.068 .322-.229 .164-.164 .229-.325 .067-.161 .067-.378 0-.217-.067-.378-.065-.161-.22-.319-.132-.132-.252-.191-.264-.132-.577-.096zM5.892 5.016q-.179 .011-.323 .085-.205 .096-.342 .269-.138 .173-.2 .378-.023 .097-.023 .252 0 .155 .023 .252 .074 .264 .264 .457 .193 .19 .457 .264 .097 .023 .252 .023 .155 0 .252-.023 .264-.074 .454-.264 .193-.193 .267-.457 .023-.097 .023-.252 0-.155-.023-.252-.062-.205-.2-.378-.137-.173-.342-.269-.226-.121-.539-.085zM9.384 5.016q-.337 .023-.601 .287-.143 .158-.211 .319-.064 .161-.064 .378 0 .217 .064 .384 .068 .167 .229 .325 .164 .155 .325 .223 .161 .064 .378 .064 .313 0 .539-.155 .29-.205 .396-.522 .108-.319 .005-.635-.099-.32-.395-.516-.293-.199-.665-.152z"
+                            fill="#5d6d65"
+                    />
+                </svg>
+            </div>
+            <div
+                    data-pencil-name="Group Items"
+                    class="box-border w-full h-fit shrink-0 flex flex-col gap-[2px] p-[0px_0px_0px_10px] justify-start items-start [border-width:0px_0px_0px_1px] [border-style:solid] [border-color:#232B28]"
+            >
+                <div
+                        data-pencil-name="Tab · 4K Movies"
+                        class="box-border w-full h-fit shrink-0 flex flex-row gap-[8px] p-[7px_9px] justify-start items-center bg-[#00000000] [border:1px_solid_#00000000] rounded-[8px]"
+                >
+                    <svg
+                            data-pencil-name="Tab Icon"
+                            viewBox="0 0 14 14"
+                            preserveAspectRatio="xMidYMid meet"
+                            data-icon-name="clapperboard"
+                            data-icon-set="lucide"
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="box-border w-[14px] shrink-0 h-[14px] overflow-visible"
+                    >
+                        <path
+                                d="M9.953 .615q-.113 .014-.294 .058l-1.203 .363q-1.23 .365-1.302 .372-.069 .007-.181 .055-.113 .048-2.656 .8-2.54 .748-2.635 .789-.226 .086-.438 .26-.208 .174-.348 .369-.195 .294-.267 .632-.027 .141-.027 .387 0 .242 .034 .369 .037 .126 .273 .783l.253 .646 .014 4.898 .041 .126q.154 .475 .475 .8 .325 .321 .813 .461 .086 .028 .715 .028l3.78 .013 3.78-.013q.629 0 .715-.028 .981-.266 1.288-1.261l.041-.126v-4.676q0-.434-.027-.489-.027-.127-.127-.222-.099-.099-.239-.144-.041-.013-.56-.027l-5.978-.014 1.568-.461q1.556-.448 1.645-.462 .092-.013 .198-.054 .106-.045 1.384-.414 1.282-.372 1.367-.413 .14-.072 .222-.212 .086-.141 .086-.294 0-.082-.045-.236-.041-.157-.194-.674l-.253-.799q-.055-.154-.11-.264-.099-.211-.294-.406-.28-.294-.68-.434-.4-.14-.834-.086zM10.459 1.818q.181 .099 .25 .24 .044 .071 .191 .553 .147 .482 .14 .489-.007 .007-.889 .267-.881 .259-.899 .259-.013 0-.461-.587l-.502-.646q-.058-.069-.045-.076 .017-.006 .926-.273 .67-.209 .804-.243 .133-.037 .246-.024 .154 0 .239 .041zM7.533 3.319q.489 .642 .496 .649 .007 .007-1.176 .359-1.183 .349-1.203 .349-.021 0-.52-.622-.495-.622-.502-.643-.007-.024 1.162-.372 1.169-.352 1.203-.359 .034-.007 .54 .639zM3.92 4.409q.489 .615 .482 .626-.006 .006-1.148 .335-1.142 .328-1.155 .328l-.322-.855v-.167q0-.113 .007-.154 .007-.041 .034-.099 .099-.181 .226-.25 .085-.044 .714-.232 .629-.188 .643-.174zM11.662 9.099v2.115l-.041 .099q-.14 .277-.434 .335-.099 .028-4.187 .028-4.088 0-4.187-.028-.294-.058-.434-.335l-.041-.099-.014-4.214h9.352z"
+                                fill="#5d6d65"
+                        />
+                    </svg>
+                    <div
+                            data-pencil-name="Label"
+                            class="text-[13px]/[normal] box-border [flex:1_1_0] text-[#93A69C] font-[Inter,system-ui,sans-serif] font-medium text-left"
+                    >
+                        4K Movies
+                    </div>
+                    <div
+                            data-pencil-name="Count"
+                            class="text-[11px]/[normal] box-border text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+                    >
+                        0
+                    </div>
+                </div>
+                <div
+                        data-pencil-name="Tab · Shows"
+                        class="box-border w-full h-fit shrink-0 flex flex-row gap-[8px] p-[7px_9px] justify-start items-center bg-[#00000000] [border:1px_solid_#00000000] rounded-[8px]"
+                >
+                    <svg
+                            data-pencil-name="Tab Icon"
+                            viewBox="0 0 14 14"
+                            preserveAspectRatio="xMidYMid meet"
+                            data-icon-name="tv"
+                            data-icon-set="lucide"
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="box-border w-[14px] shrink-0 h-[14px] overflow-visible"
+                    >
+                        <path
+                                d="M3.975 .602q-.181 .027-.308 .167-.126 .14-.153 .332-.028 .188 .054 .355 .045 .055 1.039 1.049l.978 .995h-1.665q-1.681 0-1.821 .014-.544 .085-.951 .465-.406 .375-.533 .922-.013 .11-.027 .643v6.371l.041 .168q.072 .252 .181 .44 .113 .188 .294 .373 .185 .181 .373 .294 .188 .109 .44 .181l.168 .041h9.83l.168-.041q.253-.072 .44-.181 .188-.113 .37-.294 .184-.185 .294-.373 .112-.188 .184-.44l.041-.168v-6.371q-.014-.533-.027-.643-.127-.547-.533-.922-.407-.38-.951-.465-.14-.014-1.821-.014h-1.665l.978-.981q.981-.995 1.022-1.049 .071-.099 .085-.246 .014-.147-.041-.257-.058-.154-.198-.266-.14-.113-.349-.113h-.027q-.113 0-.198 .041-.096 .072-.349 .307l-2.338 2.325-1.302-1.303q-.841-.823-1.087-1.059-.243-.239-.298-.27-.153-.055-.338-.027zM11.871 4.703q.212 .086 .324 .294l.041 .099v6.706l-.027 .086q-.126 .263-.379 .335-.082 .027-4.83 .027-4.748 0-4.83-.027-.253-.072-.379-.335l-.027-.086v-6.706l.041-.099q.044-.082 .133-.164 .092-.085 .167-.113 .079-.031 .708-.044h4.187 4.187q.615 0 .684 .027z"
+                                fill="#5d6d65"
+                        />
+                    </svg>
+                    <div
+                            data-pencil-name="Label"
+                            class="text-[13px]/[normal] box-border [flex:1_1_0] text-[#93A69C] font-[Inter,system-ui,sans-serif] font-medium text-left"
+                    >
+                        Shows
+                    </div>
+                    <div
+                            data-pencil-name="Count"
+                            class="text-[11px]/[normal] box-border text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+                    >
+                        0
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div
+                data-pencil-name="Section AD-HOC"
+                class="box-border w-full h-fit shrink-0 flex flex-row gap-0 p-[10px_8px_4px_8px] justify-start items-start"
+        >
+            <div
+                    data-pencil-name="Label"
+                    class="text-[9px]/[normal] box-border text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal tracking-[1.2px] text-left [white-space:nowrap]"
+            >
+                AD-HOC
+            </div>
+        </div>
+        <div
+                data-pencil-name="Tab · tracker:xyz · today"
+                class="box-border w-full h-fit shrink-0 flex flex-row gap-[8px] p-[7px_9px] justify-start items-center bg-[#00000000] [border:1px_solid_#00000000] rounded-[8px]"
+        >
+            <svg
+                    data-pencil-name="Tab Icon"
+                    viewBox="0 0 14 14"
+                    preserveAspectRatio="xMidYMid meet"
+                    data-icon-name="circle-dashed"
+                    data-icon-set="lucide"
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="box-border w-[14px] shrink-0 h-[14px] overflow-visible"
+            >
+                <path
+                        d="M6.665 .602q-.338 .013-.639 .058-.301 .041-.397 .095-.17 .086-.263 .26-.089 .174-.048 .356 .058 .294 .325 .42 .082 .058 .195 .058 .113 0 .328-.027 .219-.031 .427-.058 .588-.041 1.262 .054 .194 .031 .307 .031 .113 0 .195-.058 .325-.154 .325-.516 .013-.168-.072-.308-.086-.14-.226-.208-.136-.072-.615-.13-.096-.014-.448-.034-.348-.021-.376-.021zM3.568 1.61q-.194 .072-.649 .451-.455 .376-.776 .752-.126 .14-.287 .366-.161 .222-.205 .3-.041 .076-.055 .188-.013 .113 .014 .212 .041 .182 .202 .308 .164 .126 .345 .126 .307 0 .516-.28 .338-.465 .615-.748 .28-.287 .745-.612 .154-.11 .222-.229 .072-.12 .072-.287 0-.294-.246-.469-.246-.177-.513-.078zM10.08 1.624q-.195 .071-.281 .225-.068 .082-.082 .147-.013 .062-.013 .161 0 .307 .235 .488l.226 .168q.629 .461 1.131 1.176 .1 .14 .168 .205 .072 .061 .171 .089 .335 .126 .615-.123 .127-.127 .161-.315 .034-.191-.048-.359-.045-.071-.212-.3-.168-.233-.294-.373-.448-.516-1.022-.95-.222-.168-.314-.209-.089-.044-.229-.051-.141-.007-.212 .021zM1.176 5.318q-.127 .031-.246 .117-.117 .082-.175 .181-.082 .181-.14 .721-.054 .537-.027 .984 .041 .575 .113 .896 .082 .352 .434 .448 .181 .058 .376-.031 .198-.092 .28-.277 .058-.109 .058-.209 0-.099-.031-.294-.123-.854 0-1.708 .031-.195 .031-.294 0-.1-.058-.195-.068-.181-.253-.274-.181-.092-.362-.065zM12.629 5.318q-.311 .058-.434 .339-.044 .095-.044 .195 0 .099 .027 .317 .031 .216 .058 .424 .041 .588-.054 1.261-.031 .195-.031 .294 0 .1 .058 .209 .082 .185 .277 .277 .198 .089 .379 .031 .352-.096 .434-.448 .072-.321 .113-.896 .028-.447-.031-.984-.054-.54-.14-.708-.082-.171-.263-.253-.181-.085-.349-.058zM2.003 9.687q-.099 .044-.212 .129-.109 .082-.14 .151-.14 .28-.014 .547 .045 .085 .226 .321 .56 .742 1.302 1.302 .236 .181 .318 .226 .085 .041 .246 .041 .164 0 .246-.055 .14-.072 .229-.198 .092-.127 .092-.28 .017-.195-.061-.315-.075-.119-.328-.314-.38-.294-.653-.575-.274-.28-.581-.7-.082-.11-.147-.164-.062-.058-.147-.086-.082-.03-.202-.037-.119-.007-.174 .007zM11.676 9.717q-.127 .028-.212 .106-.082 .075-.181 .216-.489 .67-1.118 1.148-.253 .181-.325 .246-.068 .062-.109 .144-.072 .171-.044 .352 .03 .181 .153 .314 .127 .133 .308 .168 .185 .034 .352-.048 .085-.028 .315-.202 .232-.178 .372-.304 .516-.448 .95-1.022 .181-.236 .222-.318 .045-.085 .045-.246 0-.164-.041-.246-.099-.185-.28-.267-.086-.054-.226-.054-.14 0-.181 .013zM5.739 12.165q-.11 .03-.216 .116-.105 .082-.147 .178-.14 .252-.013 .512 .126 .26 .42 .332 .294 .068 .742 .095 .448 .028 .796 .014 .575-.041 .896-.113 .212-.054 .345-.208 .133-.154 .12-.366 0-.362-.325-.516-.082-.058-.215-.058-.134 0-.414 .044-.167 .028-.294 .035-.126 .006-.448 .006-.461 0-.714-.041-.434-.071-.533-.03z"
+                        fill="#5d6d65"
+                />
+            </svg>
+            <div
+                    data-pencil-name="Label"
+                    class="text-[13px]/[normal] box-border [flex:1_1_0] text-[#93A69C] font-[Inter,system-ui,sans-serif] font-medium text-left"
+            >
+                tracker:xyz · today
+            </div>
+            <div
+                    data-pencil-name="Count"
+                    class="text-[11px]/[normal] box-border text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+            >
+                0
+            </div>
+        </div>
+        <div
+                data-pencil-name="Flex Spacer"
+                class="box-border w-full [flex:1_1_0] flex flex-row gap-0 justify-start items-start bg-[#00000000]"
+        ></div>
+        <div
+                data-pencil-name="Sidebar Footer"
+                class="box-border w-full h-fit shrink-0 flex flex-col gap-[6px] justify-start items-start"
+        >
+            <div
+                    data-pencil-name="Btn New tab"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[7px] p-[8px_9px] justify-start items-center bg-[#00000000] [border:1px_dashed_#232B28] rounded-[9px]"
+            >
+                <svg
+                        data-pencil-name="Icon"
+                        viewBox="0 0 13 13"
+                        preserveAspectRatio="xMidYMid meet"
+                        data-icon-name="plus"
+                        data-icon-set="lucide"
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="box-border w-[13px] shrink-0 h-[13px] overflow-visible"
+                >
+                    <path
+                            d="M6.408 2.184q-.089 .012-.162 .047-.07 .032-.143 .118-.07 .082-.104 .155-.032 .07-.032 .305v3.158h-3.406l-.079 .038q-.206 .105-.279 .314-.07 .206 .006 .403 .054 .089 .13 .168 .079 .077 .156 .111 .079 .032 .314 .032h3.158v3.158q0 .235 .032 .314 .034 .077 .111 .156 .079 .076 .174 .124 .099 .044 .216 .044 .117 0 .213-.044 .098-.048 .174-.124 .08-.079 .111-.156 .035-.079 .035-.314v-3.158h3.158q.235 0 .311-.032 .08-.034 .156-.111 .079-.079 .124-.174 .047-.099 .047-.216 0-.117-.038-.222-.092-.181-.273-.273l-.079-.038h-3.406v-3.145q0-.248-.025-.299-.067-.184-.235-.279-.168-.099-.365-.06z"
+                            fill="#5d6d65"
+                    />
+                </svg>
+                <div
+                        data-pencil-name="Label"
+                        class="text-[12px]/[normal] box-border [flex:1_1_0] text-[#93A69C] font-[Inter,system-ui,sans-serif] font-medium text-left"
+                >
+                    New tab
+                </div>
+                <div
+                        data-pencil-name="Key"
+                        class="text-[10px]/[normal] box-border text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+                >
+                    ⌘T
+                </div>
+            </div>
+            <div
+                    data-pencil-name="Btn Save current lens as tab"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[7px] p-[8px_9px] justify-start items-center bg-[#15321F] [border:1px_solid_#2A5E3C] rounded-[9px]"
+            >
+                <svg
+                        data-pencil-name="Icon"
+                        viewBox="0 0 13 13"
+                        preserveAspectRatio="xMidYMid meet"
+                        data-icon-name="bookmark-plus"
+                        data-icon-set="lucide"
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="box-border w-[13px] shrink-0 h-[13px] overflow-visible"
+                >
+                    <path
+                            d="M3.459 1.117q-.52 .118-.866 .502-.343 .384-.409 .917-.026 .143-.026 4.231 0 4.088 .026 4.205 .038 .34 .26 .587 .222 .244 .546 .324 .168 .038 .368 .019 .203-.019 .359-.099 .092-.038 1.294-.726 1.203-.689 1.28-.727 .079-.041 .203-.041 .123 0 .193 .035 .073 .031 1.289 .726 1.215 .695 1.307 .733 .207 .105 .467 .105 .403 0 .708-.266 .304-.267 .358-.657 .026-.13 .026-4.218 0-4.088-.026-4.231-.066-.533-.418-.924-.35-.39-.87-.495-.102-.025-.533-.025h-2.508-2.482q-.444 .012-.546 .025zM9.296 2.184q.286 .038 .403 .298l.038 .092 .013 4.12q0 4.135-.025 4.122l-1.248-.714q-1.237-.704-1.364-.755-.302-.13-.664-.117-.209 .012-.339 .047-.13 .032-.273 .099-.143 .063-1.34 .752l-1.222 .688q-.012 .013-.025-.755l.013-7.487 .038-.092q.054-.118 .155-.2 .105-.086 .216-.105 .111-.019 2.815-.019 2.704 0 2.809 .026zM6.37 3.263q-.118 .025-.222 .123-.102 .099-.156 .216-.012 .064-.019 .162-.006 .099-.006 .514v.597l-1.235 .013-.092 .038q-.247 .117-.292 .39-.044 .273 .137 .47 .079 .076 .168 .13l.105 .038 1.209 .013v.584q0 .377 0 .495 .013 .155 .038 .222 .028 .064 .105 .143 .168 .168 .39 .168 .222 0 .39-.168 .077-.079 .102-.143 .029-.067 .041-.222 0-.118 0-.495v-.584l1.209-.013 .105-.038q.194-.105 .27-.298 .079-.197 .006-.391-.069-.196-.263-.301l-.092-.038-1.235-.013v-.597q0-.415-.006-.514-.006-.098-.019-.162-.08-.184-.264-.279-.18-.098-.374-.06z"
+                            fill="#3fe07f"
+                    />
+                </svg>
+                <div
+                        data-pencil-name="Label"
+                        class="text-[12px]/[normal] box-border [flex:1_1_0] text-[#3FE07F] font-[Inter,system-ui,sans-serif] font-medium text-left"
+                >
+                    Save current lens as tab
+                </div>
+                <div
+                        data-pencil-name="Key"
+                        class="text-[10px]/[normal] box-border text-[#2A5E3C] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+                >
+                    ⌘S
+                </div>
+            </div>
+        </div>
+        <div
+                data-pencil-name="Transfer Stats"
+                class="box-border w-full h-fit shrink-0 flex flex-row gap-[10px] p-[10px_8px_2px_8px] justify-start items-center"
+        >
+            <div
+                    data-pencil-name="Stat"
+                    class="box-border [flex:1_1_0] h-fit flex flex-row gap-[4px] justify-start items-center"
+            >
+                <svg
+                        data-pencil-name="Icon"
+                        viewBox="0 0 11 11"
+                        preserveAspectRatio="xMidYMid meet"
+                        data-icon-name="arrow-down"
+                        data-icon-set="lucide"
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="box-border w-[11px] shrink-0 h-[11px] overflow-visible"
+                >
+                    <path
+                            d="M5.422 1.848q-.075 .01-.137 .04-.059 .027-.121 .099-.059 .07-.088 .132-.027 .059-.027 .411v2.366q0 2.693-.011 2.693-.011 0-1.254-1.243-.902-.9-1.085-1.077-.18-.177-.247-.199-.164-.053-.336 .014-.169 .064-.247 .228-.032 .089-.032 .188v.032q0 .089 .043 .156 .078 .11 .365 .406l1.319 1.321q1.651 1.659 1.716 1.692 .099 .056 .22 .056 .121 0 .22-.056 .065-.033 1.716-1.692l1.319-1.321q.287-.296 .365-.406 .043-.067 .043-.156v-.032q0-.099-.032-.188-.078-.164-.25-.228-.169-.067-.333-.014-.067 .022-.25 .199-.18 .177-1.082 1.077-1.243 1.243-1.254 1.243-.011 0-.011-2.693v-2.334q0-.384-.021-.427-.057-.156-.199-.236-.142-.084-.309-.051z"
+                            fill="#3fe07f"
+                    />
+                </svg>
+                <div
+                        data-pencil-name="Value"
+                        class="text-[10px]/[normal] box-border text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+                >
+                    0 B/s
+                </div>
+            </div>
+            <div
+                    data-pencil-name="Stat"
+                    class="box-border [flex:1_1_0] h-fit flex flex-row gap-[4px] justify-start items-center"
+            >
+                <svg
+                        data-pencil-name="Icon"
+                        viewBox="0 0 11 11"
+                        preserveAspectRatio="xMidYMid meet"
+                        data-icon-name="arrow-up"
+                        data-icon-set="lucide"
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="box-border w-[11px] shrink-0 h-[11px] overflow-visible"
+                >
+                    <path
+                            d="M5.379 1.848q-.067 .01-.123 .051-.054 .037-1.703 1.686l-1.308 1.332q-.287 .285-.365 .395-.043 .067-.043 .156v.032q0 .188 .142 .33 .089 .089 .22 .116 .132 .027 .253-.016 .067-.022 .252-.204 .188-.183 1.08-1.072 1.243-1.243 1.254-1.243 .011 0 .011 2.693v2.366q0 .352 .027 .419 .029 .065 .094 .132 .067 .064 .147 .105 .084 .037 .183 .037 .099 0 .18-.037 .083-.041 .148-.105 .067-.067 .094-.132 .029-.067 .029-.419v-2.366q0-2.693 .011-2.693 .011 0 1.254 1.243 .892 .889 1.077 1.072 .188 .182 .255 .204 .121 .043 .253 .016 .131-.027 .22-.116 .142-.142 .142-.33v-.032q0-.089-.043-.156-.078-.11-.365-.406l-1.319-1.321q-1.651-1.659-1.705-1.686-.054-.03-.126-.051-.073-.022-.11-.022-.038 0-.116 .022z"
+                            fill="#45c8d8"
+                    />
+                </svg>
+                <div
+                        data-pencil-name="Value"
+                        class="text-[10px]/[normal] box-border text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+                >
+                    0 B/s
+                </div>
+            </div>
+        </div>
+    </div>
+    <div
+            data-pencil-name="Main"
+            class="box-border [flex:1_1_0] h-full flex flex-col gap-0 justify-start items-start"
+    >
+        <div
+                data-pencil-name="Top Bar"
+                class="box-border w-full h-[54px] shrink-0 flex flex-row gap-[10px] p-[0px_14px] justify-start items-center [border-width:0px_0px_1px_0px] [border-style:solid] [border-color:#232B28]"
+        >
+            <div
+                    data-pencil-name="Nav"
+                    class="box-border w-fit shrink-0 h-fit flex flex-row gap-[2px] justify-start items-center"
+            >
+                <div
+                        data-pencil-name="Nav chevron-left"
+                        class="box-border w-fit shrink-0 h-fit flex flex-row gap-0 p-[6px] justify-center items-center rounded-[7px]"
+                >
+                    <svg
+                            data-pencil-name="Icon"
+                            viewBox="0 0 16 16"
+                            preserveAspectRatio="xMidYMid meet"
+                            data-icon-name="chevron-left"
+                            data-icon-set="lucide"
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="box-border w-[16px] shrink-0 h-[16px] overflow-visible"
+                    >
+                        <path
+                                d="M9.824 3.359q-.097 .032-.222 .129-.161 .145-.61 .59l-1.472 1.457q-2.079 2.082-2.129 2.18-.047 .094-.047 .285 0 .191 .054 .297 .059 .101 2.129 2.176 2.075 2.07 2.176 2.129 .106 .054 .281 .054 .176 0 .27-.039 .098-.043 .207-.152 .113-.113 .152-.207 .043-.098 .043-.274 0-.175-.05-.269-.047-.098-1.852-1.906l-1.809-1.809 1.809-1.809q1.805-1.808 1.852-1.902 .05-.098 .05-.273 0-.176-.043-.27-.039-.098-.132-.211-.192-.176-.45-.191-.16 0-.207 .015z"
+                                fill="#93a69c"
+                        />
+                    </svg>
+                </div>
+                <div
+                        data-pencil-name="Nav chevron-right"
+                        class="box-border w-fit shrink-0 h-fit flex flex-row gap-0 p-[6px] justify-center items-center rounded-[7px]"
+                >
+                    <svg
+                            data-pencil-name="Icon"
+                            viewBox="0 0 16 16"
+                            preserveAspectRatio="xMidYMid meet"
+                            data-icon-name="chevron-right"
+                            data-icon-set="lucide"
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="box-border w-[16px] shrink-0 h-[16px] overflow-visible"
+                    >
+                        <path
+                                d="M5.824 3.359q-.289 .098-.433 .352-.047 .098-.047 .289 0 .191 .047 .289 .05 .094 1.855 1.902l1.809 1.809-1.809 1.809q-1.805 1.808-1.855 1.906-.047 .094-.047 .269 0 .176 .039 .274 .043 .094 .152 .207 .113 .109 .207 .152 .098 .039 .274 .039 .175 0 .277-.054 .105-.059 2.176-2.129 2.074-2.075 2.129-2.176 .058-.106 .058-.297 0-.191-.05-.285-.047-.098-2.125-2.18l-1.649-1.633q-.383-.382-.527-.476-.114-.082-.227-.082h-.047q-.16 0-.207 .015z"
+                                fill="#5d6d65"
+                        />
+                    </svg>
+                </div>
+            </div>
+            <div
+                    data-pencil-name="Divider"
+                    class="box-border w-[1px] shrink-0 h-[18px] bg-[#232B28]"
+            ></div>
+            <div
+                    data-pencil-name="Tab Title"
+                    class="text-[15px]/[normal] box-border text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-semibold text-left [white-space:nowrap]"
+            >
+                All
+            </div>
+            <div
+                    data-pencil-name="Scope Hint"
+                    class="text-[10px]/[normal] box-border text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+            >
+                no lens · nothing to filter yet
+            </div>
+            <div
+                    data-pencil-name="Spacer"
+                    class="box-border [flex:1_1_0] h-[1px] flex flex-row gap-0 justify-start items-start bg-[#00000000]"
+            ></div>
+            <div
+                    data-pencil-name="Window Actions"
+                    class="box-border w-fit shrink-0 h-fit flex flex-row gap-[4px] justify-start items-center"
+            >
+                <div
+                        data-pencil-name="Action rows-3"
+                        class="box-border w-fit shrink-0 h-fit flex flex-row gap-0 p-[7px] justify-start items-start bg-[#00000000] [border:1px_solid_#00000000] rounded-[8px]"
+                >
+                    <svg
+                            data-pencil-name="Icon"
+                            viewBox="0 0 16 16"
+                            preserveAspectRatio="xMidYMid meet"
+                            data-icon-name="rows-3"
+                            data-icon-set="lucide"
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="box-border w-[16px] shrink-0 h-[16px] overflow-visible"
+                    >
+                        <path
+                                d="M2.977 1.375q-.579 .098-1.004 .5-.422 .398-.582 .988-.032 .098-.032 .817l-.015 4.32 .015 4.32q0 .719 .032 .817 .16 .558 .535 .937 .379 .375 .937 .535 .098 .032 .817 .032l4.32 .015 4.32-.015q.719 0 .817-.032 .558-.16 .933-.535 .379-.379 .539-.937 .032-.098 .032-.817l.015-4.32-.015-4.32q0-.719-.032-.817-.144-.558-.523-.933-.375-.379-.918-.539l-.16-.047h-4.945q-4.958 0-5.086 .031zM12.93 2.719q.238 .113 .351 .351l.047 .114 .016 2.16h-10.688l.016-2.16 .047-.114q.082-.16 .215-.261 .136-.106 .296-.137 .098 0 4.833 0h4.753zM13.344 8v1.344h-10.688v-2.688h10.688zM13.344 11.727l-.016 1.089-.047 .114q-.16 .316-.496 .383-.113 .031-4.785 .031-4.672 0-4.785-.031-.336-.067-.496-.383l-.047-.114-.016-2.16h10.688z"
+                                fill="#93a69c"
+                        />
+                    </svg>
+                </div>
+                <div
+                        data-pencil-name="Action square-terminal"
+                        class="box-border w-fit shrink-0 h-fit flex flex-row gap-0 p-[7px] justify-start items-start bg-[#15321F] [border:1px_solid_#2A5E3C] rounded-[8px]"
+                >
+                    <svg
+                            data-pencil-name="Icon"
+                            viewBox="0 0 16 16"
+                            preserveAspectRatio="xMidYMid meet"
+                            data-icon-name="square-terminal"
+                            data-icon-set="lucide"
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="box-border w-[16px] shrink-0 h-[16px] overflow-visible"
+                    >
+                        <path
+                                d="M2.977 1.375q-.579 .098-1.004 .5-.422 .398-.582 .988-.032 .098-.032 .817l-.015 4.32 .015 4.32q0 .719 .032 .817 .16 .558 .535 .937 .379 .375 .937 .535 .098 .032 .817 .032l4.32 .015 4.32-.015q.719 0 .817-.032 .558-.16 .933-.535 .379-.379 .539-.937 .032-.098 .032-.817l.015-4.32-.015-4.32q0-.719-.032-.817-.144-.558-.523-.933-.375-.379-.918-.539l-.16-.047h-4.945q-4.958 0-5.086 .031zM12.93 2.719q.238 .113 .351 .351l.047 .114v9.632l-.047 .114q-.16 .316-.496 .383-.113 .031-4.785 .031-4.672 0-4.785-.031-.336-.067-.496-.383l-.047-.114v-9.632l.047-.114q.082-.16 .215-.261 .136-.106 .296-.137 .098 0 4.833 0h4.753zM4.512 4.016q-.223 .062-.375 .265-.153 .199-.137 .422 .016 .176 .102 .313 .089 .136 .472 .519l.465 .465-.445 .465q-.305 .289-.403 .402-.093 .11-.128 .188-.125 .273-.016 .531 .113 .254 .367 .367 .258 .11 .531-.016 .078-.035 .231-.175 .152-.145 .633-.625l.046-.047q.45-.449 .559-.578 .16-.176 .199-.254 .043-.082 .043-.242v-.032q0-.16-.043-.238-.039-.082-.199-.258-.109-.129-.559-.578l-.046-.047q-.465-.48-.625-.621-.161-.144-.243-.176-.078-.035-.207-.05-.125-.016-.222 0zM7.168 8.016q-.16 .047-.305 .191-.191 .176-.199 .426-.008 .246 .145 .449 .152 .199 .422 .246 .113 .016 1.503 0h1.411l.128-.047q.239-.129 .333-.367 .097-.242 .007-.48-.086-.243-.324-.371l-.113-.047-1.473-.016q-1.457 0-1.535 .016z"
+                                fill="#3fe07f"
+                        />
+                    </svg>
+                </div>
+                <div
+                        data-pencil-name="Action settings"
+                        class="box-border w-fit shrink-0 h-fit flex flex-row gap-0 p-[7px] justify-start items-start bg-[#00000000] [border:1px_solid_#00000000] rounded-[8px]"
+                >
+                    <svg
+                            data-pencil-name="Icon"
+                            viewBox="0 0 16 16"
+                            preserveAspectRatio="xMidYMid meet"
+                            data-icon-name="settings"
+                            data-icon-set="lucide"
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="box-border w-[16px] shrink-0 h-[16px] overflow-visible"
+                    >
+                        <path
+                                d="M7.777 .687q-.035 .016-.175 .032-.371 .066-.731 .273-.359 .207-.582 .496-.226 .274-.332 .532-.102 .253-.18 .652-.035 .207-.082 .328-.047 .121-.152 .227-.102 .101-.238 .175-.137 .071-.282 .102-.222 .031-.558-.098-.227-.094-.387-.125-.156-.035-.414-.035-.32-.016-.512 .035-.625 .125-1.074 .551-.445 .426-.621 1.012-.176 .582-.016 1.187 .192 .703 .832 1.215 .207 .18 .301 .348 .098 .168 .098 .406 0 .238-.098 .406-.094 .168-.301 .348-.464 .367-.671 .797-.243 .48-.243 1 0 .519 .243 1 .222 .433 .605 .738 .387 .305 .848 .414 .687 .176 1.441-.129 .289-.109 .543-.07 .258 .039 .473 .242 .215 .199 .265 .567 .063 .429 .239 .785 .257 .527 .769 .855 .512 .328 1.102 .36 .707 .031 1.304-.344 .602-.375 .872-1.031 .097-.258 .144-.586 .051-.329 .191-.504 .145-.176 .336-.274 .356-.16 .786 0 .257 .114 .449 .156 .191 .04 .429 .04 .372 0 .708-.114 .496-.16 .863-.527 .527-.512 .637-1.215 .113-.707-.208-1.363-.207-.43-.656-.781-.222-.176-.32-.352-.094-.18-.094-.418 0-.238 .094-.406 .098-.168 .305-.348 .351-.269 .546-.59 .336-.496 .368-1.078 .031-.586-.235-1.113-.261-.528-.75-.856-.488-.328-1.047-.363-.289-.031-.546 .012-.254 .039-.559 .168-.238 .094-.406 .094-.168 0-.364-.094-.191-.098-.336-.274-.14-.175-.191-.504-.047-.328-.144-.586-.207-.496-.633-.855-.422-.359-.965-.473-.098-.031-.363-.047-.262-.015-.325 0zM8.352 2.098q.175 .078 .304 .207 .129 .129 .176 .289 .031 .078 .063 .301 .128 .769 .64 1.281 .418 .433 1.008 .594 .145 .046 .23 .054 .09 .008 .333 .008 .285 0 .453-.031 .168-.031 .441-.145 .238-.097 .422-.097 .187 0 .394 .113 .094 .047 .215 .16 .121 .113 .168 .207 .098 .191 .098 .41 0 .215-.098 .406-.047 .114-.113 .188-.063 .07-.207 .18-.879 .707-.879 1.777 0 1.07 .879 1.777 .176 .145 .262 .266 .09 .117 .125 .277 .078 .352-.067 .641-.047 .094-.168 .215-.121 .121-.215 .168-.222 .097-.402 .097-.176 0-.441-.105-.262-.106-.461-.145-.199-.039-.473-.023-.48 .016-.863 .191-.528 .258-.856 .7-.328 .437-.425 1.031-.032 .238-.063 .316-.047 .16-.176 .289-.129 .129-.289 .207-.094 .051-.152 .059-.055 .008-.215 .008-.16 0-.219-.008-.054-.008-.133-.059-.351-.16-.48-.476-.031-.082-.063-.274-.066-.418-.195-.687-.207-.465-.59-.785-.382-.321-.863-.45-.144-.046-.234-.054-.086-.008-.328-.008-.286 0-.454 .031-.168 .031-.441 .145-.238 .097-.426 .097-.183 0-.39-.097-.094-.047-.215-.168-.121-.121-.168-.215-.145-.289-.067-.641 .036-.16 .121-.277 .09-.121 .266-.266 .688-.547 .848-1.379 .031-.14 .031-.398 0-.258-.031-.398-.16-.817-.832-1.379-.16-.11-.227-.18-.062-.074-.109-.188-.129-.269-.082-.543 .051-.273 .242-.48 .191-.207 .48-.258 .145-.015 .27 .004 .129 .016 .32 .094 .258 .098 .465 .137 .207 .039 .477 .023 .273-.016 .465-.055 .195-.043 .433-.168 .352-.175 .625-.449 .481-.496 .609-1.25 .032-.238 .063-.336 .047-.125 .168-.262 .121-.136 .238-.191 .121-.059 .207-.082 .09-.023 .235-.016 .144 .008 .199 .016 .058 .008 .152 .059zM7.586 5.375q-1.027 .176-1.648 .945-.211 .254-.333 .512-.117 .258-.214 .594-.032 .125-.039 .222-.008 .094-.008 .352 0 .32 .031 .496 .031 .176 .129 .434 .191 .543 .605 .961 .418 .414 .961 .605 .258 .098 .434 .129 .176 .031 .496 .031 .32 0 .496-.031 .176-.031 .434-.129 .543-.191 .957-.605 .418-.418 .609-.961 .098-.258 .129-.434 .031-.176 .031-.496 0-.32-.031-.496-.031-.176-.129-.434-.238-.636-.762-1.086-.519-.449-1.191-.593-.16-.032-.488-.039-.328-.008-.469 .023zM8.336 6.703q.32 .082 .598 .363 .281 .278 .363 .598 .031 .145 .031 .336 0 .191-.031 .32-.082 .336-.348 .61-.261 .269-.613 .367-.129 .031-.336 .031-.207 0-.336-.031-.351-.098-.617-.367-.262-.274-.344-.61-.031-.129-.031-.32 0-.191 .031-.336 .067-.258 .258-.496 .191-.238 .465-.367 .398-.207 .91-.098z"
+                                fill="#93a69c"
+                        />
+                    </svg>
+                </div>
+                <div
+                        data-pencil-name="Avatar"
+                        class="box-border w-[26px] shrink-0 h-[26px] flex flex-row gap-0 justify-center items-center bg-[#242D29] rounded-[20px]"
+                >
+                    <div
+                            data-pencil-name="Initials"
+                            class="text-[10px]/[normal] box-border text-[#93A69C] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+                    >
+                        NK
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div
+                data-pencil-name="Filter Bar"
+                class="box-border w-full h-[48px] shrink-0 flex flex-row gap-[8px] p-[0px_14px] justify-start items-center bg-[#1A201E] [border-width:0px_0px_1px_0px] [border-style:solid] [border-color:#232B28]"
+        >
+            <div
+                    data-pencil-name="Fuzzy Input"
+                    class="box-border w-[230px] shrink-0 h-fit flex flex-row gap-[7px] p-[6px_9px] justify-start items-center bg-[#1C2321] [border:1px_solid_#232B28] rounded-[8px]"
+            >
+                <svg
+                        data-pencil-name="Icon"
+                        viewBox="0 0 13 13"
+                        preserveAspectRatio="xMidYMid meet"
+                        data-icon-name="search"
+                        data-icon-set="lucide"
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="box-border w-[13px] shrink-0 h-[13px] overflow-visible"
+                >
+                    <path
+                            d="M5.576 1.092q-.038 .012-.219 .025-.533 .067-1.079 .27-.546 .2-1.015 .511-.365 .247-.695 .568-.33 .317-.578 .654-.6 .857-.806 1.885-.054 .26-.073 .429-.019 .168-.019 .533 0 .403 .025 .631 .026 .226 .118 .553 .181 .701 .558 1.333 .378 .628 .898 1.098 .378 .336 .759 .558 .384 .223 .854 .403 .987 .365 2.06 .273 1.072-.092 1.996-.612 .117-.064 .311-.194 .194-.13 .273-.197l.051-.05 1.028 1.028q1.041 1.025 1.117 1.073 .08 .044 .222 .044 .143 0 .219-.032 .08-.034 .169-.123 .092-.092 .123-.169 .035-.079 .035-.222 0-.142-.047-.219-.045-.079-1.07-1.12l-1.028-1.028 .051-.064q.053-.051 .184-.235 .764-1.142 .828-2.513 .067-1.371-.594-2.568-.495-.898-1.32-1.527-.825-.631-1.815-.866-.273-.064-.502-.089-.225-.029-.562-.041-.403 0-.457 0zM6.265 2.184q.352 .012 .736 .13 .385 .117 .734 .298 .688 .365 1.196 1.003 .508 .635 .702 1.39 .066 .26 .085 .464 .019 .199 .019 .472 0 .651-.181 1.21-.365 1.079-1.244 1.774-.876 .695-2.006 .812-.184 .013-.457 .007-.273-.007-.453-.032-.496-.079-.965-.286-.467-.209-.87-.52-.13-.118-.327-.318-.193-.203-.308-.346-.533-.714-.688-1.574-.08-.403-.061-.844 .019-.441 .111-.832 .273-1.066 1.105-1.818 .831-.756 1.91-.952 .169-.026 .391-.038 .222-.013 .324-.013z"
+                            fill="#5d6d65"
+                    />
+                </svg>
+                <div
+                        data-pencil-name="Value"
+                        class="text-[11px]/[normal] box-border [flex:1_1_0] text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    Filter by name…
+                </div>
+            </div>
+            <div
+                    data-pencil-name="Funnel · Active"
+                    class="box-border w-fit shrink-0 h-fit flex flex-row gap-[5px] p-[6px_8px] justify-start items-center bg-[#1C2321] [border:1px_solid_#232B28] rounded-[8px]"
+            >
+                <svg
+                        data-pencil-name="Icon"
+                        viewBox="0 0 13 13"
+                        preserveAspectRatio="xMidYMid meet"
+                        data-icon-name="funnel"
+                        data-icon-set="lucide"
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="box-border w-[13px] shrink-0 h-[13px] overflow-visible"
+                >
+                    <path
+                            d="M1.352 1.117q-.273 .08-.482 .286-.13 .13-.181 .209-.168 .311-.143 .645 .025 .33 .247 .603 .077 .079 2.032 2.244 1.958 2.164 1.999 2.253l.038 .092 .026 3.212q0 .324 .025 .441 .013 .092 .067 .181l.012 .041q.118 .219 .311 .362 .105 .092 .727 .397 .626 .304 .737 .339 .111 .032 .26 .032 .149 0 .26-.025 .111-.026 .254-.095 .143-.073 .219-.153 .21-.193 .314-.47l.038-.127 .026-4.135 .038-.092q.041-.089 .143-.194l3.862-4.278q.273-.311 .273-.714 0-.248-.117-.495-.076-.143-.2-.273-.124-.13-.267-.194l-.054-.025q-.089-.054-.26-.067-.232-.025-1.066-.025h-8.357q-.689 .012-.781 .025zM11.324 2.222q-.041 .041-1.847 2.04l-2.003 2.225q-.361 .403-.415 .899-.026 .142-.026 2.066v1.923l-1.066-.533v-1.651q0-1.663-.026-1.805-.054-.496-.415-.911l-3.901-4.317h9.763z"
+                            fill="#5d6d65"
+                    />
+                </svg>
+                <div
+                        data-pencil-name="Count"
+                        class="text-[10px]/[normal] box-border text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-medium text-left [white-space:nowrap]"
+                >
+                    0
+                </div>
+            </div>
+            <div
+                    data-pencil-name="Divider"
+                    class="box-border w-[1px] shrink-0 h-[18px] bg-[#232B28]"
+            ></div>
+            <div
+                    data-pencil-name="Active Chips"
+                    class="box-border w-fit shrink-0 h-fit flex flex-row gap-[6px] justify-start items-center"
+            >
+                <div
+                        data-pencil-name="Add Filter Chip"
+                        class="box-border w-fit shrink-0 h-fit flex flex-row gap-[4px] p-[5px_8px] justify-start items-center [border:1px_dashed_#36423D] rounded-[8px]"
+                >
+                    <svg
+                            data-pencil-name="Icon"
+                            viewBox="0 0 11 11"
+                            preserveAspectRatio="xMidYMid meet"
+                            data-icon-name="plus"
+                            data-icon-set="lucide"
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="box-border w-[11px] shrink-0 h-[11px] overflow-visible"
+                    >
+                        <path
+                                d="M5.422 1.848q-.075 .01-.137 .04-.059 .027-.121 .099-.059 .07-.088 .132-.027 .059-.027 .258v2.672h-2.882l-.067 .032q-.174 .089-.236 .266-.059 .174 .005 .341 .046 .075 .11 .142 .067 .065 .132 .094 .067 .027 .266 .027h2.672v2.672q0 .199 .027 .266 .029 .065 .094 .132 .067 .064 .147 .105 .084 .037 .183 .037 .099 0 .18-.037 .083-.041 .148-.105 .067-.067 .094-.132 .029-.067 .029-.266v-2.672h2.672q.199 0 .264-.027 .067-.029 .131-.094 .067-.067 .105-.147 .04-.084 .04-.183 0-.099-.032-.188-.078-.153-.231-.231l-.067-.032h-2.882v-2.662q0-.209-.021-.252-.057-.156-.199-.236-.142-.084-.309-.051z"
+                                fill="#5d6d65"
+                        />
+                    </svg>
+                    <div
+                            data-pencil-name="Label"
+                            class="text-[11px]/[normal] box-border text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+                    >
+                        filter
+                    </div>
+                </div>
+            </div>
+            <div
+                    data-pencil-name="Spacer"
+                    class="box-border [flex:1_1_0] h-[1px] flex flex-row gap-0 justify-start items-start bg-[#00000000]"
+            ></div>
+            <div
+                    data-pencil-name="Save As Tab"
+                    class="box-border w-fit shrink-0 h-fit flex flex-row gap-[6px] p-[6px_10px] justify-start items-center bg-[#1C2321] [border:1px_solid_#36423D] rounded-[8px]"
+            >
+                <svg
+                        data-pencil-name="Icon"
+                        viewBox="0 0 13 13"
+                        preserveAspectRatio="xMidYMid meet"
+                        data-icon-name="bookmark-plus"
+                        data-icon-set="lucide"
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="box-border w-[13px] shrink-0 h-[13px] overflow-visible"
+                >
+                    <path
+                            d="M3.459 1.117q-.52 .118-.866 .502-.343 .384-.409 .917-.026 .143-.026 4.231 0 4.088 .026 4.205 .038 .34 .26 .587 .222 .244 .546 .324 .168 .038 .368 .019 .203-.019 .359-.099 .092-.038 1.294-.726 1.203-.689 1.28-.727 .079-.041 .203-.041 .123 0 .193 .035 .073 .031 1.289 .726 1.215 .695 1.307 .733 .207 .105 .467 .105 .403 0 .708-.266 .304-.267 .358-.657 .026-.13 .026-4.218 0-4.088-.026-4.231-.066-.533-.418-.924-.35-.39-.87-.495-.102-.025-.533-.025h-2.508-2.482q-.444 .012-.546 .025zM9.296 2.184q.286 .038 .403 .298l.038 .092 .013 4.12q0 4.135-.025 4.122l-1.248-.714q-1.237-.704-1.364-.755-.302-.13-.664-.117-.209 .012-.339 .047-.13 .032-.273 .099-.143 .063-1.34 .752l-1.222 .688q-.012 .013-.025-.755l.013-7.487 .038-.092q.054-.118 .155-.2 .105-.086 .216-.105 .111-.019 2.815-.019 2.704 0 2.809 .026zM6.37 3.263q-.118 .025-.222 .123-.102 .099-.156 .216-.012 .064-.019 .162-.006 .099-.006 .514v.597l-1.235 .013-.092 .038q-.247 .117-.292 .39-.044 .273 .137 .47 .079 .076 .168 .13l.105 .038 1.209 .013v.584q0 .377 0 .495 .013 .155 .038 .222 .028 .064 .105 .143 .168 .168 .39 .168 .222 0 .39-.168 .077-.079 .102-.143 .029-.067 .041-.222 0-.118 0-.495v-.584l1.209-.013 .105-.038q.194-.105 .27-.298 .079-.197 .006-.391-.069-.196-.263-.301l-.092-.038-1.235-.013v-.597q0-.415-.006-.514-.006-.098-.019-.162-.08-.184-.264-.279-.18-.098-.374-.06z"
+                            fill="#93a69c"
+                    />
+                </svg>
+                <div
+                        data-pencil-name="Label"
+                        class="text-[12px]/[normal] box-border text-[#93A69C] font-[Inter,system-ui,sans-serif] font-medium text-left [white-space:nowrap]"
+                >
+                    Save as tab
+                </div>
+            </div>
+            <div
+                    data-pencil-name="Collapse Filter Bar"
+                    class="box-border w-fit shrink-0 h-fit flex flex-row gap-0 p-[6px] justify-start items-center rounded-[7px]"
+            >
+                <svg
+                        data-pencil-name="Icon"
+                        viewBox="0 0 14 14"
+                        preserveAspectRatio="xMidYMid meet"
+                        data-icon-name="chevrons-down-up"
+                        data-icon-set="lucide"
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="box-border w-[14px] shrink-0 h-[14px] overflow-visible"
+                >
+                    <path
+                            d="M3.948 1.764q-.195 .054-.328 .232-.134 .174-.12 .369v.028q.014 .112 .068 .198 .072 .113 .366 .42l1.203 1.203q1.528 1.525 1.61 1.569 .086 .041 .253 .041 .168 0 .25-.041 .085-.044 1.613-1.569 1.035-1.035 1.285-1.302 .253-.267 .297-.335 .096-.225 .011-.448-.082-.225-.322-.338-.082-.027-.222-.027h-.027q-.127 0-.198 .041-.11 .058-.363 .311-.195 .167-.854 .837l-1.47 1.47-1.289-1.285q-.84-.841-1.08-1.063-.235-.226-.307-.26-.069-.038-.181-.051-.11-.014-.195 0zM6.846 8.189q-.085 .028-.181 .113-.126 .099-.461 .421l-1.08 1.076q-1.022 1.022-1.275 1.289-.25 .267-.294 .335-.11 .239-.014 .465 .099 .222 .321 .321 .226 .096 .465-.014 .069-.044 .298-.259 .232-.219 1.086-1.074l1.289-1.285 1.289 1.285q.854 .855 1.083 1.074 .233 .215 .301 .259 .239 .11 .461 .014 .226-.099 .322-.321 .099-.226-.011-.465-.044-.068-.297-.335-.25-.267-1.271-1.289l-1.204-1.203q-.311-.294-.42-.366-.085-.054-.198-.054h-.028q-.14 0-.181 .013z"
+                            fill="#5d6d65"
+                    />
+                </svg>
+            </div>
+        </div>
+        <div
+                data-pencil-name="Torrent List"
+                class="box-border w-full [flex:1_1_0] flex flex-col gap-[2px] p-[6px_16px] justify-start items-start"
+        >
+            <div
+                    data-pencil-name="Empty Library"
+                    class="box-border w-full h-fit shrink-0 flex flex-col gap-[18px] p-[56px_40px] justify-start items-center"
+            >
+                <div
+                        data-pencil-name="Icon Box"
+                        class="box-border w-[58px] h-[58px] shrink-0 flex flex-row gap-0 justify-center items-center bg-[#1C2321] [border:1px_solid_#232B28] rounded-[16px]"
+                >
+                    <svg
+                            data-pencil-name="Icon"
+                            viewBox="0 0 25 25"
+                            preserveAspectRatio="xMidYMid meet"
+                            data-icon-name="inbox"
+                            data-icon-set="lucide"
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="box-border w-[25px] shrink-0 h-[25px] overflow-visible"
+                    >
+                        <path
+                                d="M7.098 3.149q-.622 .098-1.214 .464-.586 .36-.91 .861-.177 .25-2.026 3.979-1.849 3.724-1.886 3.864-.037 .134-.012 3.509v2.851q.024 .574 .049 .72 .225 .952 .909 1.605 .69 .647 1.642 .824 .299 .049 8.85 .049 8.551 0 8.85-.049 .952-.177 1.636-.824 .69-.653 .915-1.605 .025-.146 .049-.72v-2.851q.025-3.375-.012-3.509-.037-.14-1.886-3.864-1.849-3.729-2.002-3.955-.348-.525-.952-.897-.598-.378-1.221-.452-.25-.024-5.401-.024-5.152 0-5.378 .024zM17.822 5.273q.177 .08 .33 .226 .122 .104 .348 .543 .226 .434 1.275 2.485 1.447 2.899 1.447 2.923 0 .025-2.374 .025h-2.075q-.348 0-.501 .067-.146 .061-.287 .189-.134 .122-1.037 1.495l-.922 1.374h-3.052l-.921-1.374q-.904-1.373-1.044-1.495-.134-.128-.287-.189-.147-.067-.494-.067h-2.076q-2.38 0-2.38-.025 0-.024 1.453-2.923 1.049-2.051 1.275-2.485 .226-.439 .348-.543 .153-.146 .287-.195 .14-.055 .842-.079h4.523 4.523q.677 0 .799 .048zM8.698 14.899q.903 1.373 1.037 1.501 .141 .122 .287 .189 .153 .061 .476 .061h2.002 2.002q.324 0 .47-.061 .153-.067 .287-.189 .14-.128 1.044-1.501l.921-1.374h4.651l-.024 5.5-.074 .177q-.201 .372-.579 .525l-.171 .048h-17.054l-.17-.048q-.379-.153-.58-.525l-.074-.177-.024-5.5h4.651z"
+                                fill="#93a69c"
+                        />
+                    </svg>
+                </div>
+                <div
+                        data-pencil-name="Title"
+                        class="text-[19px]/[normal] box-border text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-semibold text-left [white-space:nowrap]"
+                >
+                    No torrents yet
+                </div>
+                <div
+                        data-pencil-name="Sub"
+                        class="text-[12.5px]/[19px] box-border w-[480px] text-[#93A69C] font-[Inter,system-ui,sans-serif] font-normal text-center"
+                >
+                    The library is empty — this is not a filter. Add a magnet link or a .torrent file and
+                    it lands in the All tab.
+                </div>
+                <div
+                        data-pencil-name="Drop Zone"
+                        class="box-border w-[600px] h-fit shrink-0 flex flex-col gap-[14px] p-[30px_40px] justify-start items-center bg-[#151A18] [border:1px_dashed_#36423D] rounded-[14px]"
+                >
+                    <svg
+                            data-pencil-name="Icon"
+                            viewBox="0 0 26 26"
+                            preserveAspectRatio="xMidYMid meet"
+                            data-icon-name="cloud-download"
+                            data-icon-set="lucide"
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="box-border w-[26px] h-[26px] shrink-0 overflow-visible"
+                    >
+                        <path
+                                d="M8.918 2.209q-1.999 .209-3.643 1.2-1.638 .984-2.73 2.621-1.142 1.72-1.39 3.815-.247 2.089 .483 4.012 .679 1.771 2.031 3.123 .387 .387 .565 .508 .184 .114 .47 .114 .444 .025 .755-.26 .159-.102 .26-.311 .108-.21 .121-.362 .013-.159-.045-.368-.05-.21-.127-.337-.076-.133-.444-.482-.362-.349-.546-.584-.984-1.251-1.301-2.831-.311-1.587 .159-3.072 .387-1.327 1.231-2.324 .851-1.003 2.044-1.625 .654-.342 1.238-.495 .584-.158 1.282-.184 2.552-.152 4.526 1.428 1.403 1.149 2.031 2.939 .153 .419 .292 .603 .146 .178 .406 .311l.159 .077 2.596 .05q.261 .026 .445 .077 1.066 .234 1.847 1.041 .73 .704 .99 1.72 .286 1.142-.108 2.221-.387 1.08-1.377 1.803-.337 .26-.457 .445-.115 .184-.153 .507-.038 .324 .178 .654 .222 .324 .565 .425 .286 .077 .514 .026 .235-.051 .546-.26 .99-.673 1.651-1.702 .666-1.028 .876-2.278 .05-.311 .05-.895 0-.584-.05-.845-.108-.647-.343-1.295-.229-.653-.54-1.098-.679-1.041-1.771-1.764-.831-.546-1.688-.768-.857-.223-2.209-.223h-.445q-.101 0-.101-.05-.057-.159-.241-.521-.178-.368-.337-.597-1.06-1.771-2.805-2.875-1.74-1.105-3.822-1.314-.311-.025-.844-.025-.533 0-.794 .025zM12.74 13.025q-.235 .051-.445 .248-.203 .197-.311 .432-.05 .127-.05 .545v5.872l-1.302-1.269q-1.269-1.302-1.428-1.378-.209-.133-.508-.133-.298 0-.533 .133-.387 .178-.52 .609-.127 .426 .05 .845 .083 .127 2.393 2.444 1.664 1.663 2.013 2.005 .355 .337 .482 .388 .21 .05 .47 .05 .26 0 .412-.076 .159-.082 2.457-2.367 2.304-2.292 2.387-2.444 .177-.419 .044-.845-.127-.431-.514-.609-.235-.133-.533-.133-.299 0-.508 .133-.127 .076-1.428 1.378l-1.302 1.269v-5.872q0-.418-.05-.545-.159-.369-.527-.559-.362-.197-.749-.121z"
+                                fill="#3fe07f"
+                        />
+                    </svg>
+                    <div
+                            data-pencil-name="Label"
+                            class="text-[13px]/[normal] box-border text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-medium text-left [white-space:nowrap]"
+                    >
+                        Drop a .torrent file here, or paste a magnet link
+                    </div>
+                    <div
+                            data-pencil-name="Buttons"
+                            class="box-border w-fit h-fit shrink-0 flex flex-row gap-[9px] justify-start items-center"
+                    >
+                        <div
+                                data-pencil-name="Btn Paste magnet"
+                                class="box-border w-fit shrink-0 h-fit flex flex-row gap-[7px] p-[9px_14px] justify-start items-center bg-[#3FE07F] [border:1px_solid_#3FE07F] rounded-[9px]"
+                        >
+                            <svg
+                                    data-pencil-name="Icon"
+                                    viewBox="0 0 13 13"
+                                    preserveAspectRatio="xMidYMid meet"
+                                    data-icon-name="magnet"
+                                    data-icon-set="lucide"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="box-border w-[13px] shrink-0 h-[13px] overflow-visible"
+                            >
+                                <path
+                                        d="M7.201 .571q-.596 .067-1.129 .261-.185 .066-.47 .209-.286 .143-.454 .248-.298 .193-.533 .409-.235 .213-1.143 1.111-2.691 2.691-2.771 2.815-.076 .121-.123 .292-.045 .168-.045 .317 0 .15 .057 .334 .061 .181 .137 .311 .054 .076 .755 .787 .702 .708 .806 .771 .299 .222 .689 .222 .365 0 .663-.181 .092-.066 1.819-1.796l.378-.375q.806-.793 1.028-1.003 .298-.298 .416-.377 .076-.051 .181-.038h.05q.105 0 .143 .006 .042 .006 .105 .044 .21 .093 .314 .289 .026 .076 .032 .118 .006 .038 .006 .143v.05q.013 .105-.038 .181-.079 .118-.377 .416-.21 .222-1.003 1.028l-.375 .378q-1.73 1.727-1.796 1.819-.181 .298-.181 .65 0 .403 .222 .702 .063 .104 .771 .806 .711 .701 .787 .755 .21 .13 .47 .168 .194 .039 .4 0 .209-.038 .378-.142 .079-.038 .644-.597 .565-.562 2.152-2.146 1.13-1.133 1.26-1.301 .638-.819 .885-1.806 .169-.638 .143-1.307-.025-.67-.235-1.295-.349-1.092-1.155-1.911-1.104-1.092-2.679-1.339-.155-.026-.593-.038-.435-.013-.591 .012zM8.217 1.663q.974 .143 1.746 .749 .774 .603 1.139 1.514 .337 .844 .238 1.761-.095 .918-.603 1.657-.143 .222-.352 .451-.206 .225-.87 .876l-.844 .844-1.403-1.39 .778-.781q.78-.793 .86-.907 .273-.391 .298-.838 .026-.451-.168-.867-.156-.311-.444-.546-.286-.235-.635-.339-.197-.051-.445-.051-.244 0-.441 .051-.13 .041-.292 .12-.162 .076-.273 .162-.111 .083-.876 .838l-.755 .765-1.39-1.403 .844-.857q.87-.86 1.013-.99 .431-.349 .942-.562 .514-.216 1.073-.282 .155-.013 .422-.007 .267 .007 .438 .032zM3.561 7.033q-.533 .546-.559 .552-.025 .007-.073-.019-.044-.025-.679-.65-.403-.416-.514-.533-.111-.118-.111-.15 0-.031 .095-.136 .099-.105 .451-.454l.533-.546 1.403 1.403zM7.201 9.594l.702 .702-.546 .533q-.349 .352-.454 .451-.105 .095-.136 .095-.032 0-.15-.111-.117-.111-.533-.514-.625-.635-.644-.679-.019-.048-.013-.073 .007-.026 .533-.559 .527-.533 .54-.533 .013 0 .701 .688z"
+                                        fill="#0e1110"
+                                />
+                            </svg>
+                            <div
+                                    data-pencil-name="Label"
+                                    class="text-[12px]/[normal] box-border text-[#0E1110] font-[Inter,system-ui,sans-serif] font-semibold text-left [white-space:nowrap]"
+                            >
+                                Paste magnet
+                            </div>
+                            <div
+                                    data-pencil-name="Key"
+                                    class="text-[10px]/[normal] box-border text-[#0E1110] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+                            >
+                                ⌘V
+                            </div>
+                        </div>
+                        <div
+                                data-pencil-name="Btn Add .torrent"
+                                class="box-border w-fit shrink-0 h-fit flex flex-row gap-[7px] p-[9px_14px] justify-start items-center bg-[#1C2321] [border:1px_solid_#36423D] rounded-[9px]"
+                        >
+                            <svg
+                                    data-pencil-name="Icon"
+                                    viewBox="0 0 13 13"
+                                    preserveAspectRatio="xMidYMid meet"
+                                    data-icon-name="paperclip"
+                                    data-icon-set="lucide"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="box-border w-[13px] shrink-0 h-[13px] overflow-visible"
+                            >
+                                <path
+                                        d="M8.554 .546q-.312 .013-.645 .111-.33 .098-.603 .254-.193 .117-.333 .235-.137 .114-.356 .336-.73 .727-2.666 2.717-1.936 1.99-2.015 2.066-.362 .444-.584 1.016-.222 .571-.26 1.155-.051 .819 .235 1.574 .285 .752 .869 1.34 .886 .882 2.171 1.079 .197 .025 .508 .025 .311 0 .508-.025 1.066-.168 1.857-.806 .158-.118 .545-.508 .391-.391 2.029-2.066l2.174-2.238q.231-.232 .244-.286v-.012q.054-.156 .025-.305-.025-.149-.142-.267-.156-.155-.388-.155h-.041q-.076-.013-.13 .013-.089 .05-.267 .215-.174 .162-.577 .578l-1.6 1.625q-2.288 2.339-2.431 2.457-.546 .507-1.352 .663-.156 .038-.473 .032-.317-.007-.489-.045-.609-.13-1.079-.469-.194-.131-.409-.362-.213-.235-.33-.445-.429-.726-.365-1.59 .066-.866 .612-1.517 .102-.13 2-2.066l2.329-2.365q.48-.495 .572-.561 .247-.181 .571-.273 .155-.038 .384-.045 .228-.006 .384 .045 .403 .092 .708 .365 .304 .273 .447 .638 .054 .168 .073 .266 .019 .096 .019 .305 0 .209-.019 .308-.019 .095-.073 .263-.076 .222-.219 .403-.054 .067-2.406 2.47l-1.65 1.679q-.416 .428-.6 .596-.181 .168-.26 .21-.051 .025-.13 .025h-.051q-.079 0-.124-.006-.044-.007-.111-.045-.168-.092-.26-.26-.038-.079-.038-.222 0-.092 .013-.137 .012-.044 .038-.101 .028-.06 .438-.483 .409-.422 1.748-1.786l2.339-2.394q.181-.196 .232-.285 .054-.092 .054-.235 0-.222-.155-.378-.092-.089-.172-.12-.076-.035-.206-.035h-.051q-.079 0-.13 .025-.079 .041-.254 .203-.174 .162-.578 .565l-1.625 1.651q-2.316 2.367-2.393 2.456-.234 .26-.339 .664-.038 .13-.038 .377 0 .168 .006 .241 .006 .07 .032 .175 .105 .39 .358 .676 .254 .286 .632 .428 .26 .105 .571 .105 .311 0 .559-.089 .247-.092 .441-.235 .067-.053 2.339-2.367 2.276-2.314 2.473-2.536 .273-.298 .447-.673 .175-.378 .229-.793 .076-.6-.127-1.197-.2-.6-.629-1.041-.403-.403-.93-.616-.527-.216-1.11-.19z"
+                                        fill="#93a69c"
+                                />
+                            </svg>
+                            <div
+                                    data-pencil-name="Label"
+                                    class="text-[12px]/[normal] box-border text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-medium text-left [white-space:nowrap]"
+                            >
+                                Add .torrent
+                            </div>
+                            <div
+                                    data-pencil-name="Key"
+                                    class="text-[10px]/[normal] box-border text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+                            >
+                                ⌘O
+                            </div>
+                        </div>
+                        <div
+                                data-pencil-name="Btn Open Spotlight"
+                                class="box-border w-fit shrink-0 h-fit flex flex-row gap-[7px] p-[9px_14px] justify-start items-center bg-[#1C2321] [border:1px_solid_#36423D] rounded-[9px]"
+                        >
+                            <svg
+                                    data-pencil-name="Icon"
+                                    viewBox="0 0 13 13"
+                                    preserveAspectRatio="xMidYMid meet"
+                                    data-icon-name="search"
+                                    data-icon-set="lucide"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="box-border w-[13px] shrink-0 h-[13px] overflow-visible"
+                            >
+                                <path
+                                        d="M5.576 1.092q-.038 .012-.219 .025-.533 .067-1.079 .27-.546 .2-1.015 .511-.365 .247-.695 .568-.33 .317-.578 .654-.6 .857-.806 1.885-.054 .26-.073 .429-.019 .168-.019 .533 0 .403 .025 .631 .026 .226 .118 .553 .181 .701 .558 1.333 .378 .628 .898 1.098 .378 .336 .759 .558 .384 .223 .854 .403 .987 .365 2.06 .273 1.072-.092 1.996-.612 .117-.064 .311-.194 .194-.13 .273-.197l.051-.05 1.028 1.028q1.041 1.025 1.117 1.073 .08 .044 .222 .044 .143 0 .219-.032 .08-.034 .169-.123 .092-.092 .123-.169 .035-.079 .035-.222 0-.142-.047-.219-.045-.079-1.07-1.12l-1.028-1.028 .051-.064q.053-.051 .184-.235 .764-1.142 .828-2.513 .067-1.371-.594-2.568-.495-.898-1.32-1.527-.825-.631-1.815-.866-.273-.064-.502-.089-.225-.029-.562-.041-.403 0-.457 0zM6.265 2.184q.352 .012 .736 .13 .385 .117 .734 .298 .688 .365 1.196 1.003 .508 .635 .702 1.39 .066 .26 .085 .464 .019 .199 .019 .472 0 .651-.181 1.21-.365 1.079-1.244 1.774-.876 .695-2.006 .812-.184 .013-.457 .007-.273-.007-.453-.032-.496-.079-.965-.286-.467-.209-.87-.52-.13-.118-.327-.318-.193-.203-.308-.346-.533-.714-.688-1.574-.08-.403-.061-.844 .019-.441 .111-.832 .273-1.066 1.105-1.818 .831-.756 1.91-.952 .169-.026 .391-.038 .222-.013 .324-.013z"
+                                        fill="#93a69c"
+                                />
+                            </svg>
+                            <div
+                                    data-pencil-name="Label"
+                                    class="text-[12px]/[normal] box-border text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-medium text-left [white-space:nowrap]"
+                            >
+                                Open Spotlight
+                            </div>
+                            <div
+                                    data-pencil-name="Key"
+                                    class="text-[10px]/[normal] box-border text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+                            >
+                                ⌘T
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div
+                        data-pencil-name="Hints"
+                        class="box-border w-[760px] h-fit shrink-0 flex flex-row gap-[12px] justify-start items-start"
+                >
+                    <div
+                            data-pencil-name="Hint Tabs are s"
+                            class="box-border [flex:1_1_0] h-fit flex flex-col gap-[7px] p-[14px] justify-start items-start bg-[#1C2321] [border:1px_solid_#232B28] rounded-[11px]"
+                    >
+                        <div
+                                data-pencil-name="Head"
+                                class="box-border w-full h-fit shrink-0 flex flex-row gap-[7px] justify-start items-center"
+                        >
+                            <svg
+                                    data-pencil-name="Icon"
+                                    viewBox="0 0 13 13"
+                                    preserveAspectRatio="xMidYMid meet"
+                                    data-icon-name="panel-left"
+                                    data-icon-set="lucide"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="box-border w-[13px] shrink-0 h-[13px] overflow-visible"
+                            >
+                                <path
+                                        d="M2.418 1.117q-.469 .08-.815 .406-.343 .324-.473 .803-.026 .08-.026 .664l-.012 3.51 .012 3.51q0 .584 .026 .664 .13 .453 .435 .761 .308 .305 .761 .435 .08 .026 .664 .026l3.51 .012 3.51-.012q.584 0 .664-.026 .453-.13 .758-.435 .308-.308 .438-.761 .026-.08 .026-.664l.012-3.51-.012-3.51q0-.584-.026-.664-.117-.453-.425-.758-.305-.308-.746-.438l-.13-.038h-4.018q-4.028 0-4.133 .025zM4.342 6.5v4.342h-.819q-.819 0-.911-.026-.273-.054-.403-.311l-.038-.092v-7.826l.038-.092q.067-.131 .175-.213 .111-.086 .241-.111 .079 0 .898-.013h.819zM10.505 2.209q.194 .092 .286 .286l.038 .092v7.826l-.038 .092q-.13 .257-.403 .311-.092 .026-2.536 .026h-2.444v-8.684l5.005 .013z"
+                                        fill="#3fe07f"
+                                />
+                            </svg>
+                            <div
+                                    data-pencil-name="Title"
+                                    class="text-[12px]/[normal] box-border [flex:1_1_0] text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-semibold text-left"
+                            >
+                                Tabs are saved queries
+                            </div>
+                        </div>
+                        <div
+                                data-pencil-name="Body"
+                                class="text-[11px]/[17px] box-border w-full text-[#93A69C] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                        >
+                            The sidebar holds scope. “Save as tab” is the only thing that writes to it.
+                        </div>
+                    </div>
+                    <div
+                            data-pencil-name="Hint Chips are "
+                            class="box-border [flex:1_1_0] h-fit flex flex-col gap-[7px] p-[14px] justify-start items-start bg-[#1C2321] [border:1px_solid_#232B28] rounded-[11px]"
+                    >
+                        <div
+                                data-pencil-name="Head"
+                                class="box-border w-full h-fit shrink-0 flex flex-row gap-[7px] justify-start items-center"
+                        >
+                            <svg
+                                    data-pencil-name="Icon"
+                                    viewBox="0 0 13 13"
+                                    preserveAspectRatio="xMidYMid meet"
+                                    data-icon-name="funnel"
+                                    data-icon-set="lucide"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="box-border w-[13px] shrink-0 h-[13px] overflow-visible"
+                            >
+                                <path
+                                        d="M1.352 1.117q-.273 .08-.482 .286-.13 .13-.181 .209-.168 .311-.143 .645 .025 .33 .247 .603 .077 .079 2.032 2.244 1.958 2.164 1.999 2.253l.038 .092 .026 3.212q0 .324 .025 .441 .013 .092 .067 .181l.012 .041q.118 .219 .311 .362 .105 .092 .727 .397 .626 .304 .737 .339 .111 .032 .26 .032 .149 0 .26-.025 .111-.026 .254-.095 .143-.073 .219-.153 .21-.193 .314-.47l.038-.127 .026-4.135 .038-.092q.041-.089 .143-.194l3.862-4.278q.273-.311 .273-.714 0-.248-.117-.495-.076-.143-.2-.273-.124-.13-.267-.194l-.054-.025q-.089-.054-.26-.067-.232-.025-1.066-.025h-8.357q-.689 .012-.781 .025zM11.324 2.222q-.041 .041-1.847 2.04l-2.003 2.225q-.361 .403-.415 .899-.026 .142-.026 2.066v1.923l-1.066-.533v-1.651q0-1.663-.026-1.805-.054-.496-.415-.911l-3.901-4.317h9.763z"
+                                        fill="#3fe07f"
+                                />
+                            </svg>
+                            <div
+                                    data-pencil-name="Title"
+                                    class="text-[12px]/[normal] box-border [flex:1_1_0] text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-semibold text-left"
+                            >
+                                Chips are the lens
+                            </div>
+                        </div>
+                        <div
+                                data-pencil-name="Body"
+                                class="text-[11px]/[17px] box-border w-full text-[#93A69C] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                        >
+                            Filters live inside the active tab and clear when you leave it.
+                        </div>
+                    </div>
+                    <div
+                            data-pencil-name="Hint Terminal s"
+                            class="box-border [flex:1_1_0] h-fit flex flex-col gap-[7px] p-[14px] justify-start items-start bg-[#1C2321] [border:1px_solid_#232B28] rounded-[11px]"
+                    >
+                        <div
+                                data-pencil-name="Head"
+                                class="box-border w-full h-fit shrink-0 flex flex-row gap-[7px] justify-start items-center"
+                        >
+                            <svg
+                                    data-pencil-name="Icon"
+                                    viewBox="0 0 13 13"
+                                    preserveAspectRatio="xMidYMid meet"
+                                    data-icon-name="square-terminal"
+                                    data-icon-set="lucide"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="box-border w-[13px] shrink-0 h-[13px] overflow-visible"
+                            >
+                                <path
+                                        d="M2.418 1.117q-.469 .08-.815 .406-.343 .324-.473 .803-.026 .08-.026 .664l-.012 3.51 .012 3.51q0 .584 .026 .664 .13 .453 .435 .761 .308 .305 .761 .435 .08 .026 .664 .026l3.51 .012 3.51-.012q.584 0 .664-.026 .453-.13 .758-.435 .308-.308 .438-.761 .026-.08 .026-.664l.012-3.51-.012-3.51q0-.584-.026-.664-.117-.453-.425-.758-.305-.308-.746-.438l-.13-.038h-4.018q-4.028 0-4.133 .025zM10.505 2.209q.194 .092 .286 .286l.038 .092v7.826l-.038 .092q-.13 .257-.403 .311-.092 .026-3.888 .026-3.796 0-3.888-.026-.273-.054-.403-.311l-.038-.092v-7.826l.038-.092q.067-.131 .175-.213 .111-.086 .241-.111 .079 0 3.926 0h3.862zM3.666 3.263q-.181 .05-.305 .216-.124 .161-.111 .342 .013 .143 .083 .254 .073 .111 .384 .422l.377 .378-.362 .378q-.247 .235-.326 .327-.077 .088-.105 .152-.102 .222-.013 .432 .092 .206 .298 .298 .21 .089 .432-.013 .064-.028 .187-.143 .124-.117 .515-.507l.038-.039q.365-.364 .453-.469 .131-.143 .162-.207 .035-.066 .035-.196v-.026q0-.13-.035-.193-.031-.067-.162-.21-.088-.105-.453-.47l-.038-.038q-.378-.39-.508-.504-.13-.118-.197-.143-.064-.029-.168-.041-.102-.013-.181 0zM5.824 6.513q-.13 .038-.248 .155-.155 .143-.161 .346-.007 .2 .117 .365 .124 .162 .343 .2 .092 .013 1.222 0h1.145l.105-.038q.194-.105 .27-.298 .079-.197 .006-.391-.069-.196-.263-.301l-.092-.038-1.197-.013q-1.184 0-1.247 .013z"
+                                        fill="#3fe07f"
+                                />
+                            </svg>
+                            <div
+                                    data-pencil-name="Title"
+                                    class="text-[12px]/[normal] box-border [flex:1_1_0] text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-semibold text-left"
+                            >
+                                Terminal speaks the same language
+                            </div>
+                        </div>
+                        <div
+                                data-pencil-name="Body"
+                                class="text-[11px]/[17px] box-border w-full text-[#93A69C] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                        >
+                            ⌃` · ls state:active tag:4k sort:ratio — same parser as the filter bar.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div
+                data-pencil-name="Status Bar"
+                class="box-border w-full h-[36px] shrink-0 flex flex-row gap-[12px] p-[0px_16px] justify-start items-center bg-[#141817] [border-width:1px_0px_0px_0px] [border-style:solid] [border-color:#232B28]"
+        >
+            <div
+                    data-pencil-name="Counts"
+                    class="text-[10px]/[normal] box-border text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+            >
+                0 torrents · engine rqbit · idle
+            </div>
+            <div
+                    data-pencil-name="Spacer"
+                    class="box-border [flex:1_1_0] h-[1px] flex flex-row gap-0 justify-start items-start bg-[#00000000]"
+            ></div>
+            <div
+                    data-pencil-name="Disk"
+                    class="text-[10px]/[normal] box-border text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+            >
+                free 1.2 TB
+            </div>
+            <div
+                    data-pencil-name="Terminal Handle (collapsed)"
+                    class="box-border w-fit shrink-0 h-fit flex flex-row gap-[6px] p-[5px_9px] justify-start items-center bg-[#1C2321] [border:1px_solid_#232B28] rounded-[7px]"
+            >
+                <svg
+                        data-pencil-name="Icon"
+                        viewBox="0 0 12 12"
+                        preserveAspectRatio="xMidYMid meet"
+                        data-icon-name="square-terminal"
+                        data-icon-set="lucide"
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="box-border w-[12px] shrink-0 h-[12px] overflow-visible"
+                >
+                    <path
+                            d="M2.232 1.031q-.433 .073-.753 .375-.316 .299-.436 .741-.023 .074-.023 .613l-.012 3.24 .012 3.24q0 .539 .023 .613 .12 .419 .401 .703 .285 .281 .703 .401 .074 .023 .613 .023l3.24 .012 3.24-.012q.539 0 .613-.023 .419-.12 .7-.401 .284-.284 .404-.703 .024-.074 .024-.613l.011-3.24-.011-3.24q0-.539-.024-.613-.108-.419-.393-.7-.281-.284-.688-.404l-.12-.035h-3.709q-3.718 0-3.815 .023zM9.697 2.039q.179 .085 .264 .264l.035 .085v7.224l-.035 .085q-.12 .238-.372 .287-.085 .024-3.589 .024-3.504 0-3.589-.024-.252-.049-.372-.287l-.035-.085v-7.224l.035-.085q.062-.12 .161-.197 .103-.079 .223-.102 .073 0 3.624 0h3.565zM3.384 3.012q-.167 .047-.281 .199-.115 .149-.103 .316 .012 .132 .076 .235 .068 .102 .355 .389l.348 .349-.334 .349q-.228 .216-.301 .301-.071 .082-.097 .141-.094 .205-.012 .398 .085 .191 .276 .276 .193 .082 .398-.012 .059-.026 .173-.132 .114-.108 .474-.468l.036-.036q.337-.337 .419-.433 .12-.132 .149-.191 .032-.061 .032-.181v-.024q0-.12-.032-.178-.029-.062-.149-.194-.082-.096-.419-.433l-.036-.036q-.348-.36-.468-.465-.12-.109-.182-.132-.059-.027-.155-.038-.094-.012-.167 0zM5.376 6.012q-.12 .035-.229 .143-.143 .132-.149 .32-.006 .184 .108 .337 .115 .149 .317 .184 .085 .012 1.128 0h1.057l.097-.035q.179-.097 .249-.275 .073-.182 .006-.361-.064-.181-.243-.278l-.085-.035-1.105-.012q-1.092 0-1.151 .012z"
+                            fill="#93a69c"
+                    />
+                </svg>
+                <div
+                        data-pencil-name="Label"
+                        class="text-[11px]/[normal] box-border text-[#93A69C] font-[Inter,system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+                >
+                    Terminal
+                </div>
+                <div
+                        data-pencil-name="Key"
+                        class="text-[10px]/[normal] box-border text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+                >
+                    ⌃`
+                </div>
+                <svg
+                        data-pencil-name="Chevron"
+                        viewBox="0 0 12 12"
+                        preserveAspectRatio="xMidYMid meet"
+                        data-icon-name="chevron-up"
+                        data-icon-set="lucide"
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="box-border w-[12px] shrink-0 h-[12px] overflow-visible"
+                >
+                    <path
+                            d="M5.868 4.02q-.073 .023-.167 .096-.12 .109-.457 .443l-1.104 1.092q-1.559 1.562-1.597 1.635-.035 .07-.035 .202 0 .132 .029 .205 .032 .071 .114 .156 .085 .082 .156 .114 .073 .029 .205 .029 .132 0 .202-.035 .073-.038 1.43-1.392l1.356-1.356 1.356 1.356q1.357 1.354 1.427 1.392 .073 .035 .205 .035 .132 0 .202-.029 .074-.032 .156-.114 .085-.085 .114-.156 .032-.073 .032-.205 0-.132-.038-.202-.035-.073-1.594-1.635l-1.236-1.224q-.287-.287-.395-.358-.085-.061-.17-.061h-.036q-.12 0-.155 .012z"
+                            fill="#5d6d65"
+                    />
+                </svg>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,1061 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+        tailwind = { config: { corePlugins: { preflight: false } } };
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+            href="https://fonts.googleapis.com/css2?family=Inter%3Awght%40100..900&family=JetBrains+Mono%3Awght%40100..800&display=swap"
+            rel="stylesheet"
+    />
+    <style>
+        *, ::before, ::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+        }
+    </style>
+
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body style="background-color: #151A18">
+<div
+        data-pencil-name="E · Query language reference card (reusable)"
+        class="box-border w-[1180px] h-fit flex flex-col gap-0 justify-start items-start bg-[#151A18] [border:1px_solid_#36423D] rounded-[16px] overflow-hidden"
+>
+    <div
+            data-pencil-name="Head"
+            class="box-border w-full h-fit shrink-0 flex flex-row gap-[12px] p-[18px_22px] justify-start items-center bg-[#141817] [border-width:0px_0px_1px_0px] [border-style:solid] [border-color:#232B28]"
+    >
+        <svg
+                data-pencil-name="Icon"
+                viewBox="0 0 17 17"
+                preserveAspectRatio="xMidYMid meet"
+                data-icon-name="braces"
+                data-icon-set="lucide"
+                xmlns="http://www.w3.org/2000/svg"
+                class="box-border w-[17px] shrink-0 h-[17px] overflow-visible"
+        >
+            <path
+                    d="M4.524 1.461q-.614 .137-1.058 .573-.44 .431-.594 1.079-.017 .099-.033 .44l-.017 3.723-.05 .103q-.12 .237-.356 .341-.104 .05-.308 .083-.307 .033-.477 .203-.116 .12-.162 .224-.041 .1-.041 .27 0 .17 .041 .274 .046 .1 .154 .212 .112 .108 .211 .153 .104 .042 .316 .075 .212 .033 .295 .079 .087 .041 .178 .137 .096 .091 .149 .191l.05 .103 .017 3.723q.016 .341 .033 .44 .137 .565 .511 .988 .373 .423 .9 .594 .204 .07 .382 .087 .179 .016 .606 .016 .374 0 .465-.008 .095-.008 .178-.025 .258-.104 .395-.357 .049-.12 .049-.307 0-.187-.049-.307-.121-.237-.357-.34-.071-.034-.166-.042-.092-.008-.449-.008-.527-.017-.63-.058-.1-.046-.229-.154-.124-.112-.162-.228l-.049-.104-.034-4.063-.049-.204q-.121-.39-.341-.697l-.12-.17 .12-.17q.22-.307 .341-.697l.049-.204 .034-4.063 .049-.12q.154-.341 .528-.391 .136-.033 .543-.033 .274 0 .365-.008 .096-.008 .162-.025 .258-.104 .395-.357 .049-.12 .049-.307 0-.12-.008-.17-.008-.05-.041-.137-.054-.1-.166-.199-.108-.104-.229-.158-.083-.017-.186-.025-.1-.008-.474-.008-.543 0-.73 .033zM11.086 1.461q-.121 .054-.233 .158-.108 .099-.153 .195-.042 .091-.05 .141-.008 .05-.008 .17 0 .187 .049 .307 .137 .253 .395 .357 .066 .017 .157 .025 .096 .008 .37 .008 .336 0 .506 .025 .17 .025 .258 .079 .203 .116 .307 .32l.049 .12 .034 4.063 .049 .204q.121 .39 .341 .713l.12 .154-.104 .154q-.132 .17-.211 .34-.075 .17-.162 .423-.033 .121-.033 .407l-.034 3.81-.049 .12q-.054 .1-.141 .195-.083 .092-.166 .146-.171 .083-.748 .083-.29 0-.377 .008-.083 .008-.166 .025-.121 .054-.233 .158-.108 .099-.162 .199-.033 .087-.041 .137-.008 .05-.008 .17 0 .187 .049 .307 .137 .253 .395 .357 .083 .033 .182 .033 .104 0 .544 0 .444 0 .552-.016 .112-.017 .249-.05 .577-.17 .975-.594 .403-.427 .54-1.025 .017-.099 .033-.44l.017-3.723 .05-.103q.054-.1 .145-.191 .095-.096 .178-.137 .087-.046 .299-.079 .212-.033 .311-.075 .104-.045 .212-.153 .112-.112 .154-.212 .045-.104 .045-.274 0-.17-.045-.27-.042-.104-.158-.224-.17-.17-.477-.203-.204-.033-.307-.083-.237-.104-.357-.341l-.05-.103-.017-3.723q-.016-.341-.033-.44-.137-.544-.477-.942-.341-.403-.835-.606-.22-.087-.423-.112-.203-.025-.664-.025-.373 0-.477 .008-.1 .008-.166 .025z"
+                    fill="#3fe07f"
+            />
+        </svg>
+        <div
+                data-pencil-name="Title"
+                class="text-[17px]/[normal] box-border text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-semibold text-left [white-space:nowrap]"
+        >
+            Query reference
+        </div>
+        <div
+                data-pencil-name="Sub"
+                class="text-[10px]/[normal] box-border [flex:1_1_0] text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+        >
+            identical card in the filter builder, Spotlight and the terminal
+        </div>
+        <div
+                data-pencil-name="Key"
+                class="box-border w-fit shrink-0 h-fit flex flex-row gap-0 p-[4px_8px] justify-start items-start bg-[#1C2321] rounded-[6px]"
+        >
+            <div
+                    data-pencil-name="Label"
+                    class="text-[10px]/[normal] box-border text-[#93A69C] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+            >
+                ⌘/
+            </div>
+        </div>
+    </div>
+    <div
+            data-pencil-name="Columns"
+            class="box-border w-full h-fit shrink-0 flex flex-row gap-0 justify-start items-start"
+    >
+        <div
+                data-pencil-name="Fields"
+                class="box-border [flex:1_1_0] h-fit flex flex-col gap-0 justify-start items-start [border-width:0px_1px_0px_0px] [border-style:solid] [border-color:#232B28]"
+        >
+            <div
+                    data-pencil-name="Col Head"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[10px] p-[10px_20px] justify-start items-start bg-[#1A201E] [border-width:0px_0px_1px_0px] [border-style:solid] [border-color:#232B28]"
+            >
+                <div
+                        data-pencil-name="A"
+                        class="text-[9px]/[normal] box-border w-[120px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal tracking-[1px] text-left"
+                >
+                    FIELD
+                </div>
+                <div
+                        data-pencil-name="B"
+                        class="text-[9px]/[normal] box-border w-[84px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal tracking-[1px] text-left"
+                >
+                    TYPE
+                </div>
+                <div
+                        data-pencil-name="C"
+                        class="text-[9px]/[normal] box-border [flex:1_1_0] text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal tracking-[1px] text-left"
+                >
+                    EXAMPLE
+                </div>
+            </div>
+            <div
+                    data-pencil-name="F name"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[10px] p-[7px_20px] justify-start items-center [border-width:0px_0px_1px_0px] [border-style:solid] [border-color:#232B28]"
+            >
+                <div
+                        data-pencil-name="A"
+                        class="text-[11px]/[normal] box-border w-[120px] shrink-0 text-[#3FE07F] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    name
+                </div>
+                <div
+                        data-pencil-name="B"
+                        class="text-[10px]/[normal] box-border w-[84px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    text
+                </div>
+                <div
+                        data-pencil-name="C"
+                        class="text-[11px]/[normal] box-border [flex:1_1_0] text-[#E6EFE9] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    name:ubuntu · name:"blade runner"
+                </div>
+                <div
+                        data-pencil-name="D"
+                        class="text-[9px]/[normal] box-border w-[110px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    list
+                </div>
+            </div>
+            <div
+                    data-pencil-name="F state"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[10px] p-[7px_20px] justify-start items-center [border-width:0px_0px_1px_0px] [border-style:solid] [border-color:#232B28]"
+            >
+                <div
+                        data-pencil-name="A"
+                        class="text-[11px]/[normal] box-border w-[120px] shrink-0 text-[#3FE07F] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    state
+                </div>
+                <div
+                        data-pencil-name="B"
+                        class="text-[10px]/[normal] box-border w-[84px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    enum
+                </div>
+                <div
+                        data-pencil-name="C"
+                        class="text-[11px]/[normal] box-border [flex:1_1_0] text-[#E6EFE9] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    state:active · state:!paused
+                </div>
+                <div
+                        data-pencil-name="D"
+                        class="text-[9px]/[normal] box-border w-[110px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    list
+                </div>
+            </div>
+            <div
+                    data-pencil-name="F tag"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[10px] p-[7px_20px] justify-start items-center [border-width:0px_0px_1px_0px] [border-style:solid] [border-color:#232B28]"
+            >
+                <div
+                        data-pencil-name="A"
+                        class="text-[11px]/[normal] box-border w-[120px] shrink-0 text-[#3FE07F] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    tag
+                </div>
+                <div
+                        data-pencil-name="B"
+                        class="text-[10px]/[normal] box-border w-[84px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    enum*
+                </div>
+                <div
+                        data-pencil-name="C"
+                        class="text-[11px]/[normal] box-border [flex:1_1_0] text-[#E6EFE9] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    tag:4k · tag:(4k OR shows)
+                </div>
+                <div
+                        data-pencil-name="D"
+                        class="text-[9px]/[normal] box-border w-[110px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    list
+                </div>
+            </div>
+            <div
+                    data-pencil-name="F category"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[10px] p-[7px_20px] justify-start items-center [border-width:0px_0px_1px_0px] [border-style:solid] [border-color:#232B28]"
+            >
+                <div
+                        data-pencil-name="A"
+                        class="text-[11px]/[normal] box-border w-[120px] shrink-0 text-[#3FE07F] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    category
+                </div>
+                <div
+                        data-pencil-name="B"
+                        class="text-[10px]/[normal] box-border w-[84px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    enum
+                </div>
+                <div
+                        data-pencil-name="C"
+                        class="text-[11px]/[normal] box-border [flex:1_1_0] text-[#E6EFE9] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    category:movies
+                </div>
+                <div
+                        data-pencil-name="D"
+                        class="text-[9px]/[normal] box-border w-[110px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    list
+                </div>
+            </div>
+            <div
+                    data-pencil-name="F tracker"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[10px] p-[7px_20px] justify-start items-center [border-width:0px_0px_1px_0px] [border-style:solid] [border-color:#232B28]"
+            >
+                <div
+                        data-pencil-name="A"
+                        class="text-[11px]/[normal] box-border w-[120px] shrink-0 text-[#3FE07F] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    tracker
+                </div>
+                <div
+                        data-pencil-name="B"
+                        class="text-[10px]/[normal] box-border w-[84px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    host
+                </div>
+                <div
+                        data-pencil-name="C"
+                        class="text-[11px]/[normal] box-border [flex:1_1_0] text-[#E6EFE9] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    tracker:tracker.xyz
+                </div>
+                <div
+                        data-pencil-name="D"
+                        class="text-[9px]/[normal] box-border w-[110px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    list
+                </div>
+            </div>
+            <div
+                    data-pencil-name="F size"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[10px] p-[7px_20px] justify-start items-center [border-width:0px_0px_1px_0px] [border-style:solid] [border-color:#232B28]"
+            >
+                <div
+                        data-pencil-name="A"
+                        class="text-[11px]/[normal] box-border w-[120px] shrink-0 text-[#3FE07F] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    size
+                </div>
+                <div
+                        data-pencil-name="B"
+                        class="text-[10px]/[normal] box-border w-[84px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    bytes
+                </div>
+                <div
+                        data-pencil-name="C"
+                        class="text-[11px]/[normal] box-border [flex:1_1_0] text-[#E6EFE9] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    size:&gt;4GB · size:700MB..2GB
+                </div>
+                <div
+                        data-pencil-name="D"
+                        class="text-[9px]/[normal] box-border w-[110px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    list
+                </div>
+            </div>
+            <div
+                    data-pencil-name="F progress"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[10px] p-[7px_20px] justify-start items-center [border-width:0px_0px_1px_0px] [border-style:solid] [border-color:#232B28]"
+            >
+                <div
+                        data-pencil-name="A"
+                        class="text-[11px]/[normal] box-border w-[120px] shrink-0 text-[#3FE07F] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    progress
+                </div>
+                <div
+                        data-pencil-name="B"
+                        class="text-[10px]/[normal] box-border w-[84px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    percent
+                </div>
+                <div
+                        data-pencil-name="C"
+                        class="text-[11px]/[normal] box-border [flex:1_1_0] text-[#E6EFE9] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    progress:&lt;50 · progress:100
+                </div>
+                <div
+                        data-pencil-name="D"
+                        class="text-[9px]/[normal] box-border w-[110px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    list
+                </div>
+            </div>
+            <div
+                    data-pencil-name="F ratio"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[10px] p-[7px_20px] justify-start items-center [border-width:0px_0px_1px_0px] [border-style:solid] [border-color:#232B28]"
+            >
+                <div
+                        data-pencil-name="A"
+                        class="text-[11px]/[normal] box-border w-[120px] shrink-0 text-[#3FE07F] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    ratio
+                </div>
+                <div
+                        data-pencil-name="B"
+                        class="text-[10px]/[normal] box-border w-[84px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    number
+                </div>
+                <div
+                        data-pencil-name="C"
+                        class="text-[11px]/[normal] box-border [flex:1_1_0] text-[#E6EFE9] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    ratio:&gt;2 · ratio:0..0.5
+                </div>
+                <div
+                        data-pencil-name="D"
+                        class="text-[9px]/[normal] box-border w-[110px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    list
+                </div>
+            </div>
+            <div
+                    data-pencil-name="F seeds / peers"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[10px] p-[7px_20px] justify-start items-center [border-width:0px_0px_1px_0px] [border-style:solid] [border-color:#232B28]"
+            >
+                <div
+                        data-pencil-name="A"
+                        class="text-[11px]/[normal] box-border w-[120px] shrink-0 text-[#3FE07F] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    seeds / peers
+                </div>
+                <div
+                        data-pencil-name="B"
+                        class="text-[10px]/[normal] box-border w-[84px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    number
+                </div>
+                <div
+                        data-pencil-name="C"
+                        class="text-[11px]/[normal] box-border [flex:1_1_0] text-[#E6EFE9] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    seeds:&gt;10 · peers:0
+                </div>
+                <div
+                        data-pencil-name="D"
+                        class="text-[9px]/[normal] box-border w-[110px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    list
+                </div>
+            </div>
+            <div
+                    data-pencil-name="F down / up"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[10px] p-[7px_20px] justify-start items-center [border-width:0px_0px_1px_0px] [border-style:solid] [border-color:#232B28]"
+            >
+                <div
+                        data-pencil-name="A"
+                        class="text-[11px]/[normal] box-border w-[120px] shrink-0 text-[#3FE07F] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    down / up
+                </div>
+                <div
+                        data-pencil-name="B"
+                        class="text-[10px]/[normal] box-border w-[84px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    speed
+                </div>
+                <div
+                        data-pencil-name="C"
+                        class="text-[11px]/[normal] box-border [flex:1_1_0] text-[#E6EFE9] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    down:&gt;1MB/s · up:0
+                </div>
+                <div
+                        data-pencil-name="D"
+                        class="text-[9px]/[normal] box-border w-[110px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    list
+                </div>
+            </div>
+            <div
+                    data-pencil-name="F eta"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[10px] p-[7px_20px] justify-start items-center [border-width:0px_0px_1px_0px] [border-style:solid] [border-color:#232B28]"
+            >
+                <div
+                        data-pencil-name="A"
+                        class="text-[11px]/[normal] box-border w-[120px] shrink-0 text-[#3FE07F] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    eta
+                </div>
+                <div
+                        data-pencil-name="B"
+                        class="text-[10px]/[normal] box-border w-[84px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    duration
+                </div>
+                <div
+                        data-pencil-name="C"
+                        class="text-[11px]/[normal] box-border [flex:1_1_0] text-[#E6EFE9] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    eta:&lt;30m
+                </div>
+                <div
+                        data-pencil-name="D"
+                        class="text-[9px]/[normal] box-border w-[110px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    list
+                </div>
+            </div>
+            <div
+                    data-pencil-name="F added / done"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[10px] p-[7px_20px] justify-start items-center [border-width:0px_0px_1px_0px] [border-style:solid] [border-color:#232B28]"
+            >
+                <div
+                        data-pencil-name="A"
+                        class="text-[11px]/[normal] box-border w-[120px] shrink-0 text-[#3FE07F] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    added / done
+                </div>
+                <div
+                        data-pencil-name="B"
+                        class="text-[10px]/[normal] box-border w-[84px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    date
+                </div>
+                <div
+                        data-pencil-name="C"
+                        class="text-[11px]/[normal] box-border [flex:1_1_0] text-[#E6EFE9] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    added:&gt;7d · done:&lt;2025-01-01
+                </div>
+                <div
+                        data-pencil-name="D"
+                        class="text-[9px]/[normal] box-border w-[110px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    list
+                </div>
+            </div>
+            <div
+                    data-pencil-name="F path"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[10px] p-[7px_20px] justify-start items-center [border-width:0px_0px_1px_0px] [border-style:solid] [border-color:#232B28]"
+            >
+                <div
+                        data-pencil-name="A"
+                        class="text-[11px]/[normal] box-border w-[120px] shrink-0 text-[#3FE07F] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    path
+                </div>
+                <div
+                        data-pencil-name="B"
+                        class="text-[10px]/[normal] box-border w-[84px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    text
+                </div>
+                <div
+                        data-pencil-name="C"
+                        class="text-[11px]/[normal] box-border [flex:1_1_0] text-[#E6EFE9] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    path:/Volumes/Media
+                </div>
+                <div
+                        data-pencil-name="D"
+                        class="text-[9px]/[normal] box-border w-[110px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    list
+                </div>
+            </div>
+            <div
+                    data-pencil-name="F ext"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[10px] p-[7px_20px] justify-start items-center [border-width:0px_0px_1px_0px] [border-style:solid] [border-color:#232B28]"
+            >
+                <div
+                        data-pencil-name="A"
+                        class="text-[11px]/[normal] box-border w-[120px] shrink-0 text-[#3FE07F] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    ext
+                </div>
+                <div
+                        data-pencil-name="B"
+                        class="text-[10px]/[normal] box-border w-[84px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    text
+                </div>
+                <div
+                        data-pencil-name="C"
+                        class="text-[11px]/[normal] box-border [flex:1_1_0] text-[#E6EFE9] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    ext:mkv · ext:(srt OR sub)
+                </div>
+                <div
+                        data-pencil-name="D"
+                        class="text-[9px]/[normal] box-border w-[110px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    files
+                </div>
+            </div>
+            <div
+                    data-pencil-name="F priority"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[10px] p-[7px_20px] justify-start items-center [border-width:0px_0px_1px_0px] [border-style:solid] [border-color:#232B28]"
+            >
+                <div
+                        data-pencil-name="A"
+                        class="text-[11px]/[normal] box-border w-[120px] shrink-0 text-[#3FE07F] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    priority
+                </div>
+                <div
+                        data-pencil-name="B"
+                        class="text-[10px]/[normal] box-border w-[84px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    enum
+                </div>
+                <div
+                        data-pencil-name="C"
+                        class="text-[11px]/[normal] box-border [flex:1_1_0] text-[#E6EFE9] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    priority:high · priority:!skip
+                </div>
+                <div
+                        data-pencil-name="D"
+                        class="text-[9px]/[normal] box-border w-[110px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    files
+                </div>
+            </div>
+            <div
+                    data-pencil-name="F ep / season"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[10px] p-[7px_20px] justify-start items-center [border-width:0px_0px_1px_0px] [border-style:solid] [border-color:#232B28]"
+            >
+                <div
+                        data-pencil-name="A"
+                        class="text-[11px]/[normal] box-border w-[120px] shrink-0 text-[#3FE07F] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    ep / season
+                </div>
+                <div
+                        data-pencil-name="B"
+                        class="text-[10px]/[normal] box-border w-[84px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    number
+                </div>
+                <div
+                        data-pencil-name="C"
+                        class="text-[11px]/[normal] box-border [flex:1_1_0] text-[#E6EFE9] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    ep:&gt;3 · season:2
+                </div>
+                <div
+                        data-pencil-name="D"
+                        class="text-[9px]/[normal] box-border w-[110px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    files · media
+                </div>
+            </div>
+            <div
+                    data-pencil-name="F country"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[10px] p-[7px_20px] justify-start items-center [border-width:0px_0px_1px_0px] [border-style:solid] [border-color:#232B28]"
+            >
+                <div
+                        data-pencil-name="A"
+                        class="text-[11px]/[normal] box-border w-[120px] shrink-0 text-[#3FE07F] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    country
+                </div>
+                <div
+                        data-pencil-name="B"
+                        class="text-[10px]/[normal] box-border w-[84px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    iso2
+                </div>
+                <div
+                        data-pencil-name="C"
+                        class="text-[11px]/[normal] box-border [flex:1_1_0] text-[#E6EFE9] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    country:DE · country:!CN
+                </div>
+                <div
+                        data-pencil-name="D"
+                        class="text-[9px]/[normal] box-border w-[110px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    peers
+                </div>
+            </div>
+            <div
+                    data-pencil-name="F client"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[10px] p-[7px_20px] justify-start items-center [border-width:0px_0px_1px_0px] [border-style:solid] [border-color:#232B28]"
+            >
+                <div
+                        data-pencil-name="A"
+                        class="text-[11px]/[normal] box-border w-[120px] shrink-0 text-[#3FE07F] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    client
+                </div>
+                <div
+                        data-pencil-name="B"
+                        class="text-[10px]/[normal] box-border w-[84px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    text
+                </div>
+                <div
+                        data-pencil-name="C"
+                        class="text-[11px]/[normal] box-border [flex:1_1_0] text-[#E6EFE9] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    client:qBittorrent
+                </div>
+                <div
+                        data-pencil-name="D"
+                        class="text-[9px]/[normal] box-border w-[110px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    peers
+                </div>
+            </div>
+            <div
+                    data-pencil-name="F flags"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[10px] p-[7px_20px] justify-start items-center [border-width:0px_0px_1px_0px] [border-style:solid] [border-color:#232B28]"
+            >
+                <div
+                        data-pencil-name="A"
+                        class="text-[11px]/[normal] box-border w-[120px] shrink-0 text-[#3FE07F] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    flags
+                </div>
+                <div
+                        data-pencil-name="B"
+                        class="text-[10px]/[normal] box-border w-[84px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    enum
+                </div>
+                <div
+                        data-pencil-name="C"
+                        class="text-[11px]/[normal] box-border [flex:1_1_0] text-[#E6EFE9] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    flags:!snubbed
+                </div>
+                <div
+                        data-pencil-name="D"
+                        class="text-[9px]/[normal] box-border w-[110px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    peers
+                </div>
+            </div>
+            <div
+                    data-pencil-name="F status"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[10px] p-[7px_20px] justify-start items-center [border-width:0px_0px_1px_0px] [border-style:solid] [border-color:#232B28]"
+            >
+                <div
+                        data-pencil-name="A"
+                        class="text-[11px]/[normal] box-border w-[120px] shrink-0 text-[#3FE07F] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    status
+                </div>
+                <div
+                        data-pencil-name="B"
+                        class="text-[10px]/[normal] box-border w-[84px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    enum
+                </div>
+                <div
+                        data-pencil-name="C"
+                        class="text-[11px]/[normal] box-border [flex:1_1_0] text-[#E6EFE9] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    status:working · status:failed
+                </div>
+                <div
+                        data-pencil-name="D"
+                        class="text-[9px]/[normal] box-border w-[110px] shrink-0 text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    trackers · web seeds
+                </div>
+            </div>
+        </div>
+        <div
+                data-pencil-name="Grammar"
+                class="box-border w-[430px] shrink-0 h-fit flex flex-col gap-0 justify-start items-start"
+        >
+            <div
+                    data-pencil-name="Sub OPERATORS"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-0 p-[10px_20px] justify-start items-start bg-[#1A201E] [border-width:0px_0px_1px_0px] [border-style:solid] [border-color:#232B28]"
+            >
+                <div
+                        data-pencil-name="Label"
+                        class="text-[9px]/[normal] box-border text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal tracking-[1px] text-left [white-space:nowrap]"
+                >
+                    OPERATORS
+                </div>
+            </div>
+            <div
+                    data-pencil-name="P field:value"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[10px] p-[7px_20px] justify-start items-center"
+            >
+                <div
+                        data-pencil-name="A"
+                        class="text-[11px]/[normal] box-border w-[130px] shrink-0 text-[#45C8D8] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    field:value
+                </div>
+                <div
+                        data-pencil-name="B"
+                        class="text-[11px]/[16px] box-border [flex:1_1_0] text-[#93A69C] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                >
+                    equals (case-insensitive)
+                </div>
+            </div>
+            <div
+                    data-pencil-name="P field:!value"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[10px] p-[7px_20px] justify-start items-center"
+            >
+                <div
+                        data-pencil-name="A"
+                        class="text-[11px]/[normal] box-border w-[130px] shrink-0 text-[#45C8D8] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    field:!value
+                </div>
+                <div
+                        data-pencil-name="B"
+                        class="text-[11px]/[16px] box-border [flex:1_1_0] text-[#93A69C] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                >
+                    not equal / negate
+                </div>
+            </div>
+            <div
+                    data-pencil-name="P &gt; &lt; &gt;= &lt;="
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[10px] p-[7px_20px] justify-start items-center"
+            >
+                <div
+                        data-pencil-name="A"
+                        class="text-[11px]/[normal] box-border w-[130px] shrink-0 text-[#45C8D8] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    &gt; &lt; &gt;= &lt;=
+                </div>
+                <div
+                        data-pencil-name="B"
+                        class="text-[11px]/[16px] box-border [flex:1_1_0] text-[#93A69C] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                >
+                    numeric, size, date, speed
+                </div>
+            </div>
+            <div
+                    data-pencil-name="P a..b"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[10px] p-[7px_20px] justify-start items-center"
+            >
+                <div
+                        data-pencil-name="A"
+                        class="text-[11px]/[normal] box-border w-[130px] shrink-0 text-[#45C8D8] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    a..b
+                </div>
+                <div
+                        data-pencil-name="B"
+                        class="text-[11px]/[16px] box-border [flex:1_1_0] text-[#93A69C] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                >
+                    inclusive range
+                </div>
+            </div>
+            <div
+                    data-pencil-name='P "two words"'
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[10px] p-[7px_20px] justify-start items-center"
+            >
+                <div
+                        data-pencil-name="A"
+                        class="text-[11px]/[normal] box-border w-[130px] shrink-0 text-[#45C8D8] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    "two words"
+                </div>
+                <div
+                        data-pencil-name="B"
+                        class="text-[11px]/[16px] box-border [flex:1_1_0] text-[#93A69C] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                >
+                    quoted phrase, exact
+                </div>
+            </div>
+            <div
+                    data-pencil-name="P *"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[10px] p-[7px_20px] justify-start items-center"
+            >
+                <div
+                        data-pencil-name="A"
+                        class="text-[11px]/[normal] box-border w-[130px] shrink-0 text-[#45C8D8] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    *
+                </div>
+                <div
+                        data-pencil-name="B"
+                        class="text-[11px]/[16px] box-border [flex:1_1_0] text-[#93A69C] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                >
+                    wildcard inside text values
+                </div>
+            </div>
+            <div
+                    data-pencil-name="P AND  OR"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[10px] p-[7px_20px] justify-start items-center"
+            >
+                <div
+                        data-pencil-name="A"
+                        class="text-[11px]/[normal] box-border w-[130px] shrink-0 text-[#45C8D8] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    AND OR
+                </div>
+                <div
+                        data-pencil-name="B"
+                        class="text-[11px]/[16px] box-border [flex:1_1_0] text-[#93A69C] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                >
+                    explicit join · AND is implied by a space
+                </div>
+            </div>
+            <div
+                    data-pencil-name="P ( … )"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[10px] p-[7px_20px] justify-start items-center"
+            >
+                <div
+                        data-pencil-name="A"
+                        class="text-[11px]/[normal] box-border w-[130px] shrink-0 text-[#45C8D8] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    ( … )
+                </div>
+                <div
+                        data-pencil-name="B"
+                        class="text-[11px]/[16px] box-border [flex:1_1_0] text-[#93A69C] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                >
+                    grouping, one level in MVP
+                </div>
+            </div>
+            <div
+                    data-pencil-name="Sub SORT — a predicate, never a column control"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-0 p-[10px_20px] justify-start items-start bg-[#1A201E] [border-width:0px_0px_1px_0px] [border-style:solid] [border-color:#232B28]"
+            >
+                <div
+                        data-pencil-name="Label"
+                        class="text-[9px]/[normal] box-border text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal tracking-[1px] text-left [white-space:nowrap]"
+                >
+                    SORT — a predicate, never a column control
+                </div>
+            </div>
+            <div
+                    data-pencil-name="P sort:ratio"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[10px] p-[7px_20px] justify-start items-center"
+            >
+                <div
+                        data-pencil-name="A"
+                        class="text-[11px]/[normal] box-border w-[130px] shrink-0 text-[#45C8D8] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    sort:ratio
+                </div>
+                <div
+                        data-pencil-name="B"
+                        class="text-[11px]/[16px] box-border [flex:1_1_0] text-[#93A69C] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                >
+                    default direction desc for numbers
+                </div>
+            </div>
+            <div
+                    data-pencil-name="P sort:name asc"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[10px] p-[7px_20px] justify-start items-center"
+            >
+                <div
+                        data-pencil-name="A"
+                        class="text-[11px]/[normal] box-border w-[130px] shrink-0 text-[#45C8D8] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    sort:name asc
+                </div>
+                <div
+                        data-pencil-name="B"
+                        class="text-[11px]/[16px] box-border [flex:1_1_0] text-[#93A69C] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                >
+                    explicit direction
+                </div>
+            </div>
+            <div
+                    data-pencil-name="P sort:state,ratio"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[10px] p-[7px_20px] justify-start items-center"
+            >
+                <div
+                        data-pencil-name="A"
+                        class="text-[11px]/[normal] box-border w-[130px] shrink-0 text-[#45C8D8] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    sort:state,ratio
+                </div>
+                <div
+                        data-pencil-name="B"
+                        class="text-[11px]/[16px] box-border [flex:1_1_0] text-[#93A69C] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                >
+                    multiple keys, left to right
+                </div>
+            </div>
+            <div
+                    data-pencil-name="Sub EXAMPLES"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-0 p-[10px_20px] justify-start items-start bg-[#1A201E] [border-width:0px_0px_1px_0px] [border-style:solid] [border-color:#232B28]"
+            >
+                <div
+                        data-pencil-name="Label"
+                        class="text-[9px]/[normal] box-border text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal tracking-[1px] text-left [white-space:nowrap]"
+                >
+                    EXAMPLES
+                </div>
+            </div>
+            <div
+                    data-pencil-name="E state:active"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-0 p-[6px_20px] justify-start items-start"
+            >
+                <div
+                        data-pencil-name="Label"
+                        class="text-[11px]/[17px] box-border [flex:1_1_0] text-[#3FE07F] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    state:active tag:4k size:&gt;4GB sort:ratio desc
+                </div>
+            </div>
+            <div
+                    data-pencil-name="E tracker:xyz "
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-0 p-[6px_20px] justify-start items-start"
+            >
+                <div
+                        data-pencil-name="Label"
+                        class="text-[11px]/[17px] box-border [flex:1_1_0] text-[#3FE07F] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    tracker:xyz added:&gt;7d seeds:&lt;3 sort:added
+                </div>
+            </div>
+            <div
+                    data-pencil-name='E name:"blade '
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-0 p-[6px_20px] justify-start items-start"
+            >
+                <div
+                        data-pencil-name="Label"
+                        class="text-[11px]/[17px] box-border [flex:1_1_0] text-[#3FE07F] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    name:"blade runner" OR name:dune
+                </div>
+            </div>
+            <div
+                    data-pencil-name="E state:!seedi"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-0 p-[6px_20px] justify-start items-start"
+            >
+                <div
+                        data-pencil-name="Label"
+                        class="text-[11px]/[17px] box-border [flex:1_1_0] text-[#3FE07F] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    state:!seeding ratio:&lt;1 sort:size desc
+                </div>
+            </div>
+            <div
+                    data-pencil-name="E ext:mkv size"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-0 p-[6px_20px] justify-start items-start"
+            >
+                <div
+                        data-pencil-name="Label"
+                        class="text-[11px]/[17px] box-border [flex:1_1_0] text-[#3FE07F] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                >
+                    ext:mkv size:&gt;1GB priority:!skip (files)
+                </div>
+            </div>
+            <div
+                    data-pencil-name="Sub RULES"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-0 p-[10px_20px] justify-start items-start bg-[#1A201E] [border-width:0px_0px_1px_0px] [border-style:solid] [border-color:#232B28]"
+            >
+                <div
+                        data-pencil-name="Label"
+                        class="text-[9px]/[normal] box-border text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal tracking-[1px] text-left [white-space:nowrap]"
+                >
+                    RULES
+                </div>
+            </div>
+            <div
+                    data-pencil-name="R"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[8px] p-[6px_20px] justify-start items-start"
+            >
+                <div
+                        data-pencil-name="Dot"
+                        class="text-[11px]/[normal] box-border text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+                >
+                    ·
+                </div>
+                <div
+                        data-pencil-name="Label"
+                        class="text-[11px]/[17px] box-border [flex:1_1_0] text-[#93A69C] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                >
+                    An unknown field never silently returns nothing — it raises an inline error with a
+                    suggestion.
+                </div>
+            </div>
+            <div
+                    data-pencil-name="R"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[8px] p-[6px_20px] justify-start items-start"
+            >
+                <div
+                        data-pencil-name="Dot"
+                        class="text-[11px]/[normal] box-border text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+                >
+                    ·
+                </div>
+                <div
+                        data-pencil-name="Label"
+                        class="text-[11px]/[17px] box-border [flex:1_1_0] text-[#93A69C] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                >
+                    A lens is ANDed onto the tab query; the tab query is never rewritten.
+                </div>
+            </div>
+            <div
+                    data-pencil-name="R"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[8px] p-[6px_20px] justify-start items-start"
+            >
+                <div
+                        data-pencil-name="Dot"
+                        class="text-[11px]/[normal] box-border text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+                >
+                    ·
+                </div>
+                <div
+                        data-pencil-name="Label"
+                        class="text-[11px]/[17px] box-border [flex:1_1_0] text-[#93A69C] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                >
+                    Every surface renders the same chips for the same query string.
+                </div>
+            </div>
+            <div
+                    data-pencil-name="R"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[8px] p-[6px_20px] justify-start items-start"
+            >
+                <div
+                        data-pencil-name="Dot"
+                        class="text-[11px]/[normal] box-border text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+                >
+                    ·
+                </div>
+                <div
+                        data-pencil-name="Label"
+                        class="text-[11px]/[17px] box-border [flex:1_1_0] text-[#93A69C] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                >
+                    ⌘C on the chip row copies the canonical query text.
+                </div>
+            </div>
+            <div
+                    data-pencil-name="Pad"
+                    class="box-border w-full h-[14px] shrink-0 flex flex-row gap-0 justify-start items-start bg-[#00000000]"
+            ></div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

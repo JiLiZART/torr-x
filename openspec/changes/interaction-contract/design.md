@@ -1,5 +1,9 @@
 ## Context
 
+- HTML reference (HTML + Tailwind export of the canvas frames, in `pen/nodes/`): `scope-lens-query.html`
+  (board A). Read it for layout, spacing and copy; each element carries its canvas name in `data-pencil-name`.
+  Colors there are resolved hex values: map them back to theme tokens, never copy the hex. Boards C, G, H have
+  no export; use `pen/untitled.pen` for those.
 - Sources: A (`K6pFmE`), C (`X91CR`), G (`teJ7L`), H (`yFUm5`). The screens are covered by their own
   changes; this one adds cross-cutting behavior and acceptance tests.
 

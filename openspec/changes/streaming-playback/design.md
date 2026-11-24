@@ -1,5 +1,8 @@
 ## Context
 
+- HTML reference (HTML + Tailwind export of the canvas frames, in `pen/nodes/`): `detail-view-media-mode.html`
+  (10, files in media mode). Read it for layout, spacing and copy; each element carries its canvas name in
+  `data-pencil-name`. Colors there are resolved hex values: map them back to theme tokens, never copy the hex.
 - Boards: THE DAY stop 05, VERDICT 03 ("our engine makes streaming free"), STRUCTURE move 3 ("put the play
   button on the progress bar"), REQUIREMENTS R6 (P2), UC6.
 - rqbit 9 serves seekable HTTP per file (`/ torrents/{id}/stream/{index}` style endpoint on its own HTTP

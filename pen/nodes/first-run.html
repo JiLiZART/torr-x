@@ -1,0 +1,805 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+        tailwind = { config: { corePlugins: { preflight: false } } };
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+            href="https://fonts.googleapis.com/css2?family=Inter%3Awght%40100..900&family=JetBrains+Mono%3Awght%40100..800&display=swap"
+            rel="stylesheet"
+    />
+    <style>
+        *, ::before, ::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+        }
+    </style>
+
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body style="background-color: #0E1110">
+<div
+        data-pencil-name="18 · First run — setup"
+        class="box-border w-[1440px] h-[960px] flex flex-col gap-0 justify-start items-start bg-[#0E1110] [border:1px_solid_#232B28] rounded-[14px] overflow-hidden"
+>
+    <div
+            data-pencil-name="Title Bar"
+            class="box-border w-full h-[46px] shrink-0 flex flex-row gap-[10px] p-[0px_14px] justify-start items-center bg-[#141817] [border-width:0px_0px_1px_0px] [border-style:solid] [border-color:#232B28]"
+    >
+        <div
+                data-pencil-name="Dot"
+                class="box-border w-[11px] shrink-0 h-[11px] bg-[#FF5F57] rounded-[50%]"
+        ></div>
+        <div
+                data-pencil-name="Dot"
+                class="box-border w-[11px] shrink-0 h-[11px] bg-[#FEBC2E] rounded-[50%]"
+        ></div>
+        <div
+                data-pencil-name="Dot"
+                class="box-border w-[11px] shrink-0 h-[11px] bg-[#28C840] rounded-[50%]"
+        ></div>
+        <div
+                data-pencil-name="Spacer"
+                class="box-border [flex:1_1_0] h-[1px] flex flex-row gap-0 justify-start items-start bg-[#00000000]"
+        ></div>
+        <div
+                data-pencil-name="Window Title"
+                class="text-[11px]/[normal] box-border text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+        >
+            torrentx — first run
+        </div>
+        <div
+                data-pencil-name="Spacer 2"
+                class="box-border [flex:1_1_0] h-[1px] flex flex-row gap-0 justify-start items-start bg-[#00000000]"
+        ></div>
+        <div
+                data-pencil-name="Version"
+                class="text-[10px]/[normal] box-border text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+        >
+            v0.4.0
+        </div>
+    </div>
+    <div
+            data-pencil-name="Setup Body"
+            class="box-border w-full [flex:1_1_0] flex flex-col gap-[26px] p-[46px_0px] justify-start items-center"
+    >
+        <div
+                data-pencil-name="Brand"
+                class="box-border w-fit h-fit shrink-0 flex flex-row gap-[11px] justify-start items-center"
+        >
+            <div
+                    data-pencil-name="Mark"
+                    class="box-border w-[34px] shrink-0 h-[34px] flex flex-row gap-0 justify-center items-center bg-[#15321F] [border:1px_solid_#2A5E3C] rounded-[10px]"
+            >
+                <svg
+                        data-pencil-name="Icon"
+                        viewBox="0 0 18 18"
+                        preserveAspectRatio="xMidYMid meet"
+                        data-icon-name="chevrons-down"
+                        data-icon-set="lucide"
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="box-border w-[18px] shrink-0 h-[18px] overflow-visible"
+                >
+                    <path
+                            d="M4.988 3.797q-.128 .057-.246 .167-.115 .105-.163 .206-.044 .097-.053 .15-.008 .053-.008 .18v.053q-.018 .145 .052 .255 .093 .14 .471 .518 .25 .273 1.243 1.261l1.925 1.908q.36 .342 .501 .435 .092 .07 .237 .052h.106q.145 .018 .237-.052 .141-.093 .501-.435l1.925-1.908q.993-.988 1.244-1.261 .377-.378 .47-.518 .07-.11 .052-.255v-.053q0-.127-.008-.18-.009-.053-.044-.145-.057-.123-.176-.22-.114-.101-.242-.145-.123-.048-.294-.048-.172 0-.29 .057-.114 .053-1.771 1.705l-1.657 1.657-1.657-1.657q-1.656-1.652-1.775-1.705-.114-.057-.295-.057-.18 0-.285 .035zM5.076 9.018q-.251 .07-.422 .298-.172 .225-.154 .475v.035q.018 .145 .088 .255 .092 .145 .47 .541l1.547 1.546q1.964 1.96 2.07 2.018 .11 .052 .325 .052 .215 0 .321-.052 .11-.058 2.074-2.018 1.332-1.331 1.652-1.674 .326-.343 .383-.431 .123-.29 .013-.575-.106-.29-.413-.435-.106-.035-.286-.035h-.035q-.163 0-.255 .052-.14 .075-.466 .396-.25 .22-1.098 1.081l-1.89 1.89-1.657-1.653q-1.081-1.081-1.388-1.367-.304-.29-.396-.334-.088-.048-.233-.065-.14-.018-.25 0z"
+                            fill="#3fe07f"
+                    />
+                </svg>
+            </div>
+            <div
+                    data-pencil-name="Name"
+                    class="text-[22px]/[normal] box-border text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-semibold text-left [white-space:nowrap]"
+            >
+                torrentx
+            </div>
+        </div>
+        <div
+                data-pencil-name="Step Rail"
+                class="box-border w-[760px] h-fit shrink-0 flex flex-row gap-0 justify-start items-center"
+        >
+            <div
+                    data-pencil-name="Step Engine"
+                    class="box-border w-fit shrink-0 h-fit flex flex-row gap-[8px] p-[7px_12px] justify-start items-center bg-[#1C2321] [border:1px_solid_#232B28] rounded-[20px]"
+            >
+                <div
+                        data-pencil-name="Dot"
+                        class="box-border w-[18px] shrink-0 h-[18px] flex flex-row gap-0 justify-center items-center bg-[#3FE07F] rounded-[20px]"
+                >
+                    <svg
+                            data-pencil-name="Icon"
+                            viewBox="0 0 11 11"
+                            preserveAspectRatio="xMidYMid meet"
+                            data-icon-name="check"
+                            data-icon-set="lucide"
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="box-border w-[11px] shrink-0 h-[11px] overflow-visible"
+                    >
+                        <path
+                                d="M9.021 2.32q-.057 .011-.102 .046-.043 .032-2.417 2.409l-2.377 2.363-1.012-1.012q-1.013-1.01-1.085-1.042-.07-.035-.175-.035-.105 0-.183 .029-.075 .027-.147 .089-.07 .059-.105 .134-.022 .057-.027 .089-.005 .032-.005 .11v.032q-.011 .089 .032 .156 .056 .086 .287 .317 .153 .166 .76 .771l1.177 1.165q.22 .21 .306 .266 .056 .043 .145 .032l.075 .011q.056 0 .11-.021 .067-.057 .253-.226 .188-.172 .628-.599l1.794-1.794q1.638-1.649 2.122-2.132 .483-.486 .507-.54 .032-.067 .032-.188 0-.078-.005-.11-.005-.032-.027-.089-.035-.064-.107-.129-.07-.067-.143-.094-.07-.029-.164-.029-.093 0-.147 .021z"
+                                fill="#0e1110"
+                        />
+                    </svg>
+                </div>
+                <div
+                        data-pencil-name="Label"
+                        class="text-[12px]/[normal] box-border text-[#93A69C] font-[Inter,system-ui,sans-serif] font-medium text-left [white-space:nowrap]"
+                >
+                    Engine
+                </div>
+            </div>
+            <div
+                    data-pencil-name="Connector"
+                    class="box-border [flex:1_1_0] h-[2px] bg-[#2A5E3C]"
+            ></div>
+            <div
+                    data-pencil-name="Step Library"
+                    class="box-border w-fit shrink-0 h-fit flex flex-row gap-[8px] p-[7px_12px] justify-start items-center bg-[#15321F] [border:1px_solid_#2A5E3C] rounded-[20px]"
+            >
+                <div
+                        data-pencil-name="Dot"
+                        class="box-border w-[18px] shrink-0 h-[18px] flex flex-row gap-0 justify-center items-center bg-[#3FE07F] rounded-[20px]"
+                >
+                    <div
+                            data-pencil-name="Num"
+                            class="text-[10px]/[normal] box-border text-[#0E1110] font-['JetBrains_Mono',system-ui,sans-serif] font-semibold text-left [white-space:nowrap]"
+                    >
+                        2
+                    </div>
+                </div>
+                <div
+                        data-pencil-name="Label"
+                        class="text-[12px]/[normal] box-border text-[#3FE07F] font-[Inter,system-ui,sans-serif] font-semibold text-left [white-space:nowrap]"
+                >
+                    Library
+                </div>
+            </div>
+            <div
+                    data-pencil-name="Connector"
+                    class="box-border [flex:1_1_0] h-[2px] bg-[#232B28]"
+            ></div>
+            <div
+                    data-pencil-name="Step Access"
+                    class="box-border w-fit shrink-0 h-fit flex flex-row gap-[8px] p-[7px_12px] justify-start items-center bg-[#1C2321] [border:1px_solid_#232B28] rounded-[20px]"
+            >
+                <div
+                        data-pencil-name="Dot"
+                        class="box-border w-[18px] shrink-0 h-[18px] flex flex-row gap-0 justify-center items-center bg-[#242D29] rounded-[20px]"
+                >
+                    <div
+                            data-pencil-name="Num"
+                            class="text-[10px]/[normal] box-border text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-semibold text-left [white-space:nowrap]"
+                    >
+                        3
+                    </div>
+                </div>
+                <div
+                        data-pencil-name="Label"
+                        class="text-[12px]/[normal] box-border text-[#5D6D65] font-[Inter,system-ui,sans-serif] font-medium text-left [white-space:nowrap]"
+                >
+                    Access
+                </div>
+            </div>
+        </div>
+        <div
+                data-pencil-name="Setup Card"
+                class="box-border w-[760px] h-fit shrink-0 flex flex-col gap-0 justify-start items-start bg-[#151A18] [border:1px_solid_#232B28] rounded-[16px] overflow-hidden"
+        >
+            <div
+                    data-pencil-name="Card Head"
+                    class="box-border w-full h-fit shrink-0 flex flex-col gap-[7px] p-[24px_26px] justify-start items-start [border-width:0px_0px_1px_0px] [border-style:solid] [border-color:#232B28]"
+            >
+                <div
+                        data-pencil-name="Title"
+                        class="text-[20px]/[normal] box-border w-full text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-semibold text-left"
+                >
+                    Where should downloads live?
+                </div>
+                <div
+                        data-pencil-name="Sub"
+                        class="text-[12.5px]/[19px] box-border w-full text-[#93A69C] font-[Inter,system-ui,sans-serif] font-normal text-left"
+                >
+                    Step 2 of 3 — the folder and the tabs you start with. Both are editable in Settings
+                    later.
+                </div>
+            </div>
+            <div
+                    data-pencil-name="Fields"
+                    class="box-border w-full h-fit shrink-0 flex flex-col gap-[18px] p-[22px_26px] justify-start items-start [border-width:0px_0px_1px_0px] [border-style:solid] [border-color:#232B28]"
+            >
+                <div
+                        data-pencil-name="Field Download folder"
+                        class="box-border w-full h-fit shrink-0 flex flex-col gap-[7px] justify-start items-start"
+                >
+                    <div
+                            data-pencil-name="Head"
+                            class="box-border w-full h-fit shrink-0 flex flex-row gap-[9px] justify-start items-center"
+                    >
+                        <div
+                                data-pencil-name="Label"
+                                class="text-[12.5px]/[normal] box-border text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-semibold text-left [white-space:nowrap]"
+                        >
+                            Download folder
+                        </div>
+                        <div
+                                data-pencil-name="Hint"
+                                class="text-[10px]/[normal] box-border [flex:1_1_0] text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                        >
+                            must be writable
+                        </div>
+                    </div>
+                    <div
+                            data-pencil-name="Row"
+                            class="box-border w-full h-fit shrink-0 flex flex-row gap-[9px] justify-start items-center"
+                    >
+                        <div
+                                data-pencil-name="Path Field"
+                                class="box-border [flex:1_1_0] h-fit flex flex-row gap-[9px] p-[9px_11px] justify-start items-center bg-[#1C2321] [border:1px_solid_#2A5E3C] rounded-[9px]"
+                        >
+                            <svg
+                                    data-pencil-name="Icon"
+                                    viewBox="0 0 14 14"
+                                    preserveAspectRatio="xMidYMid meet"
+                                    data-icon-name="folder-down"
+                                    data-icon-set="lucide"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="box-border w-[14px] shrink-0 h-[14px] overflow-visible"
+                            >
+                                <path
+                                        d="M1.976 1.203q-.479 .099-.838 .444-.355 .342-.495 .804-.041 .14-.041 .348-.014 .267-.028 1.135l.014 6.231q.014 .615 .027 .697 .14 .547 .516 .906 .38 .356 .913 .455 .167 .027 4.956 .027 4.789 0 4.956-.027 .533-.099 .916-.455 .386-.359 .513-.906 .013-.082 .027-.57v-2.591q.014-3.039 0-3.206-.072-.506-.348-.882-.366-.475-.968-.646l-.14-.041-5.041-.014-.096-.041q-.113-.058-.171-.113-.055-.054-.335-.475-.222-.325-.349-.478-.126-.154-.253-.25-.112-.085-.266-.174-.154-.092-.263-.12-.212-.072-.431-.078-.215-.007-1.278-.007h-1.162q-.24 .013-.335 .027zM4.857 2.379q.113 .058 .174 .13 .065 .068 .339 .475 .273 .403 .441 .571 .335 .338 .796 .478l.14 .041h2.523q2.519 .014 2.573 .034 .058 .021 .14 .079 .086 .055 .127 .099 .041 .041 .085 .137l.041 .099v6.132l-.041 .099q-.112 .208-.324 .294l-.096 .027h-9.55l-.096-.027q-.212-.086-.324-.294l-.041-.099v-7.882l.041-.099q.058-.127 .167-.216 .113-.092 .253-.105 .099-.014 1.302-.014h1.221zM6.86 5.264q-.127 .027-.239 .133-.11 .106-.168 .232-.027 .069-.027 .223v.967q0 1.09-.014 1.09-.014 0-.42-.407-.267-.263-.363-.335-.112-.112-.184-.133-.069-.02-.209-.02-.14 0-.239 .041-.195 .099-.28 .318-.082 .215-.014 .423 .027 .072 .174 .226 .147 .154 .821 .827 .94 .95 1.022 .991 .126 .072 .28 .072 .154 0 .28-.072 .082-.041 1.022-.991 .674-.673 .821-.827 .147-.154 .174-.226 .068-.208-.01-.417-.076-.212-.284-.324-.072-.028-.113-.034-.041-.007-.14-.007-.126 0-.198 .02-.069 .021-.195 .133-.082 .072-.349 .335-.406 .407-.42 .407-.014 0-.014-1.09v-.967q0-.154-.027-.223-.086-.198-.284-.3-.195-.106-.403-.065z"
+                                        fill="#3fe07f"
+                                />
+                            </svg>
+                            <div
+                                    data-pencil-name="Value"
+                                    class="text-[12px]/[normal] box-border [flex:1_1_0] text-[#E6EFE9] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                            >
+                                /Users/nk/Downloads/torrentx
+                            </div>
+                            <div
+                                    data-pencil-name="Free"
+                                    class="text-[10px]/[normal] box-border text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+                            >
+                                free 1.2 TB
+                            </div>
+                        </div>
+                        <div
+                                data-pencil-name="Btn Browse"
+                                class="box-border w-fit shrink-0 h-fit flex flex-row gap-0 p-[9px_13px] justify-start items-start bg-[#1C2321] [border:1px_solid_#36423D] rounded-[9px]"
+                        >
+                            <div
+                                    data-pencil-name="Label"
+                                    class="text-[12px]/[normal] box-border text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-medium text-left [white-space:nowrap]"
+                            >
+                                Browse…
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div
+                        data-pencil-name="Field Move completed downloads"
+                        class="box-border w-full h-fit shrink-0 flex flex-col gap-[7px] justify-start items-start"
+                >
+                    <div
+                            data-pencil-name="Head"
+                            class="box-border w-full h-fit shrink-0 flex flex-row gap-[9px] justify-start items-center"
+                    >
+                        <div
+                                data-pencil-name="Label"
+                                class="text-[12.5px]/[normal] box-border text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-semibold text-left [white-space:nowrap]"
+                        >
+                            Move completed downloads
+                        </div>
+                        <div
+                                data-pencil-name="Hint"
+                                class="text-[10px]/[normal] box-border [flex:1_1_0] text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                        >
+                            optional · handled by torrentx when the engine can't
+                        </div>
+                    </div>
+                    <div
+                            data-pencil-name="Row"
+                            class="box-border w-full h-fit shrink-0 flex flex-row gap-[9px] justify-start items-center"
+                    >
+                        <div
+                                data-pencil-name="Toggle"
+                                class="box-border w-fit shrink-0 h-fit flex flex-row gap-[8px] p-[8px_11px] justify-start items-center bg-[#15321F] [border:1px_solid_#2A5E3C] rounded-[9px]"
+                        >
+                            <div
+                                    data-pencil-name="Switch"
+                                    class="box-border w-[24px] shrink-0 h-[14px] flex flex-row gap-0 p-[0px_2px] justify-end items-center bg-[#3FE07F] rounded-[20px]"
+                            >
+                                <div
+                                        data-pencil-name="Knob"
+                                        class="box-border w-[10px] shrink-0 h-[10px] bg-[#0E1110] rounded-[50%]"
+                                ></div>
+                            </div>
+                            <div
+                                    data-pencil-name="Label"
+                                    class="text-[12px]/[normal] box-border text-[#3FE07F] font-[Inter,system-ui,sans-serif] font-medium text-left [white-space:nowrap]"
+                            >
+                                On
+                            </div>
+                        </div>
+                        <div
+                                data-pencil-name="Path Field"
+                                class="box-border [flex:1_1_0] h-fit flex flex-row gap-[9px] p-[9px_11px] justify-start items-center bg-[#1C2321] [border:1px_solid_#232B28] rounded-[9px]"
+                        >
+                            <svg
+                                    data-pencil-name="Icon"
+                                    viewBox="0 0 14 14"
+                                    preserveAspectRatio="xMidYMid meet"
+                                    data-icon-name="folder-symlink"
+                                    data-icon-set="lucide"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="box-border w-[14px] shrink-0 h-[14px] overflow-visible"
+                            >
+                                <path
+                                        d="M1.976 1.203q-.561 .127-.934 .54-.369 .414-.44 .988-.028 .154-.028 1.449 0 1.296 .028 1.391 .027 .168 .153 .294 .154 .154 .363 .168 .212 .013 .393-.11 .058-.044 .119-.126 .065-.086 .086-.147 .02-.065 .034-1.463l.014-1.415 .041-.099q.14-.28 .447-.335 .127-.014 1.303 0h1.193l.095 .041q.113 .058 .181 .13 .072 .068 .226 .304 .434 .66 .588 .8 .393 .348 .882 .434 .126 .027 2.526 .027 2.402 0 2.515 .028 .308 .041 .434 .321l.041 .099v6.132l-.041 .099q-.112 .208-.324 .294l-.096 .027h-9.55l-.096-.027q-.212-.086-.324-.294l-.041-.099v-2.058l.041-.099q.044-.082 .133-.164 .092-.085 .174-.12 .086-.037 .281-.037h2.604l-.407 .407q-.403 .406-.43 .475-.14 .266-.017 .533 .126 .266 .42 .307 .198 .041 .379-.041 .069-.044 1.012-.987 .947-.947 .988-1.036 .044-.092 .044-.246v-.027q0-.127-.037-.209-.034-.085-.229-.284-.14-.153-.656-.67l-.185-.181q-.53-.533-.684-.673-.212-.195-.307-.253-.072-.027-.199-.027h-.027q-.14 0-.232 .044-.089 .041-.168 .113-.075 .068-.119 .137-.055 .126-.055 .273 0 .147 .055 .273 .044 .069 .447 .476l.421 .42h-1.385q-1.387 0-1.527 .014-.475 .071-.855 .372-.376 .301-.557 .762-.072 .209-.085 .407-.014 .195-.014 1.063v.923q.014 .212 .027 .308 .113 .533 .503 .905 .393 .37 .926 .469 .167 .027 4.956 .027 4.789 0 4.956-.027 .533-.099 .916-.455 .386-.359 .513-.906 .013-.082 .027-.57l.014-4.847q-.014-.684-.028-.923-.013-.181-.041-.321-.14-.475-.505-.81-.363-.339-.841-.438-.11-.027-.489-.027l-4.214-.014q-.349 0-.434-.027-.168-.045-.267-.168-.027-.03-.209-.294-.42-.618-.587-.786-.253-.236-.575-.348h-.013q-.154-.072-.253-.086-.14-.027-.448-.027h-1.036-1.175q-.24 .013-.335 .027z"
+                                        fill="#93a69c"
+                                />
+                            </svg>
+                            <div
+                                    data-pencil-name="Value"
+                                    class="text-[12px]/[normal] box-border [flex:1_1_0] text-[#E6EFE9] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                            >
+                                /Volumes/Media
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div
+                        data-pencil-name="Field Start with these tabs"
+                        class="box-border w-full h-fit shrink-0 flex flex-col gap-[7px] justify-start items-start"
+                >
+                    <div
+                            data-pencil-name="Head"
+                            class="box-border w-full h-fit shrink-0 flex flex-row gap-[9px] justify-start items-center"
+                    >
+                        <div
+                                data-pencil-name="Label"
+                                class="text-[12.5px]/[normal] box-border text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-semibold text-left [white-space:nowrap]"
+                        >
+                            Start with these tabs
+                        </div>
+                        <div
+                                data-pencil-name="Hint"
+                                class="text-[10px]/[normal] box-border [flex:1_1_0] text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                        >
+                            tabs are saved queries — add, rename or delete them any time
+                        </div>
+                    </div>
+                    <div
+                            data-pencil-name="Tab Grid"
+                            class="box-border w-full h-fit shrink-0 flex flex-col gap-[8px] justify-start items-start"
+                    >
+                        <div
+                                data-pencil-name="Row"
+                                class="box-border w-full h-fit shrink-0 flex flex-row gap-[8px] justify-start items-start"
+                        >
+                            <div
+                                    data-pencil-name="Opt All"
+                                    class="box-border [flex:1_1_0] h-fit flex flex-row gap-[9px] p-[10px_11px] justify-start items-center bg-[#15321F] [border:1px_solid_#2A5E3C] rounded-[10px]"
+                            >
+                                <div
+                                        data-pencil-name="Checkbox"
+                                        class="box-border w-[15px] shrink-0 h-[15px] flex flex-row gap-0 justify-center items-center bg-[#3FE07F] [border:1px_solid_#3FE07F] rounded-[4px]"
+                                >
+                                    <svg
+                                            data-pencil-name="Check"
+                                            viewBox="0 0 11 11"
+                                            preserveAspectRatio="xMidYMid meet"
+                                            data-icon-name="check"
+                                            data-icon-set="lucide"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            class="box-border w-[11px] shrink-0 h-[11px] overflow-visible"
+                                    >
+                                        <path
+                                                d="M9.021 2.32q-.057 .011-.102 .046-.043 .032-2.417 2.409l-2.377 2.363-1.012-1.012q-1.013-1.01-1.085-1.042-.07-.035-.175-.035-.105 0-.183 .029-.075 .027-.147 .089-.07 .059-.105 .134-.022 .057-.027 .089-.005 .032-.005 .11v.032q-.011 .089 .032 .156 .056 .086 .287 .317 .153 .166 .76 .771l1.177 1.165q.22 .21 .306 .266 .056 .043 .145 .032l.075 .011q.056 0 .11-.021 .067-.057 .253-.226 .188-.172 .628-.599l1.794-1.794q1.638-1.649 2.122-2.132 .483-.486 .507-.54 .032-.067 .032-.188 0-.078-.005-.11-.005-.032-.027-.089-.035-.064-.107-.129-.07-.067-.143-.094-.07-.029-.164-.029-.093 0-.147 .021z"
+                                                fill="#0e1110"
+                                        />
+                                    </svg>
+                                </div>
+                                <div
+                                        data-pencil-name="Text"
+                                        class="box-border [flex:1_1_0] h-fit flex flex-col gap-[3px] justify-start items-start"
+                                >
+                                    <div
+                                            data-pencil-name="Head"
+                                            class="box-border w-full h-fit shrink-0 flex flex-row gap-[6px] justify-start items-center"
+                                    >
+                                        <svg
+                                                data-pencil-name="Icon"
+                                                viewBox="0 0 12 12"
+                                                preserveAspectRatio="xMidYMid meet"
+                                                data-icon-name="pin"
+                                                data-icon-set="lucide"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                class="box-border w-[12px] shrink-0 h-[12px] overflow-visible"
+                                        >
+                                            <path
+                                                    d="M3.853 .516q-.264 .023-.516 .143-.278 .144-.483 .384-.203 .24-.299 .554-.024 .096-.035 .158-.012 .058-.012 .237 0 .217 .017 .32 .018 .099 .091 .269 .155 .372 .504 .63 .349 .258 .744 .281l.144 .012v.923q0 .937-.018 1.022-.017 .082-.041 .155-.05 .097-.164 .176-.114 .076-.545 .293-.551 .287-.635 .346-.206 .158-.355 .381-.149 .22-.211 .483-.023 .097-.029 .176-.006 .076-.006 .354 0 .276 .006 .343 .006 .065 .029 .147 .073 .193 .211 .348 .138 .156 .305 .241l.014 .011q.106 .05 .191 .074 .108 .011 .395 .023h2.353v1.969q0 .155 .029 .228 .032 .071 .103 .144 .073 .07 .161 .114 .091 .041 .199 .041 .108 0 .196-.041 .091-.044 .161-.114 .074-.073 .103-.144 .032-.073 .032-.228v-1.969h2.353q.287-.012 .395-.023 .085-.024 .191-.074l.014-.011q.167-.085 .305-.241 .138-.155 .211-.348 .023-.082 .029-.147 .006-.067 .006-.343 0-.278-.006-.354-.006-.079-.029-.176-.062-.263-.211-.483-.149-.223-.354-.381-.085-.059-.636-.346-.431-.217-.545-.293-.114-.079-.164-.176-.024-.073-.041-.155-.018-.085-.018-1.022v-.923l.144-.012q.395-.023 .744-.281 .349-.258 .504-.63 .073-.182 .091-.275 .017-.097 .017-.314-.011-.179-.017-.237-.006-.062-.03-.158-.096-.314-.301-.554-.203-.24-.481-.384-.252-.12-.539-.143-.155-.024-2.142-.024-1.986 0-2.129 .024zM8.209 1.547q.287 .132 .287 .457 0 .228-.158 .366-.155 .138-.407 .138-.071 0-.191 .032-.12 .029-.217 .076-.12 .073-.234 .188-.114 .111-.173 .243l-.011 .026q-.062 .106-.074 .179-.023 .097-.023 .337v2.062l.047 .132q.17 .542 .589 .829 .096 .059 .618 .331 .521 .27 .58 .326 .061 .052 .111 .134 .024 .062 .029 .109 .006 .047 .018 .228v.252h-6v-.252q.012-.181 .018-.228 .005-.047 .029-.109 .05-.082 .108-.14 .062-.062 .583-.325 .522-.267 .618-.326 .419-.287 .589-.829l.047-.132v-2.062q0-.24-.023-.337-.012-.073-.073-.179l-.012-.026q-.059-.132-.173-.243-.114-.115-.234-.188-.097-.047-.217-.076-.12-.032-.191-.032-.372 0-.504-.276-.108-.216-.014-.436 .096-.223 .325-.284 .059-.012 2.147-.012l2.101 .012z"
+                                                    fill="#3fe07f"
+                                            />
+                                        </svg>
+                                        <div
+                                                data-pencil-name="Label"
+                                                class="text-[12px]/[normal] box-border [flex:1_1_0] text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-semibold text-left"
+                                        >
+                                            All
+                                        </div>
+                                        <div
+                                                data-pencil-name="Pinned"
+                                                class="text-[9px]/[normal] box-border text-[#3FE07F] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+                                        >
+                                            pinned
+                                        </div>
+                                    </div>
+                                    <div
+                                            data-pencil-name="Query"
+                                            class="text-[10px]/[normal] box-border w-full text-[#3FE07F] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                                    >
+                                        state:*
+                                    </div>
+                                </div>
+                            </div>
+                            <div
+                                    data-pencil-name="Opt Downloading"
+                                    class="box-border [flex:1_1_0] h-fit flex flex-row gap-[9px] p-[10px_11px] justify-start items-center bg-[#15321F] [border:1px_solid_#2A5E3C] rounded-[10px]"
+                            >
+                                <div
+                                        data-pencil-name="Checkbox"
+                                        class="box-border w-[15px] shrink-0 h-[15px] flex flex-row gap-0 justify-center items-center bg-[#3FE07F] [border:1px_solid_#3FE07F] rounded-[4px]"
+                                >
+                                    <svg
+                                            data-pencil-name="Check"
+                                            viewBox="0 0 11 11"
+                                            preserveAspectRatio="xMidYMid meet"
+                                            data-icon-name="check"
+                                            data-icon-set="lucide"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            class="box-border w-[11px] shrink-0 h-[11px] overflow-visible"
+                                    >
+                                        <path
+                                                d="M9.021 2.32q-.057 .011-.102 .046-.043 .032-2.417 2.409l-2.377 2.363-1.012-1.012q-1.013-1.01-1.085-1.042-.07-.035-.175-.035-.105 0-.183 .029-.075 .027-.147 .089-.07 .059-.105 .134-.022 .057-.027 .089-.005 .032-.005 .11v.032q-.011 .089 .032 .156 .056 .086 .287 .317 .153 .166 .76 .771l1.177 1.165q.22 .21 .306 .266 .056 .043 .145 .032l.075 .011q.056 0 .11-.021 .067-.057 .253-.226 .188-.172 .628-.599l1.794-1.794q1.638-1.649 2.122-2.132 .483-.486 .507-.54 .032-.067 .032-.188 0-.078-.005-.11-.005-.032-.027-.089-.035-.064-.107-.129-.07-.067-.143-.094-.07-.029-.164-.029-.093 0-.147 .021z"
+                                                fill="#0e1110"
+                                        />
+                                    </svg>
+                                </div>
+                                <div
+                                        data-pencil-name="Text"
+                                        class="box-border [flex:1_1_0] h-fit flex flex-col gap-[3px] justify-start items-start"
+                                >
+                                    <div
+                                            data-pencil-name="Head"
+                                            class="box-border w-full h-fit shrink-0 flex flex-row gap-[6px] justify-start items-center"
+                                    >
+                                        <svg
+                                                data-pencil-name="Icon"
+                                                viewBox="0 0 12 12"
+                                                preserveAspectRatio="xMidYMid meet"
+                                                data-icon-name="arrow-down-to-line"
+                                                data-icon-set="lucide"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                class="box-border w-[12px] shrink-0 h-[12px] overflow-visible"
+                                        >
+                                            <path
+                                                    d="M5.868 1.02q-.217 .073-.325 .263l-.035 .073v5.939l-1.105-1.102q-1.116-1.104-1.174-1.142-.097-.047-.229-.047-.132 0-.229 .047-.07 .038-.137 .117-.065 .076-.097 .161-.029 .082-.029 .191 0 .108 .047 .193 .014 .047 .313 .354 .299 .305 1.283 1.289 .985 .985 1.289 1.287 .308 .298 .355 .31 .085 .047 .205 .047 .12 0 .205-.035 .047-.024 .352-.322 .307-.302 1.292-1.287 .984-.984 1.283-1.289 .299-.307 .313-.354 .047-.085 .047-.193 0-.109-.032-.191-.029-.085-.097-.161-.064-.079-.134-.117-.097-.047-.229-.047-.132 0-.228 .047-.059 .038-1.175 1.142l-1.105 1.102v-5.939l-.035-.073q-.085-.155-.24-.228-.073-.035-.194-.041-.12-.006-.155 .006zM2.341 10.031q-.205 .074-.296 .279-.088 .202-.006 .395 .05 .082 .12 .155 .073 .071 .158 .109l.082 .023h7.202l.082-.023q.085-.038 .155-.109 .073-.073 .114-.161 .044-.091 .044-.199 0-.108-.035-.205-.085-.167-.252-.252l-.073-.035h-3.624q-3.624 0-3.671 .023z"
+                                                    fill="#3fe07f"
+                                            />
+                                        </svg>
+                                        <div
+                                                data-pencil-name="Label"
+                                                class="text-[12px]/[normal] box-border [flex:1_1_0] text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-semibold text-left"
+                                        >
+                                            Downloading
+                                        </div>
+                                        <div
+                                                data-pencil-name="Pinned"
+                                                class="text-[9px]/[normal] box-border text-[#3FE07F] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+                                        >
+                                            pinned
+                                        </div>
+                                    </div>
+                                    <div
+                                            data-pencil-name="Query"
+                                            class="text-[10px]/[normal] box-border w-full text-[#3FE07F] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                                    >
+                                        state:downloading
+                                    </div>
+                                </div>
+                            </div>
+                            <div
+                                    data-pencil-name="Opt Seeding"
+                                    class="box-border [flex:1_1_0] h-fit flex flex-row gap-[9px] p-[10px_11px] justify-start items-center bg-[#15321F] [border:1px_solid_#2A5E3C] rounded-[10px]"
+                            >
+                                <div
+                                        data-pencil-name="Checkbox"
+                                        class="box-border w-[15px] shrink-0 h-[15px] flex flex-row gap-0 justify-center items-center bg-[#3FE07F] [border:1px_solid_#3FE07F] rounded-[4px]"
+                                >
+                                    <svg
+                                            data-pencil-name="Check"
+                                            viewBox="0 0 11 11"
+                                            preserveAspectRatio="xMidYMid meet"
+                                            data-icon-name="check"
+                                            data-icon-set="lucide"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            class="box-border w-[11px] shrink-0 h-[11px] overflow-visible"
+                                    >
+                                        <path
+                                                d="M9.021 2.32q-.057 .011-.102 .046-.043 .032-2.417 2.409l-2.377 2.363-1.012-1.012q-1.013-1.01-1.085-1.042-.07-.035-.175-.035-.105 0-.183 .029-.075 .027-.147 .089-.07 .059-.105 .134-.022 .057-.027 .089-.005 .032-.005 .11v.032q-.011 .089 .032 .156 .056 .086 .287 .317 .153 .166 .76 .771l1.177 1.165q.22 .21 .306 .266 .056 .043 .145 .032l.075 .011q.056 0 .11-.021 .067-.057 .253-.226 .188-.172 .628-.599l1.794-1.794q1.638-1.649 2.122-2.132 .483-.486 .507-.54 .032-.067 .032-.188 0-.078-.005-.11-.005-.032-.027-.089-.035-.064-.107-.129-.07-.067-.143-.094-.07-.029-.164-.029-.093 0-.147 .021z"
+                                                fill="#0e1110"
+                                        />
+                                    </svg>
+                                </div>
+                                <div
+                                        data-pencil-name="Text"
+                                        class="box-border [flex:1_1_0] h-fit flex flex-col gap-[3px] justify-start items-start"
+                                >
+                                    <div
+                                            data-pencil-name="Head"
+                                            class="box-border w-full h-fit shrink-0 flex flex-row gap-[6px] justify-start items-center"
+                                    >
+                                        <svg
+                                                data-pencil-name="Icon"
+                                                viewBox="0 0 12 12"
+                                                preserveAspectRatio="xMidYMid meet"
+                                                data-icon-name="arrow-up-from-line"
+                                                data-icon-set="lucide"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                class="box-border w-[12px] shrink-0 h-[12px] overflow-visible"
+                                        >
+                                            <path
+                                                    d="M5.833 1.02q-.061 .023-.117 .067-.053 .041-1.588 1.585-1.535 1.541-1.579 1.614-.041 .07-.041 .202 0 .132 .029 .205 .032 .071 .114 .156 .085 .082 .156 .114 .073 .029 .205 .029 .132 0 .202-.035 .073-.038 1.189-1.14l1.105-1.104v5.88l.023 .082q.074 .181 .252 .278 .085 .035 .217 .035 .132 0 .217-.035 .179-.097 .252-.278l.023-.082v-5.88l1.105 1.104q1.116 1.102 1.186 1.14 .073 .035 .205 .035 .132 0 .202-.029 .074-.032 .156-.114 .085-.085 .114-.156 .032-.073 .032-.205 0-.132-.044-.202-.041-.073-1.602-1.638-1.559-1.567-1.626-1.596-.065-.032-.197-.044-.131-.012-.19 .012zM2.341 10.031q-.205 .074-.296 .279-.088 .202-.006 .395 .05 .082 .12 .155 .073 .071 .158 .109l.082 .023h7.202l.082-.023q.085-.038 .155-.109 .073-.073 .114-.161 .044-.091 .044-.199 0-.108-.035-.205-.085-.167-.252-.252l-.073-.035h-3.624q-3.624 0-3.671 .023z"
+                                                    fill="#3fe07f"
+                                            />
+                                        </svg>
+                                        <div
+                                                data-pencil-name="Label"
+                                                class="text-[12px]/[normal] box-border [flex:1_1_0] text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-semibold text-left"
+                                        >
+                                            Seeding
+                                        </div>
+                                    </div>
+                                    <div
+                                            data-pencil-name="Query"
+                                            class="text-[10px]/[normal] box-border w-full text-[#3FE07F] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                                    >
+                                        state:seeding
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div
+                                data-pencil-name="Row"
+                                class="box-border w-full h-fit shrink-0 flex flex-row gap-[8px] justify-start items-start"
+                        >
+                            <div
+                                    data-pencil-name="Opt Stalled"
+                                    class="box-border [flex:1_1_0] h-fit flex flex-row gap-[9px] p-[10px_11px] justify-start items-center bg-[#15321F] [border:1px_solid_#2A5E3C] rounded-[10px]"
+                            >
+                                <div
+                                        data-pencil-name="Checkbox"
+                                        class="box-border w-[15px] shrink-0 h-[15px] flex flex-row gap-0 justify-center items-center bg-[#3FE07F] [border:1px_solid_#3FE07F] rounded-[4px]"
+                                >
+                                    <svg
+                                            data-pencil-name="Check"
+                                            viewBox="0 0 11 11"
+                                            preserveAspectRatio="xMidYMid meet"
+                                            data-icon-name="check"
+                                            data-icon-set="lucide"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            class="box-border w-[11px] shrink-0 h-[11px] overflow-visible"
+                                    >
+                                        <path
+                                                d="M9.021 2.32q-.057 .011-.102 .046-.043 .032-2.417 2.409l-2.377 2.363-1.012-1.012q-1.013-1.01-1.085-1.042-.07-.035-.175-.035-.105 0-.183 .029-.075 .027-.147 .089-.07 .059-.105 .134-.022 .057-.027 .089-.005 .032-.005 .11v.032q-.011 .089 .032 .156 .056 .086 .287 .317 .153 .166 .76 .771l1.177 1.165q.22 .21 .306 .266 .056 .043 .145 .032l.075 .011q.056 0 .11-.021 .067-.057 .253-.226 .188-.172 .628-.599l1.794-1.794q1.638-1.649 2.122-2.132 .483-.486 .507-.54 .032-.067 .032-.188 0-.078-.005-.11-.005-.032-.027-.089-.035-.064-.107-.129-.07-.067-.143-.094-.07-.029-.164-.029-.093 0-.147 .021z"
+                                                fill="#0e1110"
+                                        />
+                                    </svg>
+                                </div>
+                                <div
+                                        data-pencil-name="Text"
+                                        class="box-border [flex:1_1_0] h-fit flex flex-col gap-[3px] justify-start items-start"
+                                >
+                                    <div
+                                            data-pencil-name="Head"
+                                            class="box-border w-full h-fit shrink-0 flex flex-row gap-[6px] justify-start items-center"
+                                    >
+                                        <svg
+                                                data-pencil-name="Icon"
+                                                viewBox="0 0 12 12"
+                                                preserveAspectRatio="xMidYMid meet"
+                                                data-icon-name="pause"
+                                                data-icon-set="lucide"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                class="box-border w-[12px] shrink-0 h-[12px] overflow-visible"
+                                        >
+                                            <path
+                                                    d="M2.76 1.031q-.24 .05-.457 .264-.106 .108-.167 .199-.059 .091-.097 .234l-.035 .109v8.326l.035 .109q.038 .143 .097 .234 .061 .091 .167 .199 .205 .202 .457 .264 .108 .023 .99 .023 .882 0 .99-.023 .252-.062 .457-.264 .106-.108 .164-.199 .062-.091 .1-.234l.035-.109v-8.326l-.035-.109q-.038-.143-.1-.234-.058-.091-.164-.199-.217-.214-.468-.264-.109-.023-.985-.023-.876 0-.984 .023zM7.26 1.031q-.24 .05-.457 .264-.106 .108-.167 .199-.059 .091-.097 .234l-.035 .109v8.326l.035 .109q.038 .143 .097 .234 .061 .091 .167 .199 .205 .202 .457 .264 .108 .023 .99 .023 .882 0 .99-.023 .252-.062 .457-.264 .106-.108 .164-.199 .062-.091 .1-.234l.035-.109v-8.326l-.035-.109q-.038-.143-.1-.234-.058-.091-.164-.199-.216-.214-.468-.264-.109-.023-.985-.023-.876 0-.984 .023zM4.5 6v4.008h-1.5v-8.016h1.5zM9 6v4.008h-1.5v-8.016h1.5z"
+                                                    fill="#3fe07f"
+                                            />
+                                        </svg>
+                                        <div
+                                                data-pencil-name="Label"
+                                                class="text-[12px]/[normal] box-border [flex:1_1_0] text-[#E6EFE9] font-[Inter,system-ui,sans-serif] font-semibold text-left"
+                                        >
+                                            Stalled
+                                        </div>
+                                    </div>
+                                    <div
+                                            data-pencil-name="Query"
+                                            class="text-[10px]/[normal] box-border w-full text-[#3FE07F] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                                    >
+                                        state:stalled
+                                    </div>
+                                </div>
+                            </div>
+                            <div
+                                    data-pencil-name="Opt 4K Movies"
+                                    class="box-border [flex:1_1_0] h-fit flex flex-row gap-[9px] p-[10px_11px] justify-start items-center bg-[#1C2321] [border:1px_solid_#232B28] rounded-[10px]"
+                            >
+                                <div
+                                        data-pencil-name="Checkbox"
+                                        class="box-border w-[15px] shrink-0 h-[15px] flex flex-row gap-0 justify-center items-center bg-[#00000000] [border:1px_solid_#36423D] rounded-[4px]"
+                                ></div>
+                                <div
+                                        data-pencil-name="Text"
+                                        class="box-border [flex:1_1_0] h-fit flex flex-col gap-[3px] justify-start items-start"
+                                >
+                                    <div
+                                            data-pencil-name="Head"
+                                            class="box-border w-full h-fit shrink-0 flex flex-row gap-[6px] justify-start items-center"
+                                    >
+                                        <svg
+                                                data-pencil-name="Icon"
+                                                viewBox="0 0 12 12"
+                                                preserveAspectRatio="xMidYMid meet"
+                                                data-icon-name="clapperboard"
+                                                data-icon-set="lucide"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                class="box-border w-[12px] shrink-0 h-[12px] overflow-visible"
+                                        >
+                                            <path
+                                                    d="M8.531 .527q-.096 .012-.252 .05l-1.031 .311q-1.055 .313-1.116 .319-.059 .006-.155 .047-.097 .041-2.277 .685-2.177 .642-2.259 .677-.193 .073-.375 .223-.178 .149-.298 .316-.167 .252-.229 .542-.023 .12-.023 .331 0 .208 .029 .317 .032 .108 .234 .671l.217 .553 .012 4.199 .035 .108q.132 .407 .407 .686 .279 .275 .697 .395 .074 .023 .613 .023l3.24 .012 3.24-.012q.539 0 .613-.023 .84-.228 1.104-1.081l.035-.108v-4.008q0-.372-.023-.419-.024-.109-.109-.191-.085-.085-.205-.123-.035-.011-.48-.023l-5.124-.012 1.345-.395q1.333-.384 1.409-.396 .079-.012 .17-.047 .09-.038 1.186-.354 1.099-.32 1.172-.355 .12-.061 .19-.181 .074-.12 .074-.252 0-.071-.038-.202-.036-.135-.167-.578l-.217-.685q-.047-.132-.094-.226-.085-.181-.252-.348-.24-.252-.583-.372-.343-.121-.715-.074zM8.965 1.559q.155 .085 .214 .205 .038 .061 .164 .474 .126 .413 .12 .419-.006 .006-.762 .229-.756 .222-.77 .222-.012 0-.396-.504l-.43-.553q-.05-.059-.039-.065 .015-.006 .794-.234 .575-.179 .689-.208 .114-.032 .211-.021 .132 0 .205 .036zM6.457 2.845q.419 .55 .425 .556 .006 .006-1.008 .308-1.014 .299-1.031 .299-.018 0-.446-.533-.424-.534-.43-.551-.006-.021 .996-.32 1.002-.301 1.031-.307 .029-.006 .463 .548zM3.36 3.779q.419 .528 .413 .536-.005 .006-.984 .288-.978 .281-.99 .281l-.276-.733v-.143q0-.097 .006-.132 .006-.035 .03-.085 .085-.155 .193-.214 .073-.038 .612-.199 .539-.161 .551-.149zM9.996 7.799v1.813l-.035 .085q-.12 .238-.372 .287-.085 .024-3.589 .024-3.504 0-3.589-.024-.252-.049-.372-.287l-.035-.085-.012-3.612h8.016z"
+                                                    fill="#5d6d65"
+                                            />
+                                        </svg>
+                                        <div
+                                                data-pencil-name="Label"
+                                                class="text-[12px]/[normal] box-border [flex:1_1_0] text-[#93A69C] font-[Inter,system-ui,sans-serif] font-semibold text-left"
+                                        >
+                                            4K Movies
+                                        </div>
+                                    </div>
+                                    <div
+                                            data-pencil-name="Query"
+                                            class="text-[10px]/[normal] box-border w-full text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                                    >
+                                        tag:4k category:movies
+                                    </div>
+                                </div>
+                            </div>
+                            <div
+                                    data-pencil-name="Opt Recently added"
+                                    class="box-border [flex:1_1_0] h-fit flex flex-row gap-[9px] p-[10px_11px] justify-start items-center bg-[#1C2321] [border:1px_solid_#232B28] rounded-[10px]"
+                            >
+                                <div
+                                        data-pencil-name="Checkbox"
+                                        class="box-border w-[15px] shrink-0 h-[15px] flex flex-row gap-0 justify-center items-center bg-[#00000000] [border:1px_solid_#36423D] rounded-[4px]"
+                                ></div>
+                                <div
+                                        data-pencil-name="Text"
+                                        class="box-border [flex:1_1_0] h-fit flex flex-col gap-[3px] justify-start items-start"
+                                >
+                                    <div
+                                            data-pencil-name="Head"
+                                            class="box-border w-full h-fit shrink-0 flex flex-row gap-[6px] justify-start items-center"
+                                    >
+                                        <svg
+                                                data-pencil-name="Icon"
+                                                viewBox="0 0 12 12"
+                                                preserveAspectRatio="xMidYMid meet"
+                                                data-icon-name="timer"
+                                                data-icon-set="lucide"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                class="box-border w-[12px] shrink-0 h-[12px] overflow-visible"
+                                        >
+                                            <path
+                                                    d="M4.907 .516q-.155 .023-.275 .155-.12 .132-.132 .302 0 .12 .053 .24 .055 .12 .164 .19l.012 .012q.058 .05 .128 .062 .074 .011 .302 .023h1.682q.228-.012 .299-.023 .073-.012 .132-.062l.011-.012q.182-.12 .211-.316 .029-.199-.085-.372-.114-.176-.328-.199-.097-.024-1.093-.024-.996 0-1.081 .024zM5.569 2.52q-.84 .084-1.602 .468-.762 .384-1.327 1.02-.923 1.043-1.117 2.472-.023 .179-.017 .557 .006 .378 .029 .548 .085 .612 .299 1.134 .217 .521 .577 1.002 .132 .167 .378 .419 .246 .252 .404 .383 .372 .288 .803 .504 .504 .241 .979 .355 .474 .114 1.025 .114 .551 0 1.025-.114 .475-.114 .979-.355 .349-.178 .618-.375 .27-.199 .571-.501 .73-.72 1.067-1.678 .217-.624 .234-1.325 .018-.703-.149-1.341-.229-.803-.709-1.456-.481-.654-1.175-1.122-.144-.097-.434-.241-.287-.143-.454-.205-.468-.167-.972-.24-.144-.023-.516-.029-.372-.006-.516 .006zM6.396 3.527q.84 .085 1.564 .583 .727 .498 1.137 1.254 .372 .709 .395 1.524 .024 .864-.337 1.608-.132 .299-.287 .516-.155 .217-.384 .445-.228 .226-.433 .378-.202 .149-.478 .293-.914 .457-1.927 .354-1.014-.102-1.829-.75-.193-.155-.421-.401-.229-.246-.373-.486-.539-.853-.521-1.89 .018-1.04 .583-1.89 .516-.782 1.368-1.201 .888-.445 1.943-.337zM7.415 5.016q-.082 .011-.143 .044-.059 .029-.888 .843-.577 .589-.703 .721-.126 .132-.15 .193-.058 .179 .012 .367 .073 .184 .24 .269 .085 .035 .217 .035h.023q.097 0 .167-.035 .074-.038 .255-.205 .132-.12 .575-.565l.096-.094q.577-.577 .703-.715 .126-.138 .15-.199 .058-.179-.003-.34-.059-.164-.208-.258-.15-.097-.343-.061z"
+                                                    fill="#5d6d65"
+                                            />
+                                        </svg>
+                                        <div
+                                                data-pencil-name="Label"
+                                                class="text-[12px]/[normal] box-border [flex:1_1_0] text-[#93A69C] font-[Inter,system-ui,sans-serif] font-semibold text-left"
+                                        >
+                                            Recently added
+                                        </div>
+                                    </div>
+                                    <div
+                                            data-pencil-name="Query"
+                                            class="text-[10px]/[normal] box-border w-full text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left"
+                                    >
+                                        added:&lt;7d sort:added desc
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div
+                    data-pencil-name="Card Footer"
+                    class="box-border w-full h-fit shrink-0 flex flex-row gap-[10px] p-[16px_26px] justify-start items-center bg-[#1A201E]"
+            >
+                <div
+                        data-pencil-name="Skip"
+                        class="text-[12px]/[normal] box-border text-[#5D6D65] font-[Inter,system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+                >
+                    Skip — use defaults
+                </div>
+                <div
+                        data-pencil-name="Spacer"
+                        class="box-border [flex:1_1_0] h-[1px] flex flex-row gap-0 justify-start items-start bg-[#00000000]"
+                ></div>
+                <div
+                        data-pencil-name="Progress"
+                        class="text-[10px]/[normal] box-border text-[#5D6D65] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+                >
+                    step 2 of 3
+                </div>
+                <div
+                        data-pencil-name="Btn Back"
+                        class="box-border w-fit shrink-0 h-fit flex flex-row gap-0 p-[10px_15px] justify-start items-start [border:1px_solid_#36423D] rounded-[9px]"
+                >
+                    <div
+                            data-pencil-name="Label"
+                            class="text-[12px]/[normal] box-border text-[#93A69C] font-[Inter,system-ui,sans-serif] font-medium text-left [white-space:nowrap]"
+                    >
+                        Back
+                    </div>
+                </div>
+                <div
+                        data-pencil-name="Btn Continue"
+                        class="box-border w-fit shrink-0 h-fit flex flex-row gap-[7px] p-[10px_17px] justify-start items-center bg-[#3FE07F] rounded-[9px]"
+                >
+                    <div
+                            data-pencil-name="Label"
+                            class="text-[12px]/[normal] box-border text-[#0E1110] font-[Inter,system-ui,sans-serif] font-semibold text-left [white-space:nowrap]"
+                    >
+                        Continue
+                    </div>
+                    <div
+                            data-pencil-name="Key"
+                            class="text-[10px]/[normal] box-border text-[#0E1110] font-['JetBrains_Mono',system-ui,sans-serif] font-normal text-left [white-space:nowrap]"
+                    >
+                        ⏎
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div
+                data-pencil-name="Note"
+                class="text-[11.5px]/[18px] box-border w-[700px] text-[#5D6D65] font-[Inter,system-ui,sans-serif] font-normal text-center"
+        >
+            Nothing is downloaded during setup. Step 3 asks whether the web UI should be reachable
+            from other machines — the default is loopback only, no password.
+        </div>
+    </div>
+</div>
+</body>
+</html>

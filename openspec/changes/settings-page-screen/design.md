@@ -1,5 +1,8 @@
 ## Context
 
+- HTML reference (HTML + Tailwind export of the canvas frames, in `pen/nodes/`): `settings.html` (19). Read it
+  for layout, spacing and copy; each element carries its canvas name in `data-pencil-name`. Colors there are
+  resolved hex values: map them back to theme tokens, never copy the hex.
 - Source frame: 19 (`pETNK`); house rules 01 and 04 (defaults, disabled controls explain themselves).
 - Current `Settings.tsx` is a 574-line modal with one Save; settings API already has sections and
   `restartRequired`; capabilities matrix exists.

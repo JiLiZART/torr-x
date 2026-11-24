@@ -1,5 +1,8 @@
 ## Context
 
+- HTML reference (HTML + Tailwind export of the canvas frames, in `pen/nodes/`): `web-login.html` (20). Read
+  it for layout, spacing and copy; each element carries its canvas name in `data-pencil-name`. Colors there
+  are resolved hex values: map them back to theme tokens, never copy the hex.
 - Source frame: 20 (`IENtA`) with its STATES OF THIS SCREEN legend.
 - `auth.rs` has in-memory sessions, argon2, Basic fallback; no attempt tracking.
 

@@ -1,5 +1,10 @@
 ## Context
 
+- HTML reference (HTML + Tailwind export of the canvas frames, in `pen/nodes/`): `command-palette.html` (08);
+  `spotlight.html` (02, plain-text jump); `spotlight-query.html` (03, structured query);
+  `spotlight-light.html` (13, light); `keymap.html` (board F). Read it for layout, spacing and copy; each
+  element carries its canvas name in `data-pencil-name`. Colors there are resolved hex values: map them back
+  to theme tokens, never copy the hex. Boards G and H have no export; use `pen/untitled.pen` for those.
 - Source of truth: screen 08 (`x8HOA5`), with screens 02 (plain-text jump) and 03 (structured query) as the
   two input modes of the same panel; board F (keyboard map), board H (cross-surface contract).
 - `active-tab-screen` provides the shell, the ⌘T trigger in the sidebar, tabs-as-queries, the lens and
