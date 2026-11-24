@@ -48,5 +48,5 @@ target, no "what do I still owe" answer, and no bulk cleanup.
 - `packages/query`: `duty` field; `packages/ui`: obligation line in the detail hero and row, target editor
   (inline popover), `Clear fulfilled` action + cost confirmation dialog reusing the destructive-confirm
   component; i18n keys in six dictionaries.
-- Depends on `attention-first-list` (duty class, groups) and `query-language-and-smart-tabs` (query, tabs).
+- Depends on `attention-first-list` (duty class, groups) and `active-tab-screen` (query, tabs).
   No engine crate changes: seeding-time accumulation and per-torrent stops are server policy (`via: server`).

@@ -47,6 +47,6 @@ in the terminal is the query in the filter bar, with the same errors and the sam
 - `crates/torrentx-server`: `logs.rs` (bounded ring fed by a `tracing` layer, also receiving policy events),
   `GET /api/v1/logs`; `main.rs` and the desktop crate install the layer.
 - `packages/api-client`: `logs()` and `LogEntry`.
-- Depends on `browser-shell-and-spotlight` (top bar toggle, status bar handle, command registry) and
-  `query-language-and-smart-tabs`; clickable references open the page from `torrent-detail-page` when present.
+- Depends on `active-tab-screen` (top bar toggle, status bar handle) and `command-palette-screen` (command
+  registry); clickable references open the page from `torrent-detail-screen` when present.
 - No standalone CLI binary and no remote shell (non-goals).

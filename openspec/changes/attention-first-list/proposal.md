@@ -36,7 +36,7 @@ three seconds to check nothing is wrong (UC3) — the list must answer that befo
 - `http-api`: `Torrent` gains `attention` and `diagnosis`; server-side derivation rules and honesty guarantee.
 - `torrent-query`: new field `attention:` and sort key `sort:attention`.
 - `web-ui`: attention-first default ordering, obligation groups, diagnosis sentence, cached engine-down view,
-  virtualized list. **Modifies** the pending `query-language-and-smart-tabs` requirement "Torrent list with
+  virtualized list. **Modifies** the `active-tab-screen` requirement "Torrent list with
   live refresh".
 
 ## Impact
@@ -50,5 +50,5 @@ three seconds to check nothing is wrong (UC3) — the list must answer that befo
   via `t("diagnosis.<code>", params)`, engine-down cache in the list data hook, detail hero verdict line.
 - i18n: diagnosis sentence keys in all six dictionaries.
 - No engine changes: derivation uses only fields the engines already report; missing inputs yield no claim.
-- Depends on `query-language-and-smart-tabs` (query, tabs) and `ui-row-activity-and-window-polish` (fixed row
+- Depends on `active-tab-screen` (query, tabs) and `ui-row-activity-and-window-polish` (fixed row
   height). `seeding-duty-and-cleanup` later refines the `seeding-duty` class with per-torrent targets.

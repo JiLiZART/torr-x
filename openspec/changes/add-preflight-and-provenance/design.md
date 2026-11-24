@@ -1,11 +1,11 @@
 ## Context
 
 - Boards: THE DAY stops 02 and 04, STRUCTURE moves 2 and 4, REQUIREMENTS R7 (P1), UC2/UC5.
-- The pending add flow (`browser-shell-and-spotlight`) already shows free space next to the save path, fed by
+- The add flow (`add-flow-and-theming`) already shows free space next to the save path, fed by
   the stats disk-free readout — which only covers the configured download dir, not an arbitrary chosen path.
-- `setup-settings-page-and-login` (pending) adds `POST /fs/check` for path validation; the same path
+- `empty-library-and-first-run` (pending) adds `POST /fs/check` for path validation; the same path
   validation rules apply here.
-- Tags (`query-language-and-smart-tabs`) established the pattern: server-owned per-torrent metadata in
+- Tags (`active-tab-screen`) established the pattern: server-owned per-torrent metadata in
   `state.json`, engines leave the field null.
 
 ## Goals / Non-Goals

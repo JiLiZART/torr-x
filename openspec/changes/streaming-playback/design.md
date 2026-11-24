@@ -5,7 +5,7 @@
 - rqbit 9 serves seekable HTTP per file (`/ torrents/{id}/stream/{index}` style endpoint on its own HTTP
   listener) and downloads sequentially by default — the head of the file arrives first, so early playback
   works without any piece-order control.
-- `torrent-detail-page` (pending) gives the hero a segmented progress bar, media mode with episode rows, and
+- `torrent-detail-screen` (pending) gives the hero a segmented progress bar, media mode with episode rows, and
   format-aware file actions; `adopt-magic-patterns-ui` (pending) defines the capability matrix and the
   "not supported by <engine>" hint.
 - Auth: session cookie or Basic on the server origin; the rqbit listener is a different port, loopback-only,

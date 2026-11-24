@@ -10,7 +10,7 @@ torrents are not added by the human, and the only breadcrumb today is a category
 
 - **Add preflight**: a `GET /fs/free?path=` endpoint reports free/total bytes for the volume of a save path
   (resolved to the nearest existing ancestor). The Spotlight add flow already shows free space next to the
-  save path (`browser-shell-and-spotlight`); this change makes it *judge*: when the selected files' total size
+  save path (`add-flow-and-theming`); this change makes it *judge*: when the selected files' total size
   exceeds free bytes, the flow shows a warning naming the shortfall ("needs 60 GB, 21 GB free on /data") and
   recomputes as files are checked/unchecked or the path changes. The warning never blocks the add — the user
   may know space will be freed — but the add can no longer silently fail at 94% (the `disk-low` attention
@@ -31,18 +31,18 @@ torrents are not added by the human, and the only breadcrumb today is a category
 ### Modified Capabilities
 - `http-api`: free-space endpoint; `AddOptions.addedBy`; `Torrent.addedBy`.
 - `torrent-query`: new field `by:`.
-- `web-ui`: fit warning in the add flow (extends the pending `browser-shell-and-spotlight` "Add torrent
+- `web-ui`: fit warning in the add flow (extends the `add-flow-and-theming` "Add torrent
   dialog" requirement), provenance column and jump.
 
 ## Impact
 
 - `crates/torrentx-server`: `api.rs` `GET /fs/free` (path validated like the settings path check from
-  `setup-settings-page-and-login`); add route records `addedBy` (UI requests are identified by the explicit
+  `empty-library-and-first-run`); add route records `addedBy` (UI requests are identified by the explicit
   label, not by User-Agent); `store.rs` provenance map persisted in `state.json`.
 - `crates/torrentx-core`: `Torrent.added_by: Option<String>`, `AddOptions.added_by`; drift fixture +
   `packages/api-client` updated together. Engines leave it `null`; the server fills it (same pattern as tags).
 - `packages/query`: `by` field; `packages/ui`: add-flow warning line, provenance column + chip, palette jump
   entry; i18n keys in six dictionaries.
-- Depends on `browser-shell-and-spotlight` (add flow), `query-language-and-smart-tabs` (query, tags pattern)
+- Depends on `add-flow-and-theming` (add flow), `active-tab-screen` (query, tags pattern)
   and `ui-row-activity-and-window-polish` (adaptive columns). No engine changes; watch-folder attribution is
   a non-goal until the server has a watch folder (rqbit's own watch folder adds arrive as `api`).

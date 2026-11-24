@@ -18,7 +18,7 @@ play affordance anywhere.
   desktop window, no Tauri IPC, seeking works through Range requests.
 - **Honest gating**: on Transmission the play affordance is visible but disabled with "not supported by
   Transmission"; for non-video files there is no play button (open/reveal/copy-path stay as defined by
-  `torrent-detail-page`). A "Copy stream URL" action accompanies the player for external players, with the
+  `torrent-detail-screen`). A "Copy stream URL" action accompanies the player for external players, with the
   auth caveat stated when auth is on.
 
 ## Capabilities
@@ -42,5 +42,5 @@ play affordance anywhere.
 - `packages/api-client`: `streamUrl(id, index)` helper (URL builder, not a fetch); capability type.
 - `packages/ui`: `Player` overlay component, play button in `detail/Hero` and `MediaView` rows, copy action;
   i18n keys in six dictionaries.
-- Depends on `torrent-detail-page` (hero, media mode, file actions) and `adopt-magic-patterns-ui`
+- Depends on `torrent-detail-screen` (hero, media mode, file actions) and `adopt-magic-patterns-ui`
   (capability matrix). No desktop-crate changes; no DLNA/UPnP surfacing (non-goal).

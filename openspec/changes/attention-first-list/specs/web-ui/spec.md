@@ -2,17 +2,20 @@
 
 ### Requirement: Torrent list with live refresh
 The UI SHALL show, for the active tab, every torrent matching the tab's query ANDed with the current lens,
-ordered by the query's `sort:` predicate. Rows SHALL show name, size, progress (bar + percent), download rate,
-upload rate, seeds/peers, ratio, state, tags and tracker, with a state color per row, and SHALL refresh at least
-every 2 seconds while the page is visible. The state cell SHALL render the server diagnosis as one localized
-sentence when present, falling back to the state name. Clicking a column header SHALL edit the `sort:` chip
-rather than hold its own sort state; the list SHALL have no ordering control that is not a `sort:` predicate.
-When nothing matches, the list SHALL show the zero-results state. The UI SHALL keep a monospace treatment for
-all query text, ids and numeric values. The list SHALL render only the visible window of rows (virtualization)
-at a fixed row height, so that live updates cause no layout shift and thousands of torrents stay scrollable.
-When the API returns `engine_unavailable`, the UI SHALL keep showing the last successfully loaded list,
-visibly dimmed, with one banner stating the data's timestamp and that retry is automatic, and SHALL disable
-engine-dependent actions with the reason; cached data SHALL NOT survive a page reload.
+ordered by the query's `sort:` predicate, in the columns NAME, SIZE, PROGRESS, DOWN, UP, PEERS, RATIO, STATE,
+TAGS, TRACKER. Rows SHALL have one fixed height: a two-line name cell (name clamped with full-name tooltip;
+secondary line = tracker · added age, replaced by the state reason while checking, paused or errored), size,
+progress bar + percent (or `done`), down/up rates with arrows (or `—` when idle), peer count, ratio, the state
+word in its state color, up to two tag chips, and the short tracker name. The state cell SHALL render the
+server diagnosis as one localized sentence when present, falling back to the state word. Numeric cells SHALL
+never wrap. The list SHALL refresh at least every 2 seconds while visible, rendering only the visible window
+of rows (virtualization) so live updates cause no layout shift and thousands of torrents stay scrollable.
+Column headers SHALL edit the `sort:` chip; no other ordering control may exist. When nothing matches, a
+zero-results state SHALL name the tab query, the lens and the responsible predicate, with Clear lens / remove
+predicate recovery. The terminal look SHALL be kept via theme tokens in both modes. When the API returns
+`engine_unavailable`, the UI SHALL keep showing the last successfully loaded list, visibly dimmed, with one
+banner stating the data's timestamp and that retry is automatic, and SHALL disable engine-dependent actions
+with the reason; cached data SHALL NOT survive a page reload.
 
 #### Scenario: Live progress
 - **WHEN** a torrent is downloading
