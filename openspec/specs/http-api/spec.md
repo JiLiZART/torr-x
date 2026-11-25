@@ -21,11 +21,14 @@ The server SHALL expose its API under `/api/v1/` using JSON request and response
 
 ### Requirement: Torrent endpoints
 The server SHALL provide:
-- `GET /api/v1/torrents` → array of torrents in the shared model
+- `GET /api/v1/torrents` → array of torrents in the shared model, each carrying `tags: string[]` (replacing
+  `tabId`)
 - `GET /api/v1/torrents/{id}` → one torrent plus `files`
 - `POST /api/v1/torrents` with JSON `{"uri": "<magnet or http(s) url>"}` or `multipart/form-data` with a `file` field containing a `.torrent` → `201 {"id": "<id>"}`
 - `POST /api/v1/torrents/{id}/pause` and `/resume` → 204
 - `DELETE /api/v1/torrents/{id}?deleteData=true|false` → 204 (default `false`)
+- `PUT /api/v1/torrents/{id}/tags` with a JSON array → 204; the former `PUT /torrents/{id}/tab` SHALL respond
+  410 with a pointer to the tags route
 
 #### Scenario: Add by magnet
 - **WHEN** a client posts `{"uri": "magnet:?xt=urn:btih:..."}` to `/api/v1/torrents`
@@ -34,6 +37,10 @@ The server SHALL provide:
 #### Scenario: Upload torrent file
 - **WHEN** a client posts a multipart form with a valid `.torrent` in field `file`
 - **THEN** the response is 201 with the torrent id
+
+#### Scenario: Tags replace membership
+- **WHEN** a client sets tags on a torrent and lists torrents
+- **THEN** the torrent carries exactly those tags and no `tabId` field exists
 
 ### Requirement: Settings endpoints
 `GET /api/v1/settings` SHALL return the current settings grouped as `server` (bind, port, allowedHosts), `auth` (enabled, username), `engine` (kind, rqbit options, transmission `host`, `port`, `path`, `https`, `username`, `hasPassword`), `network` (maxConnectionsPerTorrent, maxUploadKBps, maxDownloadKBps, listenPort, upnp, proxy {type, host, port, authRequired, username, hasPassword}), `downloads` (defaultSavePath, createSubfolder, moveCompletedEnabled, moveCompletedPath, maxActiveDownloads, maxActiveTorrents, startAutomatically, defaultPriority, seedAutomatically, minRatio, minSeedingMinutes), `advanced` (diskCacheMB, osCache, superSeeding, dht, pex, lpd, anonymousMode, sequentialDownload, webSocketTrackers) and `preferences` (see `app-preferences`). It SHALL NOT return any password or password hash. `PUT /api/v1/settings` SHALL validate, persist to the config file, and apply the new settings. Engine kind/connection changes SHALL take effect immediately (old engine stopped, new one started); network, downloads and advanced values SHALL be pushed to the running engine without restarting the server, restarting only the engine when the engine requires it. Bind address or port changes SHALL be persisted and the response SHALL include `"restartRequired": true`. A config file written by the previous version (Transmission `url`) SHALL be migrated on load.
@@ -120,13 +127,6 @@ All mutations SHALL be subject to the existing auth, Host and Origin guards. An 
 - **WHEN** the active engine cannot set file priority and a client PUTs `priority: "high"`
 - **THEN** the response is 501 with error kind `unsupported`
 
-### Requirement: Tabs endpoints
-The server SHALL provide `GET /api/v1/tabs` → `[{id, name, torrentIds[]}]` (user tabs only), `POST /api/v1/tabs` `{"name"}` → 201 tab, `PATCH /api/v1/tabs/{id}` `{"name"}`, `DELETE /api/v1/tabs/{id}` → 204, and `PUT /api/v1/torrents/{id}/tab` `{"tabId": "<id>" | null}` → 204.
-
-#### Scenario: Assign torrent
-- **WHEN** a client PUTs `{"tabId": "t1"}` for a torrent
-- **THEN** `GET /api/v1/tabs` lists that torrent id under `t1` only
-
 ### Requirement: Stats and capabilities endpoints
 The server SHALL provide `GET /api/v1/stats` (see `system-stats`) and `GET /api/v1/capabilities` (see `engine-capabilities`); `GET /api/v1/health` SHALL additionally report the server version used by the update check.
 
@@ -154,3 +154,49 @@ regardless of the number of torrents.
 #### Scenario: Renamed torrent
 - **WHEN** a torrent has a display-name override
 - **THEN** its entries carry the overridden name as `torrentName`
+
+### Requirement: Tab endpoints carry queries
+`GET/POST /api/v1/tabs` and `PATCH/DELETE /api/v1/tabs/{id}` SHALL read and write tabs as
+`{id, name, query, order, pinned, group}` with a stored grammar version. Query text SHALL round-trip
+verbatim, including queries the server cannot parse. State SHALL migrate from membership tabs on load.
+
+#### Scenario: Verbatim round trip
+- **WHEN** a tab is created with query `statu:active` (unparseable)
+- **THEN** `GET /tabs` returns the same text unchanged with the grammar version
+
+#### Scenario: Migration on load
+- **WHEN** a v2 `state.json` with assignments is loaded
+- **THEN** the server writes v3 state with tags and `tag:<slug>` tab queries and serves it
+
+### Requirement: Detail action endpoints
+The server SHALL provide `POST /torrents/{id}/reannounce`, `POST /torrents/{id}/web-seeds` (JSON `{url}`),
+`POST /torrents/{id}/files/{index}/open` and `POST /torrents/{id}/files/{index}/reveal`. Unsupported
+operations SHALL return 501 `unsupported`; unknown torrent or file index SHALL return 404. All routes SHALL
+sit behind the same auth and browser-attack guards as other mutations.
+
+#### Scenario: Re-announce
+- **WHEN** a client posts reannounce for a torrent on an engine that supports it
+- **THEN** the response is 204 and the tracker's last-announce resets
+
+#### Scenario: Unsupported
+- **WHEN** a client adds a web seed on an engine without the feature
+- **THEN** the response is 501 `unsupported`
+
+#### Scenario: Bad file index
+- **WHEN** a client opens file index 99 of an 18-file torrent
+- **THEN** the response is 404
+
+### Requirement: Detail model fields
+`GET /torrents/{id}` SHALL return trackers with `tier`, `kind` (`tracker | dht | pex`), `leechers`,
+`downloaded`, `error`, `lastAnnounce`, `nextAnnounce`; peers with `flags` and `encryption`; and a `webSeeds`
+array with `url`, `kind` (`bep19 | bep17`), `status`, `speed`, `downloaded`, `error`. Fields an engine does
+not report SHALL be `null`, never invented. The drift fixture and TS types SHALL be updated together with
+the Rust model.
+
+#### Scenario: Honest nulls
+- **WHEN** the engine reports no per-tracker downloaded bytes
+- **THEN** the field is `null` and the UI renders `—`
+
+#### Scenario: Pseudo-rows
+- **WHEN** the engine exposes DHT and PeX
+- **THEN** they appear as trackers with `kind: "dht"` / `"pex"` and null tier
