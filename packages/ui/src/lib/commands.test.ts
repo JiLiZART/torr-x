@@ -97,7 +97,9 @@ test("mode detection: plain text jumps, a structured query groups", () => {
   assert.equal(detectMode("ubuntu iso").kind, "jump");
   assert.equal(detectMode("state:paused").kind, "query");
   assert.equal(detectMode("!tag:4k size:>4GB").kind, "query");
-  assert.equal(detectMode("statu:active").kind, "jump", "a parse error never switches modes");
+  assert.equal(detectMode("statu:active").kind, "jump", "an unknown field never switches modes");
+  assert.equal(detectMode("size:").kind, "draft", "a known field without a value is a query being typed");
+  assert.equal(detectMode("state:active size:").kind, "draft");
   assert.deepEqual(detectMode("> pause"), { kind: "command", text: "pause" });
 });
 

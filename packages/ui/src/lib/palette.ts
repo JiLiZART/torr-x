@@ -1,6 +1,6 @@
 // The palette's pure logic: which mode the input puts it in, and how jump targets rank.
 import type { FileHit } from "@torrentx/api-client";
-import { compare, evaluate, FILE_SEARCH_SCOPE, parse, sortKeys, topItems, type Node, type ParseError } from "@torrentx/query";
+import { compare, complete, evaluate, FIELDS, FILE_SEARCH_SCOPE, parse, sortKeys, topItems, type Node, type ParseError } from "@torrentx/query";
 import { fileRow, type FileRow } from "./detail.ts";
 
 /** A torrent named by the palette: the scope chip, or the page the palette was opened on. */
@@ -16,6 +16,8 @@ export type Mode =
   | { kind: "jump"; text: string }
   /** A structured query (`field:value`) that parses: grouped sections. */
   | { kind: "query"; text: string; ast: Node }
+  /** A query being typed: a known `field:` that does not parse yet (`size:`), or the `:` field shortcut (`:si`). */
+  | { kind: "draft"; text: string; error: ParseError | null }
   /** `@ `: files of every torrent, or of the scope chip's torrent. `ast` is null when the text does not parse. */
   | { kind: "files"; text: string; scope: TorrentRef | null; ast: Node | null; error: ParseError | null }
   /** `torrent: ` in file mode: choosing the torrent to search in. */
@@ -174,13 +176,38 @@ export function fileJumps(hits: FileHit[], words: string[], limit: number): File
     .map((x) => x.row);
 }
 
+/** The palette's `:` shortcut at the end of the input: `:`, `:si`, `state:active !:ta`. */
+const FIELD_SHORTCUT = /(?:^|[\s(])!?:([a-z]*)$/i;
+const isField = (name: string) => name.toLowerCase() in FIELDS || name.toLowerCase() === "sort";
+
+/** `:size ` + space becomes `size:`, so the language itself never sees the shortcut. */
+export function expandFieldShortcut(text: string): string {
+  return text.replace(/(^|[\s(])(!?):([a-z]+)\s$/i, (m, pre: string, neg: string, field: string) =>
+    isField(field) ? `${pre}${neg}${field.toLowerCase()}:` : m,
+  );
+}
+
+/** Draft mode completions: field names after `:`, else what the query language offers at the end of the text. */
+export function draftCompletion(text: string, values: Partial<Record<string, string[]>>): { from: number; options: string[] } {
+  const short = FIELD_SHORTCUT.exec(text);
+  if (short) return { from: text.length - short[1].length - 1, options: complete(short[1], short[1].length, values).options };
+  // `size: ` still means "size needs a value": complete against the text before the trailing space.
+  const head = /:\s+$/.test(text) ? text.trimEnd() : text;
+  const { from, options } = complete(head, head.length, values);
+  return { from, options };
+}
+
 export function detectMode(input: string): Mode {
   const text = input.trim();
   if (text.startsWith(">")) return { kind: "command", text: text.slice(1).trim() };
+  if (FIELD_SHORTCUT.test(text)) return { kind: "draft", text, error: null };
   // A bare word parses too (`name:*word*`); only an explicit field makes it a query.
   if (/(^|[\s(!])[a-z]+:/i.test(text)) {
-    const { ast } = parse(text);
+    const { ast, error } = parse(text);
     if (ast) return { kind: "query", text, ast };
+    // An unknown field (`statu:`) is more likely a word than a query; a known one is a query being typed.
+    const known = [...text.matchAll(/(?:^|[\s(!])([a-z]+):/gi)].some(([, f]) => isField(f));
+    if (error && known) return { kind: "draft", text, error };
   }
   return { kind: "jump", text };
 }

@@ -113,3 +113,33 @@ be disabled with a reason when nothing matches.
 #### Scenario: Nothing matches
 - **WHEN** the query matches no torrent
 - **THEN** both actions are disabled with the reason that nothing matches
+
+### Requirement: Unfinished query in the palette
+When the palette input names a known field (`size:`, `state:`, `sort:` …) but does not parse yet, the panel SHALL
+stay in query mode as a draft instead of falling back to jump results. The "parses as" strip SHALL show the parse
+error, with its suggestion when there is one, and a SUGGESTIONS section SHALL list the completions for the text
+before the caret: operators for a numeric field, values for an enum or a tag or tracker field, field names after a
+space. `⏎` or `⇥` on a suggestion SHALL insert it into the input and keep the panel open. An unknown field
+(`statu:active`) SHALL keep jump mode. As a palette-only shortcut, a `:` starting a word SHALL list the field
+names, and `:field` followed by a space SHALL turn into `field:`; the query language itself is unchanged.
+
+#### Scenario: Field with no value yet
+- **WHEN** the user types `size:` in the palette
+- **THEN** the panel shows the error `missing value for "size"` and the suggestions `>`, `<`, `>=`, `<=`
+
+#### Scenario: Pick a value
+- **WHEN** the user types `state:` and presses `⏎` on the suggestion `active`
+- **THEN** the input becomes `state:active`, the panel stays open and shows the grouped query sections
+
+#### Scenario: Unknown field
+- **WHEN** the user types `statu:active`
+- **THEN** the panel shows jump results, as for plain words
+
+#### Scenario: `:` lists the fields
+- **WHEN** the user types `:` (or `:si`) in the palette
+- **THEN** SUGGESTIONS lists the field names (`size:` for `:si`), and `⏎` on one replaces `:si` with `size:`
+
+#### Scenario: `:size` and a space
+- **WHEN** the user types `:size` and then a space
+- **THEN** the input becomes `size:` and SUGGESTIONS lists `>`, `<`, `>=`, `<=`; saved queries never contain the
+  `:size` form

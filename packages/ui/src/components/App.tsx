@@ -655,6 +655,7 @@ export function App() {
         {palette !== null && (
           <Palette
             initial={palette.input}
+            values={values}
             initialAdd={palette.add}
             settings={settings.data}
             diskFree={stats.data?.diskFree ?? null}

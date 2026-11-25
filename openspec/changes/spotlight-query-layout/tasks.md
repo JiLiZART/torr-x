@@ -23,3 +23,9 @@
 - [x] 4.1 Add the new i18n keys to all 6 languages and drop the keys that are no longer used; verify with `pnpm lint`
 - [x] 4.2 Update the palette notes in CLAUDE.md and add `.changeset/spotlight-query-layout.md` (`default: minor`); verify that the file exists and that the CI `changes` format matches the other change files
 - [x] 4.3 Run `pnpm lint`, `pnpm typecheck` and `pnpm test` and confirm all pass
+
+## 5. Unfinished queries
+
+- [x] 5.1 Add a `draft` palette mode for input that names a known field but does not parse, and verify with `node --test` that `size:` is a draft and `statu:active` stays jump
+- [x] 5.2 In draft mode show the parse error in the "parses as" strip and a SUGGESTIONS section from `complete()`; `⏎`/`⇥` inserts the suggestion; verify in the browser with `size:`, `state:` and `tag:`
+- [x] 5.3 Add the palette-only `:` field shortcut (`expandFieldShortcut`, `draftCompletion`): `:` lists fields, `:size` + space becomes `size:`; verify with `node --test` and in the browser

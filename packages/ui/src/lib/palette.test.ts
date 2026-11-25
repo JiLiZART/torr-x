@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { FileHit } from "@torrentx/api-client";
 import { parse } from "@torrentx/query";
-import { fileJumps, queryWords, suggestTabName, tokenSpans } from "./palette.ts";
+import { detectMode, draftCompletion, expandFieldShortcut, fileJumps, queryWords, suggestTabName, tokenSpans } from "./palette.ts";
 
 const ast = (text: string) => {
   const { ast } = parse(text);
@@ -81,4 +81,18 @@ test("fileJumps ranks by score and respects the limit", () => {
     ],
   );
   assert.deepEqual(fileJumps(hits, [], 3), []);
+});
+
+test("`:` field shortcut: lists fields, expands on space, never reaches the language", () => {
+  assert.equal(detectMode(":").kind, "draft");
+  assert.equal(detectMode("state:active :si").kind, "draft");
+  const all = draftCompletion(":", {});
+  assert.equal(all.from, 0);
+  assert.ok(all.options.includes("size:") && all.options.includes("sort:"));
+  assert.deepEqual(draftCompletion("state:active !:ta", {}), { from: 14, options: ["tag:"] });
+  assert.equal(expandFieldShortcut(":size "), "size:");
+  assert.equal(expandFieldShortcut("state:active !:Tag "), "state:active !tag:");
+  assert.equal(expandFieldShortcut(":nope "), ":nope ", "an unknown field stays text");
+  assert.equal(expandFieldShortcut(":size"), ":size", "only a space expands");
+  assert.deepEqual(draftCompletion("size:", {}).options, [">", "<", ">=", "<="]);
 });

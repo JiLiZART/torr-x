@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent, type ReactNode } from "react";
-import { BookmarkPlus, File as FileIcon, FilePlus, Files, Funnel, Globe, Hash, Link2, ListFilter, Pause, Pencil, Pin, Search, Tag } from "lucide-react";
+import { BookmarkPlus, CornerDownLeft, File as FileIcon, FilePlus, Files, Funnel, Globe, Hash, Link2, ListFilter, Pause, Pencil, Pin, Search, Tag } from "lucide-react";
 import { api, type FileHit, type Settings, type Tab, type Torrent } from "@torrentx/api-client";
 import { chips, evaluate } from "@torrentx/query";
 import { useUi } from "../lib/context";
@@ -7,7 +7,9 @@ import { COMMANDS, type CommandDef, type Handlers } from "../lib/commands";
 import { IS_MAC, keyCaps, usableKeys } from "../lib/keymap";
 import { canonical, NO_LENS, type Lens } from "../lib/lens";
 import {
+  draftCompletion,
   dropChip,
+  expandFieldShortcut,
   fileJumps,
   fileResults,
   paletteMode,
@@ -40,6 +42,8 @@ interface PaletteProps {
   tabLabel: (tab: Tab) => string;
   /** The library. */
   all: Torrent[];
+  /** Live values offered as completions (`tag:`, `tracker:`). */
+  values: Partial<Record<string, string[]>>;
   handlers: Handlers;
   desktop: boolean;
   /** Applies a lens in the active tab, or in the pinned All tab. Never writes a tab. */
@@ -67,7 +71,7 @@ interface PaletteProps {
   onClose: () => void;
 }
 
-type Kind = "action" | "filter" | "filterAll" | "jump" | "create" | "all" | "add" | "file" | "pick";
+type Kind = "action" | "filter" | "filterAll" | "jump" | "create" | "all" | "add" | "file" | "pick" | "complete";
 
 interface Row {
   key: string;
@@ -103,7 +107,7 @@ const iconBox = (node: ReactNode, tone = "bg-ui-surface-2 text-ui-text-2") => (
 
 /** ⌘T: one surface to jump, filter and act. `>` switches to commands only. */
 export function Palette(props: PaletteProps) {
-  const { initial, tabs, counts, activeTab, tabLabel, all, handlers, desktop, onApply, onJumpTab, onJumpTorrent, onCreateTab, onPauseMatches, onTagMatches, onSheet, initialAdd, settings, diskFree, onAdded, here = null, onOpenFile, onError, onClose } = props;
+  const { initial, tabs, counts, activeTab, tabLabel, all, values, handlers, desktop, onApply, onJumpTab, onJumpTorrent, onCreateTab, onPauseMatches, onTagMatches, onSheet, initialAdd, settings, diskFree, onAdded, here = null, onOpenFile, onError, onClose } = props;
   const { t, gate } = useUi();
   // Add mode: the same panel grows downward into the add flow; Escape returns to the input.
   const [addSource, setAddSource] = useState<AddSource | null>(initialAdd ?? null);
@@ -289,6 +293,29 @@ export function Palette(props: PaletteProps) {
         },
       ];
     }
+    if (mode.kind === "draft") {
+      // An unfinished query: offer what can come next at the end of the input.
+      const completion = draftCompletion(text, values);
+      return [
+        {
+          id: "complete",
+          label: t("palette.suggestions"),
+          rows: completion.options.slice(0, 8).map(
+            (option): Row => ({
+              key: `c:${option}`,
+              kind: "complete",
+              icon: iconBox(<CornerDownLeft size={14} />),
+              title: option,
+              binding: "Tab",
+              run: () => {
+                setText(text.slice(0, completion.from) + option);
+                inputRef.current?.focus();
+              },
+            }),
+          ),
+        },
+      ].filter((s) => s.rows.length > 0);
+    }
     if (mode.kind === "command") {
       return [{ id: "actions", label: t("palette.actions"), right: t("palette.actionsHint"), rows: matchingCommands(mode.text).map(commandRow) }];
     }
@@ -447,7 +474,7 @@ export function Palette(props: PaletteProps) {
     ].filter((s) => s.rows.length > 0);
     // Handlers and labels change every render; recomputing is cheap next to the list itself.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode.kind, mode.text, input, hits, tabs, counts, all, handlers, tabName, tabNameValue]);
+  }, [mode.kind, mode.text, input, hits, tabs, counts, all, values, handlers, tabName, tabNameValue]);
 
   const flat = sections.flatMap((s, si) => s.rows.map((r, ri) => ({ ...r, si, ri })));
   const findRow = (kind: Kind) => flat.find((r) => r.kind === kind);
@@ -510,6 +537,7 @@ export function Palette(props: PaletteProps) {
     } else if (e.key === "Tab") {
       // Jump mode: filter instead. Query mode: lens in the active tab. Otherwise: switch section.
       if (mode.kind === "jump" && !e.shiftKey) runRow(findRow("filter"));
+      else if (mode.kind === "draft") runRow(current);
       else if (queryMode && !e.shiftKey) applyLens();
       else if (sections.length > 0) setCursor({ section: (pos.section + (e.shiftKey ? -1 : 1) + sections.length) % sections.length, row: 0 });
     } else if (e.key === "Enter") runRow(current);
@@ -599,7 +627,7 @@ export function Palette(props: PaletteProps) {
               if (plain && isTorrentLink(value.trim())) {
                 setText(value);
                 setAddSource({ kind: "uri", uri: value.trim() });
-              } else setInput(typeInto(input, value, here));
+              } else setInput(typeInto(input, plain ? expandFieldShortcut(value) : value, here));
             }}
             onKeyDown={handleKeyDown}
             placeholder={
@@ -614,11 +642,11 @@ export function Palette(props: PaletteProps) {
                     : t("palette.placeholder")
             }
             aria-label={t("palette.title")}
-            className={`relative w-full bg-transparent caret-ui-accent placeholder-ui-text-3 focus:outline-none ${queryMode ? "text-transparent selection:bg-ui-accent/25" : "text-ui-text"} ${queryMode || mode.kind === "files" ? "font-code text-[17px]" : "text-[18px]"}`}
+            className={`relative w-full bg-transparent caret-ui-accent placeholder-ui-text-3 focus:outline-none ${queryMode ? "text-transparent selection:bg-ui-accent/25" : "text-ui-text"} ${queryMode || mode.kind === "files" || mode.kind === "draft" ? "font-code text-[17px]" : "text-[18px]"}`}
           />
           </span>
           )}
-          {!addSource && plain && !queryMode && text.trim() !== "" && <span className="hidden shrink-0 font-code text-[10px] text-ui-text-3 xl:block">{t("palette.hint")}</span>}
+          {!addSource && plain && !queryMode && mode.kind !== "draft" && text.trim() !== "" && <span className="hidden shrink-0 font-code text-[10px] text-ui-text-3 xl:block">{t("palette.hint")}</span>}
           <button
             type="button"
             data-command="torrent.add"
@@ -664,6 +692,15 @@ export function Palette(props: PaletteProps) {
               ))}
               <span className="flex-1" />
               <span className="font-code text-[10px] text-ui-text-2">{t("palette.ofTotal", { n: all.filter((row) => evaluate(mode.ast, row, now)).length, m: all.length })}</span>
+            </div>
+          )}
+          {mode.kind === "draft" && mode.error && (
+            <div className="flex shrink-0 flex-wrap items-center gap-[8px] border-b border-ui-border bg-ui-chrome-2 px-[18px] py-[9px]">
+              <span className="font-code text-[10px] text-ui-text-3">{t("palette.parsesAs")}</span>
+              <span className="font-code text-[11px] text-ui-red">
+                {mode.error.message}
+                {mode.error.suggestion ? ` — ${t("filter.didYouMean", { suggestion: mode.error.suggestion })}` : ""}
+              </span>
             </div>
           )}
           <div ref={listRef} className="flex min-h-0 flex-col gap-[2px] overflow-y-auto px-[4px] pb-[10px] pt-[6px]" role="listbox">
@@ -759,7 +796,7 @@ export function Palette(props: PaletteProps) {
                     >
                       <span className={create ? "text-ui-accent" : "text-ui-text-2"}>{row.icon}</span>
                       <span className="flex min-w-0 flex-1 flex-col gap-[2px]">
-                        <span className={`truncate text-[13px] ${create ? "font-semibold text-ui-accent" : "font-medium text-ui-text"} ${row.kind === "filter" && mode.kind === "query" ? "font-code" : ""}`}>{row.title}</span>
+                        <span className={`truncate text-[13px] ${create ? "font-semibold text-ui-accent" : "font-medium text-ui-text"} ${(row.kind === "filter" && mode.kind === "query") || row.kind === "complete" ? "font-code" : ""}`}>{row.title}</span>
                         {row.sub && <span className={`truncate font-code text-[10px] ${row.disabled ? "text-ui-amber" : create ? "text-ui-accent-line" : "text-ui-text-3"}`}>{row.sub}</span>}
                       </span>
                       {row.scope && <span className="shrink-0 font-code text-[10px] text-ui-text-3">{row.scope}</span>}
@@ -780,6 +817,8 @@ export function Palette(props: PaletteProps) {
                 {hint("⇧⏎", t("palette.showAllKey"))}
                 {hint("⇥", t("palette.lensKey"))}
               </>
+            ) : mode.kind === "draft" ? (
+              hint("⏎ ⇥", t("palette.completeKey"))
             ) : (
               <>
                 {hint("⏎", mode.kind === "jump" ? t("palette.open") : t("palette.run"))}
@@ -788,7 +827,8 @@ export function Palette(props: PaletteProps) {
               </>
             )}
             {hint("esc", t("palette.dismiss"))}
-            {plain && !queryMode && hint("@ ␣", t("palette.filesShortcut"))}
+            {plain && !queryMode && mode.kind !== "draft" && hint("@ ␣", t("palette.filesShortcut"))}
+            {plain && !queryMode && mode.kind !== "draft" && hint(":", t("palette.fieldsShortcut"))}
             <span className="flex-1" />
             <span className="hidden truncate font-code text-[10px] text-ui-text-3 xl:block">{t("palette.brand")}</span>
           </div>
