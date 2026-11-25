@@ -37,7 +37,7 @@
       persists across reload
 - [x] 3.5 Addresses + back/forward: every view addressable, reload restores the view without a lens, stale
       addresses fall back to All with a notice; verify tab→tab→back→forward and reload
-- [ ] 3.6 Desktop window controls: dots in sidebar head (top bar when collapsed), drag areas, double-click
+- [x] 3.6 Desktop window controls: dots in sidebar head (top bar when collapsed), drag areas, double-click
       maximize, hidden in plain browser; verify in `pnpm dev:desktop` and in a browser
 
 ## 4. Filter bar, chips, lens
@@ -64,7 +64,7 @@
       verify no row moves or resizes during 1 Hz updates
 - [x] 5.3 Zero-results state naming tab query vs lens and the responsible predicate with Clear lens / remove
       predicate actions; verify with `size:>100GB` on a smaller library
-- [ ] 5.4 Verify `pnpm lint`, `pnpm typecheck`, `pnpm test`, `cargo test --workspace` pass; manual check of
+- [x] 5.4 Verify `pnpm lint`, `pnpm typecheck`, `pnpm test`, `cargo test --workspace` pass; manual check of
       screen 01 in dark and light against the canvas frame
 
 ## 6. Docs

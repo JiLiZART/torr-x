@@ -43,7 +43,7 @@ const on = "border-ui-accent-line bg-ui-accent-soft text-ui-accent";
 export function TopBar({ crumb, title, lensCount, sidebarCollapsed, onExpandSidebar, onCollapseSidebar, compact, onToggleDensity, filterBarOpen, onToggleFilterBar, terminalOpen, onToggleTerminal, onOpenSettings, onLogout }: TopBarProps) {
   const { t } = useUi();
   return (
-    <header data-tauri-drag-region className="flex h-[54px] shrink-0 items-center gap-[10px] border-b border-ui-border px-[14px]">
+    <header data-tauri-drag-region className="flex h-[54px] select-none shrink-0 items-center gap-[10px] border-b border-ui-border px-[14px]">
       {sidebarCollapsed ? (
         <>
           <WindowDotsSpace />
