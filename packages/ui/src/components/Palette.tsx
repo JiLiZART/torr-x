@@ -1,13 +1,28 @@
 import { useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent, type ReactNode } from "react";
-import { FilePlus, Files, Funnel, Globe, Hash, Link2, Pin, Save, Search } from "lucide-react";
+import { BookmarkPlus, File as FileIcon, FilePlus, Files, Funnel, Globe, Hash, Link2, ListFilter, Pause, Pencil, Pin, Search, Tag } from "lucide-react";
 import { api, type FileHit, type Settings, type Tab, type Torrent } from "@torrentx/api-client";
-import { chips, evaluate, topItems } from "@torrentx/query";
+import { chips, evaluate } from "@torrentx/query";
 import { useUi } from "../lib/context";
-import { COMMANDS, QUERY_DEFAULT_ACTIONS, type CommandDef, type Handlers } from "../lib/commands";
+import { COMMANDS, type CommandDef, type Handlers } from "../lib/commands";
 import { IS_MAC, keyCaps, usableKeys } from "../lib/keymap";
 import { canonical, NO_LENS, type Lens } from "../lib/lens";
-import { dropChip, fileResults, paletteMode, pickTorrent, rank, typeInto, type FileResult, type PaletteChip, type PaletteInput, type TorrentRef } from "../lib/palette";
-import { percent, rate, rowState, STATE_STYLE, trimMiddle } from "../lib/format";
+import {
+  dropChip,
+  fileJumps,
+  fileResults,
+  paletteMode,
+  pickTorrent,
+  queryWords,
+  rank,
+  suggestTabName,
+  tokenSpans,
+  typeInto,
+  type FileResult,
+  type PaletteChip,
+  type PaletteInput,
+  type TorrentRef,
+} from "../lib/palette";
+import { bytes, percent, rate, rowState, STATE_STYLE, trimMiddle } from "../lib/format";
 import { HTTP_URL, isTorrentLink, type AddSource } from "../lib/addFlow";
 import { usePreview } from "../lib/preview";
 import { AddFlow } from "./AddFlow";
@@ -25,16 +40,18 @@ interface PaletteProps {
   tabLabel: (tab: Tab) => string;
   /** The library. */
   all: Torrent[];
-  /** Rows matching the active tab's query (no lens): what a filter result counts against. */
-  tabRows: Torrent[];
   handlers: Handlers;
   desktop: boolean;
   /** Applies a lens in the active tab, or in the pinned All tab. Never writes a tab. */
   onApply: (lens: Lens, inAll: boolean) => void;
   onJumpTab: (id: string) => void;
   onJumpTorrent: (id: string) => void;
-  /** Creates the tab without activating it. */
-  onCreateTab: (query: string) => void;
+  /** Creates the tab without activating it; an empty name means "named by its query". */
+  onCreateTab: (query: string, name: string) => void;
+  /** Query mode: pause every matching torrent that is not paused. */
+  onPauseMatches: (rows: Torrent[]) => void;
+  /** Query mode: open the tag dialog for every matching torrent. */
+  onTagMatches: (rows: Torrent[]) => void;
   onSheet: () => void;
   /** Open straight into the add flow (a file dropped on the window, ⌘O). */
   initialAdd?: AddSource;
@@ -77,13 +94,16 @@ interface Section {
 const MAX_TORRENTS = 6;
 const MAX_TABS = 5;
 const MAX_PICKS = 20;
+/** Query mode: rows shown per section, as drawn. */
+const QUERY_TORRENTS = 3;
+const QUERY_FILES = 3;
 const iconBox = (node: ReactNode, tone = "bg-ui-surface-2 text-ui-text-2") => (
   <span className={`flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-[7px] ${tone}`}>{node}</span>
 );
 
 /** ⌘T: one surface to jump, filter and act. `>` switches to commands only. */
 export function Palette(props: PaletteProps) {
-  const { initial, tabs, counts, activeTab, tabLabel, all, tabRows, handlers, desktop, onApply, onJumpTab, onJumpTorrent, onCreateTab, onSheet, initialAdd, settings, diskFree, onAdded, here = null, onOpenFile, onError, onClose } = props;
+  const { initial, tabs, counts, activeTab, tabLabel, all, handlers, desktop, onApply, onJumpTab, onJumpTorrent, onCreateTab, onPauseMatches, onTagMatches, onSheet, initialAdd, settings, diskFree, onAdded, here = null, onOpenFile, onError, onClose } = props;
   const { t, gate } = useUi();
   // Add mode: the same panel grows downward into the add flow; Escape returns to the input.
   const [addSource, setAddSource] = useState<AddSource | null>(initialAdd ?? null);
@@ -94,8 +114,14 @@ export function Palette(props: PaletteProps) {
   const setText = (value: string) => setInput({ ...input, text: value });
   // File mode: every torrent's files, fetched once per palette when file mode is first entered.
   const [hits, setHits] = useState<FileHit[] | null>(null);
-  const [cursor, setCursor] = useState({ section: 0, row: 0 });
+  /** null until the user moves it: the default position depends on the mode. */
+  const [cursor, setCursor] = useState<{ section: number; row: number } | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const mirrorRef = useRef<HTMLDivElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
+  /** The Create row's name, tied to the query it was edited for; a new query brings back the suggestion. */
+  const [nameDraft, setNameDraft] = useState<{ query: string; value: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [dropping, setDropping] = useState(false);
   const pickFile = () => fileRef.current?.click();
@@ -118,8 +144,12 @@ export function Palette(props: PaletteProps) {
   const command = mode.kind === "command";
   const plain = input.chips.length === 0;
   const fileMode = mode.kind === "files" || mode.kind === "pickTorrent";
+  // Query mode lists files by name under JUMP TO, so it needs the same one-time fetch.
+  const needFiles = fileMode || mode.kind === "query";
+  const queryCanon = mode.kind === "query" ? canonical(mode.text) : "";
+  const tabNameValue = mode.kind !== "query" ? "" : nameDraft?.query === queryCanon ? nameDraft.value : suggestTabName(mode.text, mode.ast);
   useEffect(() => {
-    if (!fileMode || hits !== null) return;
+    if (!needFiles || hits !== null) return;
     let live = true;
     api.files().then(
       (all) => live && setHits(all),
@@ -132,7 +162,7 @@ export function Palette(props: PaletteProps) {
     return () => {
       live = false;
     };
-  }, [fileMode, hits, onError]);
+  }, [needFiles, hits, onError]);
   const tabName = activeTab ? tabLabel(activeTab) : "";
   const now = Date.now() / 1000;
 
@@ -304,44 +334,74 @@ export function Palette(props: PaletteProps) {
         },
       ].filter((s) => s.rows.length > 0);
     }
-    // Structured query: grouped sections, never mixed.
-    const { ast, text: query } = mode;
-    const canon = canonical(query);
-    const words = topItems(ast).flatMap((n) => (n.type === "pred" ? [n.value.replace(/\*/g, "")] : []));
-    const named = words.flatMap((w) => (w ? matchingCommands(w) : []));
-    // The scoped defaults as drawn, then any command whose label matches a typed value.
-    const defaults = QUERY_DEFAULT_ACTIONS.map((id) => offered.find((d) => d.id === id)).filter((d): d is CommandDef => !!d);
-    const actions = [...new Set([...defaults, ...named])].slice(0, 6);
-    const inTab = tabRows.filter((row) => evaluate(ast, row, now)).length;
+    // Structured query: save it, see what it matches, act on exactly those matches.
+    const { ast } = mode;
+    const canon = canonical(mode.text);
     const matching = all.filter((row) => evaluate(ast, row, now));
     const savedAs = tabs.find((tab) => canonical(tab.query) === canon);
-    const jumpTabs = tabs.filter((tab) => tab.query && (canonical(tab.query) === canon || canonical(tab.query).includes(canon) || canon.includes(canonical(tab.query))));
-    const jumps = [...jumpTabs.slice(0, MAX_TABS).map(tabRow), ...matching.slice(0, MAX_TORRENTS).map(torrentRow)];
+    const words = queryWords(ast);
+    const jumpTabs = tabs.filter((tab) => {
+      if (!tab.query) return false;
+      const q = canonical(tab.query);
+      const hay = `${tabLabel(tab)} ${tab.query}`.toLowerCase();
+      return q.includes(canon) || canon.includes(q) || words.some((w) => hay.includes(w));
+    });
+    const jumpFiles = hits ? fileJumps(hits, words, QUERY_FILES) : [];
+    const jumps: Row[] = [
+      ...jumpTabs.slice(0, MAX_TABS).map((tab) => ({ ...tabRow(tab), meta: { text: t("palette.metaTab"), className: "text-ui-text-3" }, binding: undefined })),
+      ...jumpFiles.map(
+        (file): Row => ({
+          key: `jf:${file.torrentId}:${file.index}`,
+          kind: "jump",
+          icon: iconBox(<FileIcon size={14} />),
+          title: file.name,
+          sub: t("palette.fileIn", { torrent: trimMiddle(file.torrentName, 48) }),
+          meta: { text: t("palette.metaFile"), className: "text-ui-text-3" },
+          run: () => {
+            onClose();
+            onOpenFile(file.torrentId, file.index);
+          },
+        }),
+      ),
+    ];
+    const none = matching.length === 0 ? t("palette.noMatches") : null;
+    const torrentResult = (torrent: Torrent): Row => ({
+      ...torrentRow(torrent),
+      sub: [bytes(torrent.size), torrent.ratio == null ? null : t("palette.ctx.ratio", { r: torrent.ratio.toFixed(2) }), torrent.tracker].filter(Boolean).join(" · "),
+    });
     return [
-      { id: "actions", label: t("palette.actions"), right: t("palette.actionsHint"), rows: actions.map(commandRow) },
       {
-        id: "filter",
-        label: t("palette.filter"),
-        right: t("palette.filterHint"),
+        id: "create",
+        label: t("palette.createFromQuery"),
+        right: t("palette.recommended"),
         rows: [
           {
-            key: "filter",
-            kind: "filter" as Kind,
-            icon: <Funnel size={15} className="text-ui-accent" />,
-            title: canon,
-            sub: t("palette.lensMatches", { tab: tabName, n: inTab }),
-            binding: "Tab",
+            key: "create",
+            kind: "create" as Kind,
+            icon: iconBox(<BookmarkPlus size={14} />, "bg-ui-accent-line text-ui-accent"),
+            title: savedAs ? t("palette.savedAs", { tab: tabLabel(savedAs) }) : t("palette.saveSmart"),
+            sub: t("palette.saveSmartHint"),
+            binding: "Mod+S",
             run: () => {
               onClose();
-              onApply({ fuzzy: "", query: canon }, false);
+              if (savedAs) onJumpTab(savedAs.id);
+              else onCreateTab(canon, tabNameValue.trim());
             },
           },
+        ],
+      },
+      {
+        id: "results",
+        label: t("palette.filterResults"),
+        right: t("palette.matches", { n: matching.length }),
+        rows: [
+          ...matching.slice(0, QUERY_TORRENTS).map(torrentResult),
           {
             key: "filter-all",
             kind: "filterAll" as Kind,
-            icon: <Globe size={15} className="text-ui-text-2" />,
-            title: t("palette.inAll", { query: canon }),
-            sub: t("palette.inAllHint"),
+            icon: iconBox(<ListFilter size={14} />),
+            title: t("palette.showAll", { n: matching.length }),
+            sub: t("palette.showAllHint"),
             binding: "Shift+Enter",
             run: () => {
               onClose();
@@ -350,22 +410,36 @@ export function Palette(props: PaletteProps) {
           },
         ],
       },
-      { id: "jump", label: t("palette.jumpTo"), right: t("palette.matches", { n: jumps.length }), rows: jumps },
+      { id: "jump", label: t("palette.jumpTo"), right: t("palette.nameMatches", { n: jumps.length }), rows: jumps },
       {
-        id: "create",
-        label: t("palette.createTab"),
+        id: "actions",
+        label: t("palette.actions"),
+        right: t("palette.actionsOnMatches", { n: matching.length }),
         rows: [
           {
-            key: "create",
-            kind: "create" as Kind,
-            icon: <Save size={15} className="text-ui-accent" />,
-            title: savedAs ? t("palette.savedAs", { tab: tabLabel(savedAs) }) : t("palette.save", { query: canon }),
-            sub: t("palette.createHint"),
-            binding: "Mod+S",
+            key: "pause-matches",
+            kind: "action" as Kind,
+            icon: iconBox(<Pause size={14} />),
+            title: t("palette.pauseMatches"),
+            sub: none ?? undefined,
+            binding: "Mod+P",
+            disabled: none,
             run: () => {
               onClose();
-              if (savedAs) onJumpTab(savedAs.id);
-              else onCreateTab(canon);
+              onPauseMatches(matching);
+            },
+          },
+          {
+            key: "tag-matches",
+            kind: "action" as Kind,
+            icon: iconBox(<Tag size={14} />),
+            title: t("palette.tagMatches"),
+            sub: none ?? undefined,
+            binding: "Mod+L",
+            disabled: none,
+            run: () => {
+              onClose();
+              onTagMatches(matching);
             },
           },
         ],
@@ -373,14 +447,17 @@ export function Palette(props: PaletteProps) {
     ].filter((s) => s.rows.length > 0);
     // Handlers and labels change every render; recomputing is cheap next to the list itself.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode.kind, mode.text, input, hits, tabs, counts, all, tabRows, handlers, tabName]);
+  }, [mode.kind, mode.text, input, hits, tabs, counts, all, handlers, tabName, tabNameValue]);
 
-  const at = sections[Math.min(cursor.section, sections.length - 1)];
-  const current = at?.rows[Math.min(cursor.row, at.rows.length - 1)];
   const flat = sections.flatMap((s, si) => s.rows.map((r, ri) => ({ ...r, si, ri })));
   const findRow = (kind: Kind) => flat.find((r) => r.kind === kind);
+  // No cursor yet (fresh input): query mode starts on the first matching torrent, so ⏎ opens it.
+  const firstTorrent = mode.kind === "query" ? flat.find((r) => r.key.startsWith("t:")) : undefined;
+  const pos = cursor ?? (firstTorrent ? { section: firstTorrent.si, row: firstTorrent.ri } : { section: 0, row: 0 });
+  const at = sections[Math.min(pos.section, sections.length - 1)];
+  const current = at?.rows[Math.min(pos.row, at.rows.length - 1)];
 
-  useEffect(() => setCursor({ section: 0, row: 0 }), [input]);
+  useEffect(() => setCursor(null), [input]);
   useEffect(() => {
     listRef.current?.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: "nearest" });
   }, [cursor]);
@@ -388,9 +465,35 @@ export function Palette(props: PaletteProps) {
   const runRow = (row: Row | undefined) => {
     if (row && !row.disabled) row.run();
   };
+  const queryMode = mode.kind === "query";
+  /** Keeps the token layer scrolled with a long input. */
+  const syncMirror = () => {
+    if (mirrorRef.current && inputRef.current) mirrorRef.current.scrollLeft = inputRef.current.scrollLeft;
+  };
+  useEffect(syncMirror);
+  const applyLens = () => {
+    if (mode.kind !== "query") return;
+    onClose();
+    onApply({ fuzzy: "", query: canonical(mode.text) }, false);
+  };
+  /** Query mode: the keys every focused field inside the panel shares. Returns false when the key is not one. */
+  const queryKey = (e: KeyboardEvent<HTMLInputElement>): boolean => {
+    const mod = e.metaKey || e.ctrlKey;
+    const key = e.key.toLowerCase();
+    if (mod && key === "s") runRow(findRow("create"));
+    else if (mod && key === "p") runRow(flat.find((r) => r.key === "pause-matches"));
+    else if (mod && key === "l") runRow(flat.find((r) => r.key === "tag-matches"));
+    else if (e.key === "Enter" && e.shiftKey) runRow(findRow("filterAll"));
+    else return false;
+    return true;
+  };
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (addSource) return; // the add flow owns its keys
     const mod = e.metaKey || e.ctrlKey;
+    if (queryMode && queryKey(e)) {
+      e.preventDefault();
+      return;
+    }
     // Escape while picking a torrent drops the pick, not the palette.
     if (e.key === "Escape") {
       if (mode.kind === "pickTorrent") setInput(dropChip(input));
@@ -398,16 +501,18 @@ export function Palette(props: PaletteProps) {
     } else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       if (!at) return;
       const step = e.key === "ArrowDown" ? 1 : -1;
-      setCursor({ section: cursor.section, row: (cursor.row + step + at.rows.length) % at.rows.length });
+      if (queryMode) {
+        // One cursor over every row, across sections.
+        const i = flat.findIndex((r) => r.si === pos.section && r.ri === Math.min(pos.row, at.rows.length - 1));
+        const next = flat[(i + step + flat.length) % flat.length];
+        setCursor({ section: next.si, row: next.ri });
+      } else setCursor({ section: pos.section, row: (pos.row + step + at.rows.length) % at.rows.length });
     } else if (e.key === "Tab") {
-      // Jump mode: filter instead. Grouped mode: switch section; on a filter row, apply it.
-      const filterRow = findRow("filter");
-      if (mode.kind === "jump" && !e.shiftKey) runRow(filterRow);
-      else if (!e.shiftKey && current?.kind === "filter") runRow(current);
-      else if (sections.length > 0) setCursor({ section: (cursor.section + (e.shiftKey ? -1 : 1) + sections.length) % sections.length, row: 0 });
-    } else if (e.key === "Enter") {
-      runRow(e.shiftKey && mode.kind === "query" ? findRow("filterAll") : current);
-    } else if (mod && e.key.toLowerCase() === "s" && mode.kind === "query") runRow(findRow("create"));
+      // Jump mode: filter instead. Query mode: lens in the active tab. Otherwise: switch section.
+      if (mode.kind === "jump" && !e.shiftKey) runRow(findRow("filter"));
+      else if (queryMode && !e.shiftKey) applyLens();
+      else if (sections.length > 0) setCursor({ section: (pos.section + (e.shiftKey ? -1 : 1) + sections.length) % sections.length, row: 0 });
+    } else if (e.key === "Enter") runRow(current);
     else if (mod && e.key.toLowerCase() === "k") onSheet();
     else if (mod && e.key.toLowerCase() === "o") pickFile();
     else if (e.key === "Backspace" && !plain && text === "") setInput(dropChip(input));
@@ -472,9 +577,23 @@ export function Palette(props: PaletteProps) {
               </span>
             </span>
           ) : (
+          <span className="relative flex min-w-[120px] flex-1 items-center">
+          {queryMode && (
+            // Query tokens: drawn behind the input in the same font, so the native caret and selection line up.
+            <div ref={mirrorRef} aria-hidden className="pointer-events-none absolute inset-0 flex items-center overflow-hidden whitespace-pre font-code text-[17px]">
+              {tokenSpans(text).map((span, i) => (
+                <span key={i} className={span.kind === "field" ? "text-ui-text-3" : span.kind === "value" ? "text-ui-accent" : "text-ui-text"}>
+                  {span.text}
+                </span>
+              ))}
+            </div>
+          )}
           <input
+            ref={inputRef}
             autoFocus
             value={text}
+            onScroll={syncMirror}
+            onSelect={syncMirror}
             onChange={(e) => {
               const value = e.target.value;
               if (plain && isTorrentLink(value.trim())) {
@@ -495,10 +614,11 @@ export function Palette(props: PaletteProps) {
                     : t("palette.placeholder")
             }
             aria-label={t("palette.title")}
-            className={`min-w-[120px] flex-1 bg-transparent text-ui-text caret-ui-accent placeholder-ui-text-3 focus:outline-none ${mode.kind === "query" || mode.kind === "files" ? "font-code text-[17px]" : "text-[18px]"}`}
+            className={`relative w-full bg-transparent caret-ui-accent placeholder-ui-text-3 focus:outline-none ${queryMode ? "text-transparent selection:bg-ui-accent/25" : "text-ui-text"} ${queryMode || mode.kind === "files" ? "font-code text-[17px]" : "text-[18px]"}`}
           />
+          </span>
           )}
-          {!addSource && plain && text.trim() !== "" && <span className="hidden shrink-0 font-code text-[10px] text-ui-text-3 xl:block">{t("palette.hint")}</span>}
+          {!addSource && plain && !queryMode && text.trim() !== "" && <span className="hidden shrink-0 font-code text-[10px] text-ui-text-3 xl:block">{t("palette.hint")}</span>}
           <button
             type="button"
             data-command="torrent.add"
@@ -558,7 +678,7 @@ export function Palette(props: PaletteProps) {
                   </div>
                 )}
                 {section.rows.map((row, ri) => {
-                  const selected = si === cursor.section && ri === cursor.row;
+                  const selected = si === pos.section && ri === Math.min(pos.row, section.rows.length - 1);
                   const create = row.kind === "create";
                   const all = row.kind === "all";
                   const frame = create
@@ -584,6 +704,47 @@ export function Palette(props: PaletteProps) {
                       >
                         <FileCells row={file} compact torrentName={mode.kind === "files" && mode.scope ? undefined : file.torrentName} />
                       </button>
+                    );
+                  }
+                  if (create && queryMode) {
+                    // A div, not a button: it holds the editable tab name.
+                    return (
+                      <div
+                        key={row.key}
+                        role="option"
+                        aria-selected={selected}
+                        onMouseMove={() => !selected && setCursor({ section: si, row: ri })}
+                        onClick={() => runRow(row)}
+                        className={`flex w-full cursor-pointer items-center gap-[11px] rounded-[10px] border px-[14px] py-[10px] text-left ${frame}`}
+                      >
+                        {row.icon}
+                        <span className="flex min-w-0 flex-1 flex-col gap-[2px]">
+                          <span className="truncate text-[13px] font-semibold text-ui-accent">{row.title}</span>
+                          <span className="truncate font-code text-[10px] text-ui-accent-line">{row.sub}</span>
+                        </span>
+                        <label onClick={(e) => e.stopPropagation()} className="flex w-[190px] shrink-0 cursor-text items-center gap-[6px] rounded-[8px] border border-ui-accent-line bg-ui-surface px-[9px] py-[6px]">
+                          <input
+                            ref={nameRef}
+                            value={tabNameValue}
+                            onChange={(e) => setNameDraft({ query: queryCanon, value: e.target.value })}
+                            onKeyDown={(e) => {
+                              if (queryKey(e)) e.preventDefault();
+                              else if (e.key === "Enter") {
+                                e.preventDefault();
+                                runRow(row);
+                              } else if (e.key === "Escape" || e.key === "ArrowUp" || e.key === "ArrowDown") {
+                                e.preventDefault();
+                                inputRef.current?.focus();
+                              }
+                            }}
+                            placeholder={t("palette.tabNamePlaceholder")}
+                            aria-label={t("palette.tabName")}
+                            className="min-w-0 flex-1 bg-transparent text-[12px] text-ui-text placeholder-ui-text-3 focus:outline-none"
+                          />
+                          <Pencil size={11} className="shrink-0 text-ui-text-3" />
+                        </label>
+                        {row.binding && <KeyCaps binding={row.binding} />}
+                      </div>
                     );
                   }
                   return (
@@ -612,11 +773,22 @@ export function Palette(props: PaletteProps) {
           </div>
           <div className="flex h-[38px] shrink-0 items-center gap-[14px] border-t border-ui-border bg-ui-chrome-2 px-[16px]">
             {hint("↑↓", t("palette.navigate"))}
-            {hint("⏎", mode.kind === "jump" ? t("palette.open") : t("palette.run"))}
-            {hint("⇥", mode.kind === "jump" ? t("palette.filterInstead") : t("palette.switchSection"))}
-            {hint(keyCaps("Mod+K", IS_MAC).join(IS_MAC ? "" : "+"), t("palette.sheet"))}
+            {queryMode ? (
+              <>
+                {hint("⏎", t("palette.open"))}
+                {hint(keyCaps("Mod+S", IS_MAC).join(IS_MAC ? "" : "+"), t("palette.saveAsTab"))}
+                {hint("⇧⏎", t("palette.showAllKey"))}
+                {hint("⇥", t("palette.lensKey"))}
+              </>
+            ) : (
+              <>
+                {hint("⏎", mode.kind === "jump" ? t("palette.open") : t("palette.run"))}
+                {hint("⇥", mode.kind === "jump" ? t("palette.filterInstead") : t("palette.switchSection"))}
+                {hint(keyCaps("Mod+K", IS_MAC).join(IS_MAC ? "" : "+"), t("palette.sheet"))}
+              </>
+            )}
             {hint("esc", t("palette.dismiss"))}
-            {plain && hint("@ ␣", t("palette.filesShortcut"))}
+            {plain && !queryMode && hint("@ ␣", t("palette.filesShortcut"))}
             <span className="flex-1" />
             <span className="hidden truncate font-code text-[10px] text-ui-text-3 xl:block">{t("palette.brand")}</span>
           </div>

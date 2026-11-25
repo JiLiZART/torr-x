@@ -134,6 +134,11 @@ TORRENTX_TEST_TRANSMISSION=http://127.0.0.1:9091/transmission/rpc \
   mode `torrent:␣` picks a torrent and becomes a scope chip bound to its id. On a torrent page `@␣` starts scoped to
   it; Backspace on an empty input pops the last chip. ⏎ on a file opens its Files section with the row highlighted
   (in-memory `focusFile` in `App.tsx`, never in the address). File rows reuse `FileCells` from `FilesSection`.
+- Spotlight query mode (input parses with a `field:`): tokens are drawn by a mirror layer behind a transparent input
+  (`tokenSpans`); sections CREATE TAB (name prefilled by `suggestTabName`, ⌘S) → FILTER RESULTS (3 library matches +
+  "Show all", ⇧⏎ = All tab + lens) → JUMP TO (tabs, files via `fileJumps`) → ACTIONS on the matches (⌘P pause, ⌘L tag).
+  ⇥ applies the lens in the active tab. One cursor runs across sections and starts on the first match. The two match
+  actions are palette-local keys, not entries in `lib/commands.ts`.
 - Every GUI command is registered in `lib/commands.ts` (tag its button with `data-command`); keys come from there.
 - Errors: API calls are awaited in `try/catch` and routed to one `handleError` in `packages/ui/src/components/App.tsx`.
 - Tests: Rust `cargo test --workspace` (API tests via tower `oneshot`); JS only for pure logic via

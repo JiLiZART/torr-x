@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
-import { COMMAND_FOR_ACTION, COMMAND_IDS, COMMANDS, QUERY_DEFAULT_ACTIONS } from "./commands.ts";
+import { COMMAND_FOR_ACTION, COMMAND_IDS, COMMANDS } from "./commands.ts";
 import { commandFor, eventBinding, keyCaps, matchBinding, usableKeys } from "./keymap.ts";
 import { detectMode, rank } from "./palette.ts";
 
@@ -16,7 +16,7 @@ test("every rendered action button is a registered command", () => {
   }
   assert.ok(used.size >= 10, `expected tagged buttons, found ${[...used]}`);
   for (const id of used) assert.ok(COMMAND_IDS.has(id), `button data-command="${id}" has no registry entry`);
-  for (const id of [...Object.values(COMMAND_FOR_ACTION), ...QUERY_DEFAULT_ACTIONS]) assert.ok(COMMAND_IDS.has(id), id);
+  for (const id of Object.values(COMMAND_FOR_ACTION)) assert.ok(COMMAND_IDS.has(id), id);
   assert.equal(COMMAND_IDS.size, COMMANDS.length, "ids are unique");
 });
 

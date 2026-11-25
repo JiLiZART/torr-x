@@ -443,11 +443,11 @@ export function App() {
       navigate(ALL_TAB);
     } else setLens(next);
   };
-  const createFromPalette = (query: string) =>
+  const createFromPalette = (query: string, name: string) =>
     run(async () => {
-      // Named by its query, not activated: the palette never steals the current view.
-      const tab = await api.createTab({ name: query, query });
-      setNotice(t("palette.created", { tab: tab.name }));
+      // Not activated: the palette never steals the current view. An empty name = named by its query.
+      const tab = await api.createTab({ name, query });
+      setNotice(t("palette.created", { tab: tabLabel(tab) }));
     });
 
   const onDropFiles = (e: DragEvent) => {
@@ -478,7 +478,6 @@ export function App() {
   }
 
   const detailTorrent = detailView ? list.find((x) => x.id === detailView.id) : undefined;
-  const tabRows = tabAst ? list.filter((row) => evaluate(tabAst, row)) : [];
 
   const banner = "flex shrink-0 items-center gap-[10px] border-b border-ui-border bg-ui-accent-soft px-[16px] py-[8px] text-[12px] text-ui-accent";
 
@@ -668,7 +667,6 @@ export function App() {
             activeTab={activeTab}
             tabLabel={tabLabel}
             all={list}
-            tabRows={tabRows}
             handlers={handlers}
             desktop={DESKTOP}
             onApply={applyFromPalette}
@@ -677,7 +675,9 @@ export function App() {
             here={detailView ? { id: detailView.id, name: list.find((row) => row.id === detailView.id)?.name ?? detailView.id } : null}
             onOpenFile={openFile}
             onError={handleError}
-            onCreateTab={(query) => void createFromPalette(query)}
+            onCreateTab={(query, name) => void createFromPalette(query, name)}
+            onPauseMatches={(rows) => void pauseRows(notPaused(rows))}
+            onTagMatches={(rows) => setPrompt({ kind: "tags", torrents: rows })}
             onSheet={() => {
               setPalette(null);
               setSheetOpen(true);

@@ -122,9 +122,6 @@ export const COMMAND_FOR_ACTION: Record<TorrentAction, string> = {
   tags: "sel.tags",
 };
 
-/** ACTIONS shown for a structured query when no command label matches the typed words. */
-export const QUERY_DEFAULT_ACTIONS = ["sel.pause", "tab.pauseAll", "all.pause", "tab.resumeAll"];
-
 /** What App supplies per command: how to run it, and why it cannot run right now. */
 export interface Handler {
   run: (arg?: number) => void;

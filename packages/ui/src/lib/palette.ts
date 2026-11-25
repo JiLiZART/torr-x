@@ -111,6 +111,69 @@ export function fileResults(hits: FileHit[], mode: Extract<Mode, { kind: "files"
   );
 }
 
+/** Every predicate and sort of a query, groups flattened. */
+function leaves(node: Node): Node[] {
+  return node.type === "and" || node.type === "or" ? node.items.flatMap(leaves) : [node];
+}
+
+/** True when the item at `column` was typed as `field:…` (not a bare word). */
+const named = (text: string, column: number) => /^!?[A-Za-z]+:/.test(text.slice(column));
+
+export interface TokenSpan {
+  text: string;
+  kind: "plain" | "field" | "value";
+}
+
+/** The input split for drawing: each `field:value` becomes a field span and a value span; the rest stays plain. */
+export function tokenSpans(text: string): TokenSpan[] {
+  const { ast } = parse(text);
+  const spans: TokenSpan[] = [];
+  let at = 0;
+  const plain = (to: number) => {
+    if (to > at) spans.push({ text: text.slice(at, to), kind: "plain" });
+  };
+  const items = ast ? leaves(ast).filter((n): n is Extract<Node, { column: number }> => n.type !== "and" && n.type !== "or") : [];
+  for (const item of items.sort((a, b) => a.column - b.column)) {
+    if (!named(text, item.column)) continue;
+    const end = item.column + item.length;
+    const colon = text.indexOf(":", item.column) + 1;
+    plain(item.column);
+    spans.push({ text: text.slice(item.column, colon), kind: "field" });
+    if (end > colon) spans.push({ text: text.slice(colon, end), kind: "value" });
+    at = end;
+  }
+  plain(text.length);
+  return spans;
+}
+
+/** Default name for a tab saved from `text`: the values of its plain `field:value` predicates, joined by ` · `. */
+export function suggestTabName(text: string, ast: Node): string {
+  return topItems(ast)
+    .flatMap((n) => (n.type === "pred" && !n.negated && n.op === "=" && !n.value.includes("..") && named(text, n.column) ? [n.value] : []))
+    .join(" · ");
+}
+
+/** Words the query names (values and sort keys), for jump matches by name. */
+export function queryWords(ast: Node): string[] {
+  const words = leaves(ast).flatMap((n) => (n.type === "pred" ? (n.negated ? [] : [n.value]) : n.type === "sort" ? n.keys.map((k) => k.field) : []));
+  return [...new Set(words.map((w) => w.replace(/\*/g, "").toLowerCase()))].filter((w) => w.length >= 2);
+}
+
+/** Files whose name contains one of `words`, best `score` first, then server order. */
+export function fileJumps(hits: FileHit[], words: string[], limit: number): FileResult[] {
+  if (words.length === 0) return [];
+  return hits
+    .map((h, i) => {
+      const row: FileResult = { ...fileRow(h), torrentId: h.torrentId, torrentName: h.torrentName };
+      const scores = words.map((w) => score(row.name, w)).filter((s): s is number => s !== null);
+      return { row, i, s: scores.length ? Math.min(...scores) : null };
+    })
+    .filter((x) => x.s !== null)
+    .sort((a, b) => a.s! - b.s! || a.i - b.i)
+    .slice(0, limit)
+    .map((x) => x.row);
+}
+
 export function detectMode(input: string): Mode {
   const text = input.trim();
   if (text.startsWith(">")) return { kind: "command", text: text.slice(1).trim() };
