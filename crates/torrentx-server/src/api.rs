@@ -114,6 +114,7 @@ pub fn router(state: Arc<AppState>) -> Router {
             "/torrents/{id}/files/{index}/cover",
             get(covers::get_file_cover).put(covers::put_file_cover).delete(covers::delete_file_cover),
         )
+        .route("/torrents/{id}/files/{index}/cover/capture", post(covers::capture_file_cover))
         .route("/torrents/{id}/tab", put(set_tab_gone))
         .route("/torrents/{id}/tags", put(set_tags))
         .route("/torrents/{id}/category", put(set_category))

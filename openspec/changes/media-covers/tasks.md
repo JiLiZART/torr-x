@@ -58,3 +58,12 @@
       on-screen rows; verify `pnpm lint`, `pnpm typecheck` pass
 - [ ] 6.3 Verify in `pnpm dev:web` that row text keeps its contrast in dark and light, plain, hovered and
       selected, and that a seeding MP4 torrent gets its row cover without opening it
+
+## 7. Frames for files `<video>` rejects
+
+- [x] 7.1 `decodeFrame` (`lib/cover.ts`): JS demux (`mediabunny`, loaded on demand) + WebCodecs when `<video>`
+      fails; checked on MKV HEVC 10-bit in Chrome
+- [x] 7.2 `POST /torrents/{id}/files/{index}/cover/capture`: the server's own `ffmpeg` (found on `PATH` or the
+      usual folders, never bundled) takes the frame of a complete file; `unsupported` without it; the UI uses
+      it after the browser fails and for paused torrents
+- [ ] 7.3 Verify `decodeFrame` in the desktop window (WebKit) on MKV

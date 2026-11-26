@@ -396,19 +396,24 @@ pub async fn put_file_cover(
     if !d.files.iter().any(|f| f.index == index && kind(&f.path) == Kind::Video) {
         return Err(ApiError::invalid(format!("file {index} is not a video file")));
     }
+    store_frame(&state, &id, &d.files, index, ext, &body).await
+}
+
+/// Stores a frame as a video file's cover, and as the torrent's when the file is its largest video.
+async fn store_frame(state: &AppState, id: &str, files: &[FileInfo], index: u32, ext: &str, body: &[u8]) -> ApiResult<Json<Value>> {
     let key = index.to_string();
-    let rec = state.store.covers(&id);
+    let rec = state.store.covers(id);
     // Removed by the user, or an episode image is already there: the frame is not wanted.
     if rec.removed.contains(&key) || rec.files.get(&index).is_some_and(|c| c.source == Source::Online) {
         return Ok(Json(json!({ "cover": rec.files.get(&index).map(|c| &c.version) })));
     }
     let name = format!("f{index}.{ext}");
-    let version = cache(&state, &id, &name, &body).await?;
+    let version = cache(state, id, &name, body).await?;
     let cover = Cover { source: Source::Frame, index: 0, name, version: version.clone() };
-    let promote = largest_video(&d.files) == Some(index);
+    let promote = largest_video(files) == Some(index);
     state
         .store
-        .update_covers(&id, |r| {
+        .update_covers(id, |r| {
             let frame_or_none = r.torrent.as_ref().is_none_or(|c| c.source == Source::Frame);
             if promote && frame_or_none && !r.removed.contains(TORRENT) {
                 r.torrent = Some(cover.clone());
@@ -417,6 +422,59 @@ pub async fn put_file_cover(
         })
         .map_err(store_err)?;
     Ok(Json(json!({ "cover": version })))
+}
+
+/// `ffmpeg` on the `PATH`, or in the usual install folders (a desktop app starts with a short `PATH`).
+fn find_ffmpeg() -> Option<PathBuf> {
+    let name = if cfg!(windows) { "ffmpeg.exe" } else { "ffmpeg" };
+    let path = std::env::var_os("PATH").unwrap_or_default();
+    let usual = ["/opt/homebrew/bin", "/usr/local/bin", "/usr/bin"].map(PathBuf::from);
+    std::env::split_paths(&path).chain(usual).map(|dir| dir.join(name)).find(|p| p.is_file())
+}
+
+/// The duration in seconds from ffmpeg's `Duration: 00:23:41.08, ...` line.
+fn parse_duration(log: &str) -> Option<f64> {
+    let at = log.split("Duration: ").nth(1)?.split(',').next()?;
+    let mut parts = at.trim().split(':').map(|p| p.parse::<f64>().ok());
+    Some(parts.next()??.mul_add(3600.0, parts.next()??.mul_add(60.0, parts.next()??)))
+}
+
+/// Where the frame is taken: the UI's `seekTime` (WebTorrent Desktop's formula).
+fn seek_time(duration: Option<f64>) -> f64 {
+    (duration.filter(|d| *d > 0.0).unwrap_or(600.0) * 0.03).min(60.0)
+}
+
+async fn ffmpeg(bin: &std::path::Path, args: &[&str]) -> ApiResult<std::process::Output> {
+    let mut cmd = tokio::process::Command::new(bin);
+    cmd.args(["-nostdin", "-hide_banner"]).args(args).stdin(std::process::Stdio::null()).kill_on_drop(true);
+    tokio::time::timeout(Duration::from_secs(30), cmd.output())
+        .await
+        .map_err(|_| ApiError::internal("ffmpeg gave no frame in time"))?
+        .map_err(|e| ApiError::internal(format!("cannot start ffmpeg: {e}")))
+}
+
+/// Takes the cover frame of a complete video file with the `ffmpeg` installed on the server machine,
+/// for files no browser decodes. `unsupported` without ffmpeg; TorrentX never bundles it.
+pub async fn capture_file_cover(State(state): State<Arc<AppState>>, Path((id, index)): Path<(String, u32)>) -> ApiResult<Json<Value>> {
+    let id = parse_id(&id)?;
+    let bin = find_ffmpeg().ok_or_else(|| ApiError::from(EngineError::Unsupported("frame capture needs ffmpeg on the server".into())))?;
+    let d = engine(&state).await?.get(&id).await?;
+    let file = d.files.iter().find(|f| f.index == index && kind(&f.path) == Kind::Video);
+    let file = file.ok_or_else(|| ApiError::invalid(format!("file {index} is not a video file")))?;
+    if file.progress < 1.0 || !stays_inside(&file.path) {
+        return Err(ApiError::invalid(format!("file {index} is not complete")));
+    }
+    let path = PathBuf::from(&d.torrent.save_path).join(&file.path);
+    let path = path.to_str().ok_or_else(|| ApiError::invalid("the file path is not UTF-8"))?;
+    let probe = ffmpeg(&bin, &["-i", path]).await?;
+    let at = format!("{:.2}", seek_time(parse_duration(&String::from_utf8_lossy(&probe.stderr))));
+    let scale = "scale='min(640,iw)':-2";
+    let args = ["-v", "error", "-ss", &at, "-i", path, "-frames:v", "1", "-vf", scale, "-pix_fmt", "yuvj420p", "-q:v", "4", "-f", "mjpeg", "pipe:1"];
+    let frame = ffmpeg(&bin, &args).await?.stdout;
+    if sniff(&frame).map(|(_, ext)| ext) != Some("jpg") || frame.len() > MAX_UPLOAD {
+        return Err(ApiError::internal("ffmpeg gave no frame"));
+    }
+    store_frame(&state, &id, &d.files, index, "jpg", &frame).await
 }
 
 pub async fn delete_cover(State(state): State<Arc<AppState>>, Path(id): Path<String>) -> ApiResult<StatusCode> {
@@ -691,6 +749,12 @@ mod tests {
     #[test]
     fn image_type_comes_from_the_bytes() {
         assert_eq!(sniff(&[0xFF, 0xD8, 0xFF, 0xE0, 0]), Some(("image/jpeg", "jpg")));
+        let log = "Input #0, matroska,webm, from 'a.mkv':\n  Duration: 00:23:41.08, start: 0.000000, bitrate: 7 kb/s";
+        assert_eq!(parse_duration(log), Some(1421.08));
+        assert_eq!(parse_duration("  Duration: N/A, start: 0"), None);
+        assert_eq!(seek_time(Some(100.0)), 3.0);
+        assert_eq!(seek_time(Some(7200.0)), 60.0);
+        assert_eq!(seek_time(None), 18.0);
         assert_eq!(sniff(b"\x89PNG\r\n\x1a\n\0\0"), Some(("image/png", "png")));
         assert_eq!(sniff(b"GIF89a.."), Some(("image/gif", "gif")));
         assert_eq!(sniff(b"RIFF\0\0\0\0WEBPVP8 "), Some(("image/webp", "webp")));

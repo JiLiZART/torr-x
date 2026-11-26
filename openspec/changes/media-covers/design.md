@@ -137,3 +137,11 @@ torrent image files over 20 MB are not used as covers.
 
 No migration. Existing torrents get local covers on the first policy ticks after the upgrade. Rollback: an
 older binary ignores `covers` in `state.json` and the `covers/` folder.
+
+## Addendum: files the browser's player rejects
+
+`<video>` cannot open MKV in WebKit, so the capture has two fallbacks, tried in order: (1) `decodeFrame` reads the
+container in JS over range requests and decodes one frame with WebCodecs; (2) the server runs the `ffmpeg` installed
+on its machine on a complete file and stores the JPEG as an uploaded frame would be. This relaxes "the server has no
+decoder" only as an optional external tool: TorrentX does not bundle or require ffmpeg, and the server still decodes
+nothing itself. The ffmpeg path needs no stream link, so it also serves paused torrents and Transmission.

@@ -19,3 +19,5 @@ and `POST /torrents/{id}/cover/lookup`. Settings gain `covers {onlineLookup, has
 
 Fixed: with rqbit, the files of a multi-file torrent had paths without the torrent's folder, so "Open" and "Reveal"
 looked in the wrong place. File paths are now relative to the save path on both engines.
+
+MKV and other files the browser's player rejects get a frame too: the UI decodes one itself, and a server with `ffmpeg` installed takes the frame from finished files, also for paused torrents.

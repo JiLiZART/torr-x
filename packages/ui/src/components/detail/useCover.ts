@@ -1,16 +1,18 @@
 import { useEffect, useState, type RefObject } from "react";
-import { api, type CoverLookup, type FileInfo, type Torrent, type TorrentDetails } from "@torrentx/api-client";
+import { api, ApiError, type CoverLookup, type FileInfo, type Torrent, type TorrentDetails } from "@torrentx/api-client";
 import { useUi } from "../../lib/context";
-import { canCapture, captureFrame, captureKey, mainVideo, onceQueue, torrentLookup } from "../../lib/cover";
+import { canCapture, captureFrame, captureKey, decodeFrame, mainVideo, onceQueue, torrentLookup } from "../../lib/cover";
 import { mediaEpisodes } from "../../lib/media";
 
 /** One lookup or capture at a time for the whole app; nothing is retried within a session. */
 const queue = onceQueue();
+/** False once the server said it has no ffmpeg. */
+let serverCapture = true;
 
 /**
  * Gets a cover for a video file (and, for the torrent's main video, the torrent): the online lookup first
- * when it is on, since a poster outranks a frame, then a captured frame. Failures are silent: no cover is
- * a normal state.
+ * when it is on, since a poster outranks a frame, then a frame: `<video>`, else JS demux + WebCodecs, else
+ * the server's ffmpeg. Failures are silent: no cover is a normal state.
  */
 export function ensureCover(d: TorrentDetails, file: FileInfo | null, lookup: CoverLookup | null, canStream: boolean) {
   let found = false;
@@ -19,13 +21,29 @@ export function ensureCover(d: TorrentDetails, file: FileInfo | null, lookup: Co
       found = (await api.lookupCover(d.id, lookup)) !== null;
     });
   }
-  if (file && file.cover === null && canStream && canCapture(file, d.status)) {
-    void queue(captureKey(d.id, file), async () => {
-      if (found) return;
-      const frame = await captureFrame(await api.streamFile(d.id, file.index));
-      await api.uploadFileCover(d.id, file.index, frame);
-    });
-  }
+  if (!file || file.cover !== null) return;
+  const inBrowser = canStream && canCapture(file, d.status);
+  // The server's ffmpeg reads a complete file from disk: no stream link, so a paused torrent is fine.
+  const onServer = () => serverCapture && file.progress >= 1;
+  if (!inBrowser && !onServer()) return;
+  void queue(captureKey(d.id, file), async () => {
+    if (found) return;
+    if (inBrowser) {
+      try {
+        const url = await api.streamFile(d.id, file.index);
+        const frame = await captureFrame(url).catch(() => decodeFrame(url));
+        return await api.uploadFileCover(d.id, file.index, frame);
+      } catch {
+        // No decoder in this browser: the server may have one.
+      }
+    }
+    if (!onServer()) return;
+    try {
+      await api.captureFileCover(d.id, file.index);
+    } catch (e) {
+      if (e instanceof ApiError && e.kind === "unsupported") serverCapture = false;
+    }
+  });
 }
 
 /** On a torrent's page: looks its cover up (when the lookup is on) and captures a frame while it has none. */
@@ -59,7 +77,7 @@ export function useRowCover(torrent: Torrent, row: RefObject<HTMLElement | null>
   const active = torrent.status === "downloading" || torrent.status === "seeding";
   const done = torrent.progress >= 1;
   useEffect(() => {
-    if (!seen || !missing || !(active || coverLookup)) return;
+    if (!seen || !missing || !(active || done || coverLookup)) return;
     void queue(`${id}:row:${done ? "done" : "part"}`, async () => {
       const d = await api.get(id);
       if (d.cover !== null) return;

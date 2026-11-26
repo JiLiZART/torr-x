@@ -95,7 +95,9 @@ openspec/                   specs and change proposals
   `<video>` on the stream link at `min((duration || 600) * 0.03, 60)` s, never for a paused torrent or a skipped file; the hero,
   on-screen list rows (`useRowCover`) and media view rows trigger it) and uploaded with
   `PUT /torrents/{id}/files/{index}/cover` (JPEG/PNG/WebP, ≤ 512 KB); the server has no image or video decoder and only
-  checks leading bytes (`sniff`; SVG is never served). Records are in `state.json` `covers`, cached images in
+  checks leading bytes (`sniff`; SVG is never served). A file `<video>` rejects (MKV) is read in JS and decoded with WebCodecs
+  (`decodeFrame`, `mediabunny`, loaded on demand); failing that, or for a paused torrent, `POST …/files/{index}/cover/capture`
+  has the server run the machine's `ffmpeg` on a complete file (`unsupported` when none is installed; never bundled). Records are in `state.json` `covers`, cached images in
   `<data_dir>/covers/<id>/`; `DELETE` marks a cover removed so no automatic source sets it again. The lookup
   (`POST /torrents/{id}/cover/lookup`, `[covers]` in the config, off by default, the user's own TMDB key, never
   returned) sends only the title, year, season and episode the UI parsed (`parseTitle`), once per torrent or file.

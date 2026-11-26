@@ -120,3 +120,33 @@ export function captureFrame(url: string, timeoutMs = 20_000): Promise<Blob> {
     video.src = url;
   });
 }
+
+/**
+ * The same frame for a file `<video>` rejects (MKV above all): the container is read in JS over range
+ * requests and one frame is decoded with the system's decoder (WebCodecs). Rejects when the browser has
+ * no decoder for the codec.
+ */
+export async function decodeFrame(url: string, timeoutMs = 30_000): Promise<Blob> {
+  const { ALL_FORMATS, CanvasSink, Input, UrlSource } = await import("mediabunny");
+  const source = new UrlSource(new URL(url, location.href), { getRetryDelay: () => null });
+  const input = new Input({ source, formats: ALL_FORMATS });
+  const frame = async () => {
+    const track = await input.getPrimaryVideoTrack();
+    if (!track || !(await track.canDecode())) throw new Error("cannot decode");
+    const { width } = frameSize(track.displayWidth, track.displayHeight);
+    const at = seekTime((await input.getDurationFromMetadata()) ?? NaN);
+    const shot = await new CanvasSink(track, { width }).getCanvas(at);
+    if (!shot) throw new Error("no frame");
+    const canvas = shot.canvas;
+    if ("convertToBlob" in canvas) return canvas.convertToBlob({ type: "image/jpeg", quality: 0.8 });
+    return new Promise<Blob>((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("no frame"))), "image/jpeg", 0.8));
+  };
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const late = new Promise<never>((_, reject) => (timer = setTimeout(() => reject(new Error("no frame in time")), timeoutMs)));
+  try {
+    return await Promise.race([frame(), late]);
+  } finally {
+    clearTimeout(timer);
+    input.dispose();
+  }
+}

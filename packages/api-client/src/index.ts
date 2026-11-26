@@ -418,6 +418,9 @@ export const api = {
   /** Stores a captured frame (JPEG, PNG or WebP, at most 512 KB) as a video file's cover. */
   uploadFileCover: (id: string, index: number, image: Blob) =>
     request<{ cover: string | null }>("PUT", `/torrents/${enc(id)}/files/${index}/cover`, image).then((r) => r.cover),
+  /** Has the server take the frame of a complete video file with its ffmpeg (`unsupported` without one). */
+  captureFileCover: (id: string, index: number) =>
+    request<{ cover: string | null }>("POST", `/torrents/${enc(id)}/files/${index}/cover/capture`).then((r) => r.cover),
   /** Removes a cover for good: no automatic source sets it again. */
   removeCover: (id: string) => request<void>("DELETE", `/torrents/${enc(id)}/cover`),
   removeFileCover: (id: string, index: number) => request<void>("DELETE", `/torrents/${enc(id)}/files/${index}/cover`),
