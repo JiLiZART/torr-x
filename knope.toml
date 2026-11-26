@@ -63,5 +63,5 @@ name = "release"
 type = "Release"
 
 [github]
-owner = "JiLiZART"
-repo = "torr-x"
+owner = "torrentx"
+repo = "torrentx"
