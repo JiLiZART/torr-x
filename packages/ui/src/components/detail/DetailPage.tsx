@@ -7,6 +7,7 @@ import { bytes, eta, percent, pieceCells, rate } from "../../lib/format";
 import { SECTIONS, type Section } from "../../lib/detail";
 import type { TorrentAction } from "../../lib/commands";
 import { Hero } from "./Hero";
+import { useTorrentCover } from "./useCover";
 import { FilesSection } from "./FilesSection";
 import { PeersSection, TrackersSection, WebSeedsSection } from "./SwarmSections";
 
@@ -23,7 +24,7 @@ interface DetailPageProps {
   onFocused?: () => void;
 }
 
-const HISTORY = 44;
+const HISTORY = 96;
 
 function Item({ icon, label, value }: { icon: ReactNode; label: string; value: ReactNode }) {
   return (
@@ -43,6 +44,7 @@ export function DetailPage({ id, section, onSection, onAction, onError, onPollEr
   const want = { peers: section === "peers" && !gate("peerList"), pieces: section === "pieces" && !gate("pieces") };
   const { details, peers, pieces } = useDetails(id, want, { onError: onPollError });
   const d = details.data;
+  useTorrentCover(d);
   const [history, setHistory] = useState<{ id: string; down: number[] }>({ id, down: [] });
   // The section lens: in memory, per torrent + section, gone when the section changes.
   const [lens, setLens] = useState({ key: `${id}:${section}`, query: "" });

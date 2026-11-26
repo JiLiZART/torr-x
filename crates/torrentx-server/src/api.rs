@@ -23,7 +23,7 @@ use torrentx_core::{
 use crate::config::{Config, EngineKind, Preferences};
 use crate::engine::Engine;
 use crate::store::{PausedBy, Tab, TabPatch};
-use crate::{AppState, ServerEvent, auth, ui};
+use crate::{AppState, ServerEvent, auth, covers, ui};
 
 /// Big enough for any sane .torrent file.
 const BODY_LIMIT: usize = 10 * 1024 * 1024;
@@ -35,7 +35,7 @@ pub struct ApiError {
 }
 
 impl ApiError {
-    fn new(status: StatusCode, kind: &'static str, message: impl Into<String>) -> Self {
+    pub(crate) fn new(status: StatusCode, kind: &'static str, message: impl Into<String>) -> Self {
         Self {
             status,
             kind,
@@ -57,7 +57,7 @@ impl ApiError {
     pub fn forbidden(msg: impl Into<String>) -> Self {
         Self::new(StatusCode::FORBIDDEN, "forbidden", msg)
     }
-    fn internal(msg: impl Into<String>) -> Self {
+    pub(crate) fn internal(msg: impl Into<String>) -> Self {
         Self::new(StatusCode::INTERNAL_SERVER_ERROR, "internal", msg)
     }
 }
@@ -82,7 +82,7 @@ impl IntoResponse for ApiError {
     }
 }
 
-type ApiResult<T> = Result<T, ApiError>;
+pub(crate) type ApiResult<T> = Result<T, ApiError>;
 
 pub fn router(state: Arc<AppState>) -> Router {
     let protected = Router::new()
@@ -108,6 +108,13 @@ pub fn router(state: Arc<AppState>) -> Router {
         .route("/torrents/{id}/files/{index}/reveal", post(reveal_file))
         .route("/torrents/{id}/files/{index}/stream", post(stream_link))
         .route("/torrents/{id}/files/{index}/play", post(play_file))
+        .route("/torrents/{id}/cover", get(covers::get_cover).delete(covers::delete_cover))
+        .route("/torrents/{id}/cover/lookup", post(covers::lookup))
+        .route(
+            "/torrents/{id}/files/{index}/cover",
+            get(covers::get_file_cover).put(covers::put_file_cover).delete(covers::delete_file_cover),
+        )
+        .route("/torrents/{id}/files/{index}/cover/capture", post(covers::capture_file_cover))
         .route("/torrents/{id}/tab", put(set_tab_gone))
         .route("/torrents/{id}/tags", put(set_tags))
         .route("/torrents/{id}/category", put(set_category))
@@ -159,8 +166,9 @@ async fn health(State(state): State<Arc<AppState>>) -> Json<Value> {
     }))
 }
 
-/// Adds what only the server knows: tags, category, rename override, queued-by-policy.
+/// Adds what only the server knows: tags, category, cover, rename override, queued-by-policy.
 fn decorate(state: &AppState, t: &mut Torrent) {
+    covers::decorate(state, t);
     t.tags = state.store.tags_of(&t.id);
     t.category = state.store.category_of(&t.id);
     if let Some(name) = state.store.name_of(&t.id) {
@@ -188,7 +196,8 @@ async fn files(State(state): State<Arc<AppState>>) -> ApiResult<Json<Vec<FileHit
             continue;
         };
         decorate(&state, &mut t);
-        let (_, list) = files.swap_remove(at);
+        let (_, mut list) = files.swap_remove(at);
+        covers::decorate_files(&state, &t.id, &mut list);
         hits.extend(list.into_iter().map(|file| FileHit {
             torrent_id: t.id.clone(),
             torrent_name: t.name.clone(),
@@ -204,6 +213,7 @@ async fn details(
 ) -> ApiResult<Json<TorrentDetails>> {
     let mut d = engine(&state).await?.get(&id).await?;
     decorate(&state, &mut d.torrent);
+    covers::decorate_files(&state, &d.torrent.id, &mut d.files);
     Ok(Json(d))
 }
 
@@ -329,7 +339,9 @@ async fn remove(
     Query(q): Query<RemoveQuery>,
 ) -> ApiResult<StatusCode> {
     engine(&state).await?.remove(&id, q.delete_data).await?;
-    state.store.forget(&parse_id(&id)?).map_err(store_err)?;
+    let id = parse_id(&id)?;
+    state.store.forget(&id).map_err(store_err)?;
+    covers::forget(&state, &id);
     Ok(StatusCode::NO_CONTENT)
 }
 
@@ -479,7 +491,7 @@ async fn file_path(state: &AppState, id: &str, index: u32, local: bool) -> ApiRe
 
 /// Paths come from torrent metadata: only plain names may follow the save path. An absolute
 /// path or a drive prefix would replace it in `join`, and `..` would climb out of it.
-fn stays_inside(relative: &str) -> bool {
+pub(crate) fn stays_inside(relative: &str) -> bool {
     !relative.is_empty()
         && std::path::Path::new(relative)
             .components()
@@ -898,6 +910,19 @@ pub struct Settings {
     advanced: AdvancedSettings,
     #[serde(default)]
     preferences: Preferences,
+    #[serde(default)]
+    covers: CoversSettings,
+}
+
+#[derive(Default, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+struct CoversSettings {
+    online_lookup: bool,
+    /// Absent = keep the stored key, "" = clear it.
+    #[serde(skip_serializing)]
+    api_key: Option<String>,
+    /// Read-only hint for the UI.
+    has_api_key: bool,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -986,6 +1011,11 @@ impl From<&Config> for Settings {
             downloads: c.downloads.clone(),
             advanced: c.advanced.clone(),
             preferences: c.preferences.clone(),
+            covers: CoversSettings {
+                online_lookup: c.covers.online_lookup,
+                api_key: None,
+                has_api_key: !c.covers.api_key.is_empty(),
+            },
         }
     }
 }
@@ -1056,6 +1086,10 @@ impl Settings {
         c.downloads.move_completed_path = c.downloads.move_completed_path.trim().to_string();
         c.advanced = self.advanced;
         c.preferences = self.preferences;
+        c.covers.online_lookup = self.covers.online_lookup;
+        if let Some(key) = self.covers.api_key {
+            c.covers.api_key = key.trim().to_string();
+        }
         c.validate().map_err(ApiError::invalid)?;
         Ok((c, creds_changed))
     }

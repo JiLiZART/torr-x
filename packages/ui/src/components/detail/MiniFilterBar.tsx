@@ -23,7 +23,9 @@ const field = "rounded-[8px] border border-ui-border bg-ui-surface-2 font-code t
 
 /** The list's filter bar in miniature: same parser, chips and sort chip, scoped to one section. */
 export function MiniFilterBar({ scope, query, onQuery, placeholder, count, values = {}, children }: MiniFilterBarProps) {
-  const { t } = useUi();
+  const { t, filterBar } = useUi();
+  // Hidden with the top bar's toggle, but never while it holds a filter; the view buttons stay.
+  const open = filterBar || query.trim() !== "";
   const [draft, setDraft] = useState("");
   const list = chips(parse(query, scope).ast ?? { type: "and", items: [] });
   const n = predicateCount(query, scope);
@@ -37,6 +39,8 @@ export function MiniFilterBar({ scope, query, onQuery, placeholder, count, value
     setDraft("");
   };
 
+  if (!open && !children) return null;
+  if (!open) return <div className="flex shrink-0 items-center justify-end gap-[8px] border-b border-ui-border bg-ui-chrome-2 px-[14px] py-[6px]">{children}</div>;
   return (
     <div className="flex shrink-0 flex-col gap-[4px] border-b border-ui-border bg-ui-chrome-2 px-[14px] py-[10px]">
       <div className="flex flex-wrap items-center gap-[8px]">

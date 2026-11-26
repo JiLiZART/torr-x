@@ -778,5 +778,17 @@
   "columns.left": "{column} nach links",
   "columns.right": "{column} nach rechts",
   "columns.hint": "Zum Anordnen ziehen, Kopfzeilenrand ziehen zum Ändern der Breite. Schmale Fenster blenden einige Spalten aus.",
-  "columns.resize": "Ziehen zum Ändern der Breite · Doppelklick zum Zurücksetzen"
+  "columns.resize": "Ziehen zum Ändern der Breite · Doppelklick zum Zurücksetzen",
+  "action.removeCover": "Cover entfernen",
+  "cmd.sel.removeCover": "Cover des ausgewählten Torrents entfernen",
+  "cmd.needCover": "dieser Torrent hat kein Cover",
+  "set.group.covers": "Cover",
+  "set.group.coversCaption": "aus den Dateien des Torrents, solange die Suche aus ist",
+  "set.coverLookup": "Cover online suchen",
+  "set.coverLookup.desc": "Sendet Titel, Jahr, Staffel- und Episodennummer an TMDB, um ein Poster zu finden. Torrent-Namen, Dateinamen und Info-Hashes werden nie gesendet.",
+  "set.coverLookup.needKey": "Zuerst einen API-Schlüssel eingeben",
+  "set.coverApiKey": "TMDB-API-Schlüssel",
+  "set.coverApiKey.desc": "Ihr eigener Schlüssel von themoviedb.org. Wird auf dem Server gespeichert und nie wieder angezeigt.",
+  "set.coverApiKey.stored": "(Schlüssel gespeichert)",
+  "set.coverAttribution": "Dieses Produkt verwendet die TMDB-API, wird aber von TMDB weder unterstützt noch zertifiziert."
 }

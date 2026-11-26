@@ -778,5 +778,17 @@
   "columns.left": "将{column}左移",
   "columns.right": "将{column}右移",
   "columns.hint": "拖动以调整顺序，拖动表头边框以调整宽度。窗口较窄时会隐藏部分列。",
-  "columns.resize": "拖动调整宽度 · 双击重置"
+  "columns.resize": "拖动调整宽度 · 双击重置",
+  "action.removeCover": "移除封面",
+  "cmd.sel.removeCover": "移除所选种子的封面",
+  "cmd.needCover": "此种子没有封面",
+  "set.group.covers": "封面",
+  "set.group.coversCaption": "取自种子自身的文件，除非开启在线查找",
+  "set.coverLookup": "在线查找封面",
+  "set.coverLookup.desc": "将标题、年份、季号和集号发送到 TMDB 以查找海报。绝不发送种子名称、文件名和 info-hash。",
+  "set.coverLookup.needKey": "请先输入 API 密钥",
+  "set.coverApiKey": "TMDB API 密钥",
+  "set.coverApiKey.desc": "你自己在 themoviedb.org 申请的密钥。保存在服务器上，不会再次显示。",
+  "set.coverApiKey.stored": "（已保存密钥）",
+  "set.coverAttribution": "本产品使用 TMDB API，但未获得 TMDB 的认可或认证。"
 }

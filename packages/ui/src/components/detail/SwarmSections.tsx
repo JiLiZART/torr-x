@@ -44,7 +44,7 @@ function relative(secs: number | null, t: (k: string, v?: Record<string, string 
 const LEGEND = ["D", "U", "I", "E", "K", "S", "?"];
 
 export function PeersSection({ d, query, onQuery, peers, error }: Omit<SectionProps, "onError"> & { peers: Peer[] | null; error: string | null }) {
-  const { t, gate, prefs } = useUi();
+  const { t, gate, prefs, compact } = useUi();
   const rows = useMemo(() => (peers ?? []).map(peerRow), [peers]);
   const { shown, sort } = useLens(rows, query, PEER_SCOPE);
   const names = useMemo(() => {
@@ -87,7 +87,7 @@ export function PeersSection({ d, query, onQuery, peers, error }: Omit<SectionPr
           <SectionEmpty>{rows.length === 0 ? t(d.status === "paused" ? "detail.empty.peersPaused" : "detail.empty.peers") : t("detail.empty.lens")}</SectionEmpty>
         ) : (
           shown.map((p) => (
-            <div key={p.address} className="flex items-center gap-[10px] rounded-[8px] px-[8px] py-[7px] font-code text-[11px] hover:bg-ui-surface-2">
+            <div key={p.address} className={`flex items-center gap-[10px] rounded-[8px] px-[8px] ${compact ? "py-[2px]" : "py-[7px]"} font-code text-[11px] hover:bg-ui-surface-2`}>
               <span className="w-[170px] shrink-0 truncate text-ui-text" title={p.address}>
                 {p.address}
               </span>
@@ -189,7 +189,7 @@ function Heading({ title, summary, children }: { title: string; summary: string;
 }
 
 export function TrackersSection({ d, query, onQuery, onError, onReload }: SectionProps & { onReload: () => void }) {
-  const { t, gate } = useUi();
+  const { t, gate, compact } = useUi();
   const rows = useMemo(() => d.trackers.map(trackerRow), [d.trackers]);
   const { shown, sort } = useLens(rows, query, TRACKER_SCOPE);
   const announced = rows.filter((r) => r.kind === "tracker").length;
@@ -222,7 +222,7 @@ export function TrackersSection({ d, query, onQuery, onError, onReload }: Sectio
         {shown.map((r) => {
           const pseudo = r.kind !== "tracker";
           return (
-            <div key={`${r.kind}:${r.url}`} className="flex flex-col rounded-[8px] px-[8px] py-[7px] hover:bg-ui-surface-2">
+            <div key={`${r.kind}:${r.url}`} className={`flex flex-col rounded-[8px] px-[8px] ${compact ? "py-[2px]" : "py-[7px]"} hover:bg-ui-surface-2`}>
               <div className="flex items-center gap-[10px] font-code text-[11px]">
                 <span className={`min-w-0 flex-1 truncate ${pseudo ? "text-ui-text-2" : "text-ui-text"}`} title={r.url}>
                   {r.url}
@@ -252,7 +252,7 @@ export function TrackersSection({ d, query, onQuery, onError, onReload }: Sectio
 }
 
 export function WebSeedsSection({ d, query, onQuery, onReload }: Omit<SectionProps, "onError"> & { onReload: () => void }) {
-  const { t, gate } = useUi();
+  const { t, gate, compact } = useUi();
   const rows = useMemo(() => d.webSeeds.map(webSeedRow), [d.webSeeds]);
   const { shown, sort } = useLens(rows, query, WEBSEED_SCOPE);
   const failing = rows.filter((r) => r.status === "failed").length;
@@ -274,7 +274,7 @@ export function WebSeedsSection({ d, query, onQuery, onReload }: Omit<SectionPro
       <div className="flex flex-col gap-[1px] px-[14px] py-[8px]">
         {shown.length === 0 && <SectionEmpty>{reportHint ?? (rows.length === 0 ? t("detail.empty.webSeeds") : t("detail.empty.lens"))}</SectionEmpty>}
         {shown.map((r) => (
-          <div key={r.url} className="flex flex-col rounded-[8px] px-[8px] py-[7px] hover:bg-ui-surface-2">
+          <div key={r.url} className={`flex flex-col rounded-[8px] px-[8px] ${compact ? "py-[2px]" : "py-[7px]"} hover:bg-ui-surface-2`}>
             <div className="flex items-center gap-[10px] font-code text-[11px]">
               <span className="min-w-0 flex-1 truncate text-ui-text" title={r.url}>
                 {r.url}

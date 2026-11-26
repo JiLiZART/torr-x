@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactElement } from "react";
-import { Cast, ChevronDown, ChevronRight, ClipboardCopy, Eye, ExternalLink, Film, Folder, FolderOpen, FolderTree, HardDriveDownload, LayoutList, Library, Play, Tv } from "lucide-react";
+import { Cast, ChevronDown, ChevronRight, ClipboardCopy, Eye, ExternalLink, Folder, FolderOpen, FolderTree, HardDriveDownload, LayoutList, Library, Play, Tv } from "lucide-react";
 import { api, type FileInfo, type TorrentDetails } from "@torrentx/api-client";
 import { compare, evaluate, FILE_PRIORITIES, FILE_SCOPE, parse, sortKeys } from "@torrentx/query";
 import { useUi } from "../../lib/context";
@@ -7,7 +7,9 @@ import { bytes, trimMiddle } from "../../lib/format";
 import { clickSort } from "../../lib/lens";
 import { FILE_ACTIONS, fileActionBlock, fileClass, fileRow, fileTree, joinPath, treeLines, type FileAction, type FilePriorityWord, type FileRow, type TreeDir } from "../../lib/detail";
 import { FileIcon } from "./FileIcon";
+import { graphPaths, pushFileSample, type History } from "../../lib/activity";
 import { episodeCode, episodeState, mediaEpisodes, type EpisodeFile } from "../../lib/media";
+import { EpisodeThumb } from "./covers";
 import { MiniFilterBar } from "./MiniFilterBar";
 import { MiniBar, SectionEmpty, TableHeader } from "./Table";
 
@@ -43,7 +45,7 @@ const small = "rounded-[6px] border border-ui-border bg-ui-surface-2 p-[5px] tex
 const isLocal = () => ["localhost", "127.0.0.1", "[::1]", "::1"].includes(window.location.hostname) || "__TAURI_INTERNALS__" in window;
 
 export function FilesSection({ d, query, onQuery, onError, onNotice, focusFile = null, onFocused }: FilesSectionProps) {
-  const { t, gate, caps } = useUi();
+  const { t, gate, caps, compact } = useUi();
   useEffect(() => {
     if (focusFile === null) return;
     document.getElementById(`file-${focusFile}`)?.scrollIntoView({ block: "center" });
@@ -168,7 +170,7 @@ export function FilesSection({ d, query, onQuery, onError, onNotice, focusFile =
       <div
         key={row.index}
         id={`file-${row.index}`}
-        className={`flex items-center gap-[10px] rounded-[8px] px-[8px] py-[8px] hover:bg-ui-surface-2 ${focused ? "bg-ui-accent-soft ring-1 ring-ui-accent-line" : ""}`}
+        className={`flex items-center gap-[10px] rounded-[8px] px-[8px] ${compact ? "py-[3px]" : "py-[8px]"} hover:bg-ui-surface-2 ${focused ? "bg-ui-accent-soft ring-1 ring-ui-accent-line" : ""}`}
       >
         <input
           type="checkbox"
@@ -201,7 +203,7 @@ export function FilesSection({ d, query, onQuery, onError, onNotice, focusFile =
     const priorities = new Set(dir.indices.map((i) => byIndex.get(i)!.priority));
     const priority = priorities.size === 1 ? [...priorities][0] : "";
     return (
-      <div key={`dir:${dir.path}`} className="flex items-center gap-[10px] rounded-[8px] px-[8px] py-[8px] hover:bg-ui-surface-2">
+      <div key={`dir:${dir.path}`} className={`flex items-center gap-[10px] rounded-[8px] px-[8px] ${compact ? "py-[3px]" : "py-[8px]"} hover:bg-ui-surface-2`}>
         <input
           type="checkbox"
           className="h-[15px] w-[15px] shrink-0 accent-ui-accent"
@@ -361,12 +363,17 @@ interface MediaViewProps {
 
 /** Files as episodes: season picker, a strip that mirrors the lens, and one row per episode. */
 function MediaView({ d, episodes, shown, query, actionButtons, canStream, play, playHint }: MediaViewProps) {
-  const { t } = useUi();
+  const { t, compact } = useUi();
   const seasons = [...new Set(episodes.map((e) => e.season))];
   const [season, setSeason] = useState(seasons[0]);
   const inSeason = episodes.filter((e) => e.season === season);
   const visible = inSeason.filter((e) => shown.has(e.file.index));
   const active = d.status === "downloading" || d.status === "seeding";
+  // Per-file activity, one sample per details refresh; restarts with another torrent.
+  const [activity, setActivity] = useState<{ id: string; files: History }>({ id: d.id, files: new Map() });
+  useEffect(() => {
+    setActivity((a) => ({ id: d.id, files: pushFileSample(a.id === d.id ? a.files : new Map(), d.files, active, Date.now()) }));
+  }, [d, active]);
   // The first finished episode, else (when the engine streams) the first one still wanted.
   const featured = visible.find((e) => episodeState(e.file, active) === "ready") ?? (canStream ? visible.find((e) => e.file.wanted) : undefined);
   const featuredHint = featured && playHint(featured.file.progress >= 1);
@@ -420,15 +427,20 @@ function MediaView({ d, episodes, shown, query, actionButtons, canStream, play, 
           const state = episodeState(e.file, active);
           const isFeatured = e === featured;
           const done = Math.floor(e.file.progress * 100);
+          const samples = activity.id === d.id ? activity.files.get(String(e.file.index)) : undefined;
           return (
             <div
               key={e.file.index}
               id={`ep-${e.file.index}`}
-              className={`flex items-center gap-[12px] rounded-[10px] border px-[10px] py-[9px] ${isFeatured ? "border-ui-accent-line bg-ui-surface-2" : "border-ui-border"}`}
+              className={`relative isolate flex items-center gap-[12px] rounded-[10px] border px-[10px] ${compact ? "py-[4px]" : "py-[9px]"} ${isFeatured ? "border-ui-accent-line bg-ui-surface-2" : "border-ui-border"}`}
             >
-              <span className="flex h-[44px] w-[76px] shrink-0 items-center justify-center rounded-[7px] bg-ui-surface-3 text-ui-text-3">
-                <Film size={18} />
-              </span>
+              {samples && samples.length >= 2 && (
+                // The list row's graph: download speed only, a file has no upload rate.
+                <svg className="pointer-events-none absolute inset-0 -z-10 h-full w-full overflow-hidden rounded-[10px]" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
+                  <path d={graphPaths(samples).down} className="fill-ui-accent/5" />
+                </svg>
+              )}
+              <EpisodeThumb d={d} episode={e} />
               <div className="flex min-w-0 flex-1 flex-col gap-[4px]">
                 <div className="flex items-center gap-[8px]">
                   <span className="rounded-[5px] bg-ui-surface-3 px-[6px] py-[2px] font-code text-[10px] text-ui-text-2">{episodeCode(e)}</span>

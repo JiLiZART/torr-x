@@ -347,6 +347,7 @@ impl RawTorrent {
             category: None,
             tracker: self.trackers.iter().find_map(|t| tracker_host(&t.announce)),
             priority: map_priority(self.bandwidth_priority),
+            cover: None,
         }
     }
 }
@@ -368,6 +369,7 @@ fn file_infos(files: Vec<RawFile>, stats: &[RawFileStat]) -> Vec<FileInfo> {
                 size: f.length,
                 wanted: stat.is_none_or(|s| s.wanted.as_bool() == Some(true) || s.wanted == 1),
                 priority: stat.map_or(Priority::Normal, |s| map_priority(s.priority)),
+                cover: None,
             }
         })
         .collect()

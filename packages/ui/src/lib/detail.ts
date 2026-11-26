@@ -4,7 +4,7 @@ import type { FileInfo, Peer, Tracker, WebSeed } from "@torrentx/api-client";
 import { PEER_FLAGS } from "@torrentx/query";
 import { parseEpisode, VIDEO_EXT } from "./media.ts";
 
-export const SECTIONS = ["overview", "files", "peers", "trackers", "webseeds", "pieces"] as const;
+export const SECTIONS = ["files", "overview", "peers", "trackers", "webseeds", "pieces"] as const;
 export type Section = (typeof SECTIONS)[number];
 export const isSection = (s: string): s is Section => (SECTIONS as readonly string[]).includes(s);
 

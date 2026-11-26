@@ -5902,6 +5902,7 @@ dependencies = [
  "maxminddb",
  "open",
  "percent-encoding",
+ "reqwest",
  "rust-embed",
  "serde",
  "serde_json",

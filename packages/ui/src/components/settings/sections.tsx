@@ -346,6 +346,8 @@ export function AppearanceSection({ store, row }: SectionProps) {
   const { t } = useUi();
   const v = store.value;
   const appearance = v<{ mode: Mode; accent: Accent }>("preferences.appearance");
+  const lookup = v<boolean | undefined>("covers.onlineLookup") === true;
+  const hasKey = store.saved?.covers?.hasApiKey === true;
   return (
     <>
       <Group title={t("set.group.theme")}>
@@ -400,11 +402,26 @@ export function AppearanceSection({ store, row }: SectionProps) {
           />
         </Row>
       </Group>
+      <Group title={t("set.group.covers")} caption={t("set.group.coversCaption")}>
+        <Row {...row("coverLookup", "covers.onlineLookup")} desc={lookup ? `${t("set.coverLookup.desc")} ${t("set.coverAttribution")}` : undefined}>
+          {!hasKey && !lookup && <span className="text-[11px] text-ui-text-3">{t("set.coverLookup.needKey")}</span>}
+          <Toggle label={t("set.coverLookup")} on={lookup} disabled={!hasKey && !lookup} onChange={(on) => store.change("covers.onlineLookup", on)} />
+        </Row>
+        <Row {...row("coverApiKey", "covers.apiKey")}>
+          <TextInput
+            type="password"
+            label={t("set.coverApiKey")}
+            value=""
+            placeholder={hasKey ? t("set.coverApiKey.stored") : ""}
+            onCommit={(s) => store.change("covers.apiKey", s.trim())}
+          />
+        </Row>
+      </Group>
     </>
   );
 }
 
-export function AboutSection({ row, version, checkUpdates }: SectionProps & { version: string | undefined; checkUpdates: () => Promise<Release | null> }) {
+export function AboutSection({ store, row, version, checkUpdates }: SectionProps & { version: string | undefined; checkUpdates: () => Promise<Release | null> }) {
   const { t } = useUi();
   const [status, setStatus] = useState<string | null>(null);
   const check = async () => {
@@ -424,6 +441,7 @@ export function AboutSection({ row, version, checkUpdates }: SectionProps & { ve
       <Row {...row("checkNow")} desc={status ?? undefined}>
         <Button onClick={() => void check()}>{t("set.checkNow")}</Button>
       </Row>
+      {store.value<boolean | undefined>("covers.onlineLookup") === true && <p className="px-[16px] py-[9px] text-[11px] leading-[17px] text-ui-text-3">{t("set.coverAttribution")}</p>}
     </Group>
   );
 }

@@ -35,9 +35,9 @@ test("media mode needs two episodes of one show", () => {
 
 test("section rows feed the section scopes", () => {
   const files = [
-    fileRow({ index: 0, path: "S/Arcane.S02E04.mkv", size: 2 ** 31, progress: 0.5, wanted: true, priority: "normal" }),
-    fileRow({ index: 1, path: "S/Arcane.S02E05.mkv", size: 2 ** 31, progress: 0, wanted: false, priority: "normal" }),
-    fileRow({ index: 2, path: "S/Subs/en.srt", size: 10, progress: 1, wanted: true, priority: "high" }),
+    fileRow({ index: 0, path: "S/Arcane.S02E04.mkv", size: 2 ** 31, progress: 0.5, wanted: true, priority: "normal", cover: null }),
+    fileRow({ index: 1, path: "S/Arcane.S02E05.mkv", size: 2 ** 31, progress: 0, wanted: false, priority: "normal", cover: null }),
+    fileRow({ index: 2, path: "S/Subs/en.srt", size: 10, progress: 1, wanted: true, priority: "high", cover: null }),
   ];
   assert.deepEqual([files[1].priority, files[0].ep, files[2].ep, files[2].ext], ["skip", 4, null, "srt"]);
   const shown = (q: string) => files.filter((r) => evaluate(parse(q, FILE_SCOPE).ast!, r)).map((r) => r.index);

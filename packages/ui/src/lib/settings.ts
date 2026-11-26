@@ -65,6 +65,7 @@ export function settingsBody(base: Settings, changes: Record<SettingPath, unknow
   let body = structuredClone(base);
   delete body.network.proxy.hasPassword;
   delete body.engine.transmission.hasPassword;
+  delete body.covers?.hasApiKey;
   for (const [path, value] of Object.entries(changes)) body = setPath(body, path, value);
   return body;
 }
@@ -125,7 +126,7 @@ export const ROWS: RowDef[] = [
   ...rows("tabs", ["grammar", "savedTabs"]),
   ...rows("security", ["bind", "serverPort", "allowedHosts", "authEnabled", "authUsername", "authPassword"]),
   ...rows("notifications", ["notifyEnabled", "notifyComplete", "notifyAdd", "notifySound"]),
-  ...rows("appearance", ["mode", "accent", "speedGraph", "pieceMap", "dateFormat"]),
+  ...rows("appearance", ["mode", "accent", "speedGraph", "pieceMap", "dateFormat", "coverLookup", "coverApiKey"]),
   ...rows("about", ["version", "checkNow"]),
 ];
 

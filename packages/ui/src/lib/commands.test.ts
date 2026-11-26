@@ -151,7 +151,7 @@ test("palette chips: @ files, torrent picker, scope and Backspace", async () => 
   assert.deepEqual(dropChip(here).chips, [{ kind: "files" }], "Backspace widens to all torrents");
 
   // Results: hint without scope or query, file order when scoped, name score ranking, cap.
-  const hit = (torrentId: string, index: number, path: string) => ({ torrentId, torrentName: torrentId === "ab" ? "The Expanse S01" : "Other", index, path, size: 1, progress: 0, wanted: true, priority: "normal" as const });
+  const hit = (torrentId: string, index: number, path: string) => ({ torrentId, torrentName: torrentId === "ab" ? "The Expanse S01" : "Other", index, path, size: 1, progress: 0, wanted: true, priority: "normal" as const, cover: null });
   const hits = [hit("ab", 0, "S01/e04.srt"), hit("ab", 1, "S01/x-e04.mkv"), hit("cd", 0, "e04-other.mkv")];
   const files = (input: { chips: never[] | object[]; text: string }) => paletteMode(input as never) as Extract<ReturnType<typeof paletteMode>, { kind: "files" }>;
   assert.equal(fileResults(hits, files({ chips: [{ kind: "files" }], text: "" })), null);

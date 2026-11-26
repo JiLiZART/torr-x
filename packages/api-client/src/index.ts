@@ -39,6 +39,8 @@ export interface Torrent {
   /** Host of the first tracker. */
   tracker: string | null;
   priority: Priority;
+  /** Cover version (opaque; changes with the image), or null. The image: `api.coverUrl`. */
+  cover: string | null;
 }
 
 export interface FileInfo {
@@ -48,6 +50,8 @@ export interface FileInfo {
   progress: number;
   wanted: boolean;
   priority: Priority;
+  /** Cover version, like `Torrent.cover`. The image: `api.fileCoverUrl`. */
+  cover: string | null;
 }
 
 /** One file of one torrent, flattened for searching across torrents (`GET /files`). */
@@ -287,6 +291,19 @@ export interface Settings {
     webSocketTrackers: boolean;
   };
   preferences: Preferences;
+  /** Online cover lookup. `apiKey` is write-only: absent keeps the stored key, "" clears it. */
+  covers: { onlineLookup: boolean; apiKey?: string; hasApiKey?: boolean };
+}
+
+/** What a cover lookup sends to the lookup service: nothing but these values. */
+export interface CoverLookup {
+  kind: "movie" | "tv";
+  title: string;
+  year?: number;
+  season?: number;
+  episode?: number;
+  /** With a file index: the episode image, as that file's cover. */
+  file?: number;
 }
 
 export interface SaveSettingsResult {
@@ -320,7 +337,7 @@ const BASE = "/api/v1";
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const init: RequestInit = { method, credentials: "same-origin" };
-  if (body instanceof FormData) {
+  if (body instanceof FormData || body instanceof Blob) {
     init.body = body;
   } else if (body !== undefined) {
     init.body = JSON.stringify(body);
@@ -395,6 +412,22 @@ export const api = {
   streamFile: (id: string, index: number) => request<{ path: string }>("POST", `/torrents/${enc(id)}/files/${index}/stream`).then((r) => r.path),
   revealFile: (id: string, index: number) => request<void>("POST", `/torrents/${enc(id)}/files/${index}/reveal`),
   /** Replaces the torrent's tags. */
+  /** Image URLs; pass the model's `cover` version so the browser can keep the image forever. */
+  coverUrl: (id: string, version: string) => `${BASE}/torrents/${enc(id)}/cover?v=${enc(version)}`,
+  fileCoverUrl: (id: string, index: number, version: string) => `${BASE}/torrents/${enc(id)}/files/${index}/cover?v=${enc(version)}`,
+  /** Stores a captured frame (JPEG, PNG or WebP, at most 512 KB) as a video file's cover. */
+  uploadFileCover: (id: string, index: number, image: Blob) =>
+    request<{ cover: string | null }>("PUT", `/torrents/${enc(id)}/files/${index}/cover`, image).then((r) => r.cover),
+  /** Has the server take the frame of a complete video file with its ffmpeg (`unsupported` without one). */
+  captureFileCover: (id: string, index: number) =>
+    request<{ cover: string | null }>("POST", `/torrents/${enc(id)}/files/${index}/cover/capture`).then((r) => r.cover),
+  /** Removes a cover for good: no automatic source sets it again. */
+  removeCover: (id: string) => request<void>("DELETE", `/torrents/${enc(id)}/cover`),
+  removeFileCover: (id: string, index: number) => request<void>("DELETE", `/torrents/${enc(id)}/files/${index}/cover`),
+  /** Online lookup (opt-in; `unsupported` while it is off). Asked once per torrent or file. */
+  lookupCover: (id: string, lookup: CoverLookup) =>
+    request<{ cover: string | null }>("POST", `/torrents/${enc(id)}/cover/lookup`, lookup).then((r) => r.cover),
+
   setTags: (id: string, tags: string[]) => request<void>("PUT", `/torrents/${enc(id)}/tags`, tags),
   /** Sets the torrent's category; null clears it. */
   setCategory: (id: string, category: string | null) => request<void>("PUT", `/torrents/${enc(id)}/category`, { category }),

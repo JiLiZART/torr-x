@@ -141,6 +141,7 @@ pub fn plan(
 
 pub async fn run(state: Arc<AppState>) {
     let mut prev: Option<HashMap<String, f64>> = None;
+    let mut covered = std::collections::HashSet::new();
     let mut interval = tokio::time::interval(TICK);
     loop {
         interval.tick().await;
@@ -153,6 +154,7 @@ pub async fn run(state: Arc<AppState>) {
             let _ = state.events.send(ev);
         }
         prev = Some(list.iter().map(|t| (t.id.clone(), t.progress)).collect());
+        crate::covers::tick(&state, &engine, &list, &mut covered).await;
 
         let caps = engine.capabilities().await;
         let d = state.config.read().await.downloads.clone();
@@ -210,6 +212,7 @@ mod tests {
             category: None,
             tracker: None,
             priority: Priority::Normal,
+            cover: None,
         }
     }
 

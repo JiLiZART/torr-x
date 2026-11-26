@@ -20,6 +20,7 @@
   "category": null,
   "tracker": "tracker.opentrackr.org",
   "priority": "normal",
+  "cover": null,
   "pieceSize": 262144,
   "pieces": 1055,
   "availability": null,
@@ -70,7 +71,8 @@
       "size": 276134947,
       "progress": 0.5,
       "wanted": true,
-      "priority": "normal"
+      "priority": "normal",
+      "cover": null
     }
   ]
 }

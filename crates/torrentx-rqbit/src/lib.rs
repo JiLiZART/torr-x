@@ -340,6 +340,7 @@ impl RqbitEngine {
             // Unordered set in librqbit: the smallest host keeps the answer stable.
             tracker: t.shared().trackers.iter().filter_map(|u| tracker_host(u.as_str())).min(),
             priority: Priority::Normal,
+            cover: None,
         }
     }
 
@@ -349,9 +350,11 @@ impl RqbitEngine {
             .with_torrents(|all| all.map(|(_, t)| self.to_torrent(t)).collect()))
     }
 
-    /// None while a magnet's metadata is unresolved.
+    /// None while a magnet's metadata is unresolved. Paths are relative to `save_path`, so they
+    /// start with the torrent's subfolder when `split_output` took one out of it.
     fn files_of(handle: &ManagedTorrent) -> Option<Vec<FileInfo>> {
         let progress = handle.stats().file_progress;
+        let prefix = split_output(handle).1.map_or(String::new(), |dir| format!("{}/", dir.to_string_lossy()));
         let only = handle.only_files();
         handle
             .with_metadata(|m| {
@@ -362,7 +365,7 @@ impl RqbitEngine {
                         let done = progress.get(i).copied().unwrap_or(0);
                         FileInfo {
                             index: i as u32,
-                            path: f.relative_filename.to_string_lossy().into_owned(),
+                            path: format!("{prefix}{}", f.relative_filename.to_string_lossy()),
                             size: f.len,
                             progress: if f.len == 0 {
                                 1.0
@@ -371,6 +374,7 @@ impl RqbitEngine {
                             },
                             wanted: only.as_ref().is_none_or(|o| o.contains(&i)),
                             priority: Priority::Normal,
+                            cover: None,
                         }
                     })
                     .collect()

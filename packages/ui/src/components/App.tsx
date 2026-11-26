@@ -162,7 +162,9 @@ export function App() {
   // Over the defaults, so a server from before a preference existed (e.g. `appearance`) cannot break the UI.
   const loaded = settings.data?.preferences;
   const prefs = useMemo(() => ({ ...DEFAULT_PREFS, ...loaded }), [loaded]);
-  const ui = useMemo(() => makeUi(prefs, caps.data), [prefs, caps.data]);
+  // `covers` is absent on a server from before covers existed.
+  const coverLookup = settings.data?.covers?.onlineLookup === true;
+  const ui = useMemo(() => makeUi(prefs, caps.data, coverLookup, compact, !filterCollapsed), [prefs, caps.data, coverLookup, compact, filterCollapsed]);
   const { t } = ui;
   useApplyPrefs(prefs);
   useEffect(() => initDesktopChrome(), []);
@@ -383,7 +385,7 @@ export function App() {
   const openDetails = (id: string | null) => {
     if (!id) return;
     openedFromList.current = !detailView;
-    openTorrent(id, detailView?.section ?? "overview");
+    openTorrent(id, detailView?.section ?? "files");
   };
   // The tag picker opens under the torrent's tags: the hero's tag line, else its list row's tags cell (or row).
   const openPicker = (torrents: Torrent[]) => {
@@ -427,6 +429,7 @@ export function App() {
           }),
         disabled: one,
       },
+      "sel.removeCover": { run: () => run(() => api.removeCover(single.id)), disabled: one ?? (single.cover ? null : t("cmd.needCover")) },
     };
   };
   const notPaused = (rows: Torrent[]) => rows.filter((row) => row.status !== "paused");

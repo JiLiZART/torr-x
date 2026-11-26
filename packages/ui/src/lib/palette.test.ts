@@ -68,6 +68,7 @@ const hit = (path: string, torrentName = "T"): FileHit => ({
   progress: 0,
   wanted: true,
   priority: "normal",
+  cover: null,
 });
 
 test("fileJumps ranks by score and respects the limit", () => {

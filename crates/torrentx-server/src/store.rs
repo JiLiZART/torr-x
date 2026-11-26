@@ -8,6 +8,8 @@ use std::sync::Mutex;
 
 use serde::{Deserialize, Deserializer, Serialize};
 
+use crate::covers::CoverRec;
+
 /// Version of the query grammar tab queries were written in (`@torrentx/query`).
 /// The server stores query text verbatim and never parses it.
 pub const GRAMMAR_VERSION: u32 = 1;
@@ -80,6 +82,8 @@ struct Data {
     categories: BTreeMap<String, String>,
     names: BTreeMap<String, String>,
     policy: BTreeMap<String, PolicyRec>,
+    /// Cover records; absent in files written before covers existed.
+    covers: BTreeMap<String, CoverRec>,
 }
 
 /// state.json before version 3: named tabs with one tab per torrent.
@@ -163,6 +167,7 @@ fn migrate(old: LegacyData) -> Data {
         categories: BTreeMap::new(),
         names: old.names,
         policy: old.policy,
+        covers: BTreeMap::new(),
     }
 }
 
@@ -369,6 +374,24 @@ impl Store {
             d.categories.remove(torrent);
             d.names.remove(torrent);
             d.policy.remove(torrent);
+            d.covers.remove(torrent);
+            Ok(())
+        })
+    }
+
+    pub fn covers(&self, torrent: &str) -> CoverRec {
+        let data = self.data.lock().unwrap();
+        data.covers.get(torrent).cloned().unwrap_or_default()
+    }
+
+    /// Changes the torrent's cover record; an empty record is dropped.
+    pub fn update_covers(&self, torrent: &str, f: impl FnOnce(&mut CoverRec)) -> Result<(), String> {
+        self.write(|d| {
+            let mut rec = d.covers.remove(torrent).unwrap_or_default();
+            f(&mut rec);
+            if rec != CoverRec::default() {
+                d.covers.insert(torrent.into(), rec);
+            }
             Ok(())
         })
     }
@@ -527,9 +550,19 @@ mod tests {
         let s = Store::load(&d).unwrap();
         assert_eq!(s.name_of("aa").as_deref(), Some("Nice"));
         assert_eq!(s.policy("aa"), rec);
+        // An old state.json has no `covers`; records written now survive a restart.
+        assert_eq!(s.covers("aa"), CoverRec::default());
+        s.update_covers("aa", |r| {
+            r.removed.insert("torrent".into());
+            r.looked_up.insert("3".into());
+        })
+        .unwrap();
+        let s = Store::load(&d).unwrap();
+        assert!(s.covers("aa").removed.contains("torrent") && s.covers("aa").looked_up.contains("3"));
         s.forget("aa").unwrap();
         assert_eq!(s.name_of("aa"), None);
         assert_eq!(s.policy("aa"), PolicyRec::default());
+        assert_eq!(s.covers("aa"), CoverRec::default());
         let _ = std::fs::remove_dir_all(d);
     }
 }

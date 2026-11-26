@@ -4,6 +4,7 @@
 mod api;
 mod auth;
 pub mod config;
+mod covers;
 mod engine;
 mod geoip;
 mod policy;
@@ -46,6 +47,7 @@ pub struct AppState {
     events: broadcast::Sender<ServerEvent>,
     geoip: geoip::GeoIp,
     sampler: stats::Sampler,
+    tmdb: covers::Tmdb,
 }
 
 impl AppState {
@@ -68,6 +70,7 @@ impl AppState {
             settings_lock: Mutex::new(()),
             events: broadcast::channel(64).0,
             sampler: stats::Sampler::default(),
+            tmdb: covers::Tmdb::default(),
         })
     }
 

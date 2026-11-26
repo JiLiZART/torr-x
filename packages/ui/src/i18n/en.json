@@ -778,5 +778,17 @@
   "columns.left": "Move {column} left",
   "columns.right": "Move {column} right",
   "columns.hint": "Drag to reorder, drag a header border to resize. Narrow windows hide some columns.",
-  "columns.resize": "Drag to resize · double-click to reset"
+  "columns.resize": "Drag to resize · double-click to reset",
+  "action.removeCover": "Remove Cover",
+  "cmd.sel.removeCover": "Remove the cover of the selected torrent",
+  "cmd.needCover": "this torrent has no cover",
+  "set.group.covers": "Covers",
+  "set.group.coversCaption": "from the torrent's own files unless you turn the lookup on",
+  "set.coverLookup": "Look up covers online",
+  "set.coverLookup.desc": "Sends the title, year, season and episode number to TMDB to find a poster. Torrent names, file names and info-hashes are never sent.",
+  "set.coverLookup.needKey": "Enter an API key first",
+  "set.coverApiKey": "TMDB API key",
+  "set.coverApiKey.desc": "Your own key from themoviedb.org. Stored on the server and never shown again.",
+  "set.coverApiKey.stored": "(key stored)",
+  "set.coverAttribution": "This product uses the TMDB API but is not endorsed or certified by TMDB."
 }

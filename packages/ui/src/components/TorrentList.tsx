@@ -221,7 +221,7 @@ export function TorrentList(props: TorrentListProps) {
           </button>
         </div>
       )}
-      <div ref={headerRef} className="relative flex shrink-0 items-center gap-[10px] border-b border-ui-border px-[26px] py-[9px] font-code text-[9px] tracking-[1px] text-ui-text-3">
+      <div ref={headerRef} className="relative flex shrink-0 items-center gap-[10px] border-b border-ui-border px-[16px] py-[9px] font-code text-[9px] tracking-[1px] text-ui-text-3">
         <span className="w-[7px] shrink-0" />
         {columns.map((id) => (
           // Headers hold no sort state: a click only edits the `sort:` chip.
@@ -266,7 +266,7 @@ export function TorrentList(props: TorrentListProps) {
         {!engineError && torrents.length === 0 ? (
           <ZeroResults {...props} />
         ) : (
-          <div className="flex flex-col gap-[2px] px-[16px] py-[6px]">
+          <div className="flex flex-col gap-[2px] px-[6px] py-[6px]">
             {torrents.map((torrent) => (
               <TorrentRow
                 key={torrent.id}

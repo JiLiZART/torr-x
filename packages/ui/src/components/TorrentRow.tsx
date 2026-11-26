@@ -17,7 +17,8 @@ import {
   Trash,
   Trash2,
 } from "lucide-react";
-import type { Torrent } from "@torrentx/api-client";
+import { api, type Torrent } from "@torrentx/api-client";
+import { useRowCover } from "./detail/useCover";
 import { useUi } from "../lib/context";
 import { graphPaths, isActive, type Sample } from "../lib/activity";
 import { COLUMNS, type Column, type ColumnWidths } from "../lib/columns";
@@ -64,6 +65,8 @@ export function TorrentRow({ torrent, isSelected, isCursor, onClick, onDoubleCli
   const { t, gate } = useUi();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const rowRef = useRef<HTMLDivElement>(null);
+  useRowCover(torrent, rowRef);
 
   const close = () => setMenuOpen(false);
   const act = (action: TorrentAction) => {
@@ -193,12 +196,20 @@ export function TorrentRow({ torrent, isSelected, isCursor, onClick, onDoubleCli
 
   return (
     <div
+      ref={rowRef}
       data-row={torrent.id}
       aria-selected={isSelected}
       className={`group relative isolate flex w-full cursor-pointer select-none items-center gap-[10px] rounded-[10px] border px-[10px] ${compact ? "py-[5px]" : "py-[9px]"} ${isSelected ? "bg-ui-surface-2" : "hover:bg-ui-surface"} ${isCursor ? "border-ui-border-strong" : isSelected ? "border-ui-border" : "border-transparent"}`}
       onClick={onClick}
       onDoubleClick={onDoubleClick}
     >
+      {torrent.cover && (
+        // The cover, dimmed with the background the row has in each state so the cells keep their contrast.
+        <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-[10px]">
+          <img src={api.coverUrl(torrent.id, torrent.cover)} alt="" loading="lazy" className="h-full w-full object-cover" />
+          <div className={`absolute inset-0 ${isSelected ? "bg-ui-surface-2/80" : "bg-ui-bg/80 group-hover:bg-ui-surface/80"}`} />
+        </div>
+      )}
       {graph && (
         <svg className="pointer-events-none absolute inset-0 -z-10 h-full w-full overflow-hidden rounded-[10px]" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
           <path d={graph.down} className="fill-ui-accent/5" />

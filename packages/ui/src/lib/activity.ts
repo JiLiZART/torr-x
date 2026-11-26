@@ -1,4 +1,4 @@
-import type { Torrent } from "@torrentx/api-client";
+import type { FileInfo, Torrent } from "@torrentx/api-client";
 
 /** Rates in bytes/s; `done` = completed payload bytes, used to derive `disk`. */
 export interface Sample {
@@ -31,6 +31,26 @@ export function pushSample(prev: History, torrents: Torrent[], now: number): His
     const disk = prior ? Math.max(0, (done - prior.done) / ((now - prior.t) / 1000)) : 0;
     const sample = { t: now, down: tor.downloadRate, up: tor.uploadRate, disk, done };
     next.set(tor.id, [...old, sample].slice(-MAX_SAMPLES));
+  }
+  return next;
+}
+
+/**
+ * The same history for the files of one torrent, keyed by file index. A file has no rates in the model, so
+ * `down` is derived from its completed bytes. Only wanted, unfinished files of an active torrent are kept.
+ */
+export function pushFileSample(prev: History, files: FileInfo[], active: boolean, now: number): History {
+  const next: History = new Map();
+  for (const f of active ? files : []) {
+    if (!f.wanted || f.progress >= 1) continue;
+    const key = String(f.index);
+    let old = prev.get(key) ?? [];
+    const last = old.at(-1);
+    if (last && (now - last.t > GAP_MS || now <= last.t)) old = [];
+    const prior = old.at(-1);
+    const done = f.progress * f.size;
+    const down = prior ? Math.max(0, (done - prior.done) / ((now - prior.t) / 1000)) : 0;
+    next.set(key, [...old, { t: now, down, up: 0, disk: 0, done }].slice(-MAX_SAMPLES));
   }
   return next;
 }
