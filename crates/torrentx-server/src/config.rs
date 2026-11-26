@@ -127,6 +127,8 @@ pub struct Preferences {
     pub show_piece_map: bool,
     pub date_format: DateFormat,
     pub notifications: Notifications,
+    /// Video player for Play: an app name (macOS) or command; empty = the first one found.
+    pub player: String,
 }
 
 /// What a stored file or a client may send: the current shape plus the pre-`appearance` keys,
@@ -165,6 +167,7 @@ struct PreferencesCurrent {
     show_piece_map: bool,
     date_format: DateFormat,
     notifications: Notifications,
+    player: String,
 }
 
 impl Default for PreferencesCurrent {
@@ -185,6 +188,7 @@ impl From<Preferences> for PreferencesCurrent {
             show_piece_map: p.show_piece_map,
             date_format: p.date_format,
             notifications: p.notifications,
+            player: p.player,
         }
     }
 }
@@ -208,6 +212,7 @@ impl From<PreferencesIn> for Preferences {
             show_piece_map: c.show_piece_map,
             date_format: c.date_format,
             notifications: c.notifications,
+            player: c.player,
         }
     }
 }
@@ -225,6 +230,7 @@ impl Default for Preferences {
             show_piece_map: true,
             date_format: DateFormat::Relative,
             notifications: Notifications::default(),
+            player: String::new(),
         }
     }
 }

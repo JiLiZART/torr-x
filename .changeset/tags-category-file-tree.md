@@ -12,3 +12,5 @@ default: minor
 - Reorder and resize the list's columns: drag a header border to resize (double-click it for the default width), or open the button at the right end of the header (or "Reorder columns" in the palette) to drag columns into a new order; Reset there restores both. Order and widths are remembered in this browser.
 - The paused, queued and checking state chips stay visible on a selected row.
 - Sidebar tabs show icons by what they hold (All, Downloading, Active, Seeding, Stalled, movies, shows, music, books, disc images; a dashed circle for ad-hoc tabs), and the "Search or paste magnet" button fits on one line.
+- Media view recognizes anime-style episode names (`Show - 01 [1080p].mkv`, `[Group] Show - 12v2.mkv`) and opens by default when a torrent is a season pack.
+- Play works: a finished episode opens in your video player, and an unfinished one streams into it while it downloads (pieces near the playhead come first; embedded engine only). Pick the player in Settings → General (empty = IINA, VLC or mpv, whichever is installed). From another device, Play copies a stream link to paste into a player there.

@@ -44,6 +44,9 @@ export function GeneralSection({ store, row }: SectionProps) {
         <Row {...row("language", "preferences.language")}>
           <Select<Language> label={t("set.language")} value={v("preferences.language")} onChange={(next) => store.change("preferences.language", next)} options={LANGUAGES} />
         </Row>
+        <Row {...row("player", "preferences.player")}>
+          <TextInput label={t("set.player")} width="w-[220px]" placeholder={t("set.player.auto")} value={v("preferences.player")} onCommit={(s) => store.change("preferences.player", s.trim())} />
+        </Row>
       </Group>
     </>
   );

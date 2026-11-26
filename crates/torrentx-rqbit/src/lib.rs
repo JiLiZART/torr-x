@@ -240,6 +240,8 @@ impl RqbitEngine {
                 "upnp",
                 "proxySocks5",
                 "dht",
+                // librqbit FileStream: reads wait for, and prioritize, the pieces they need.
+                "stream",
             ])
             .server(&[
                 "verify",
@@ -743,6 +745,24 @@ impl RqbitEngine {
             .update_only_files(&handle, &only)
             .await
             .map_err(invalid)
+    }
+
+    /// A seekable reader over one file and its length. Reads wait for the pieces they need, which
+    /// librqbit downloads first, so a player can start before the file is complete.
+    pub async fn stream(
+        &self,
+        id: &str,
+        index: u32,
+    ) -> EngineResult<(u64, impl tokio::io::AsyncRead + tokio::io::AsyncSeek + Send + Unpin + 'static)> {
+        let handle = self.handle(id)?;
+        let count = handle
+            .with_metadata(|m| m.file_infos.len())
+            .map_err(invalid)?;
+        if index as usize >= count {
+            return Err(EngineError::NotFound(format!("torrent has no file {index}")));
+        }
+        let stream = handle.stream(index as usize).await.map_err(invalid)?;
+        Ok((stream.len(), stream))
     }
 
     pub async fn torrent_file(&self, id: &str) -> EngineResult<Vec<u8>> {

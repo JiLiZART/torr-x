@@ -58,9 +58,9 @@ export function FilesSection({ d, query, onQuery, onError, onNotice, focusFile =
   const [view, setViewState] = useState<View>(() => {
     try {
       const saved = localStorage.getItem(VIEW_KEY(d.id));
-      return saved === "media" || saved === "list" ? saved : "tree";
+      return saved === "media" || saved === "list" || saved === "tree" ? saved : episodes ? "media" : "tree";
     } catch {
-      return "tree";
+      return episodes ? "media" : "tree";
     }
   });
   // Folders the user folded, by path; a file opened from the palette unfolds the folders above it.
@@ -107,12 +107,20 @@ export function FilesSection({ d, query, onQuery, onError, onNotice, focusFile =
     });
 
   const blockHint = (action: FileAction, done: boolean) => {
-    const why = fileActionBlock(action, { openFile: gate("openFile"), local, done });
+    const why = fileActionBlock(action, { openFile: gate("openFile"), stream: gate("stream"), local, done });
     if (!why) return undefined;
     return why === "engine" ? t("caps.notSupported", { engine }) : t(`detail.block.${why}`);
   };
   const runAction = (action: FileAction, file: Pick<FileInfo, "index" | "path">) => {
-    if (action === "open") api.openFile(d.id, file.index).catch(onError);
+    if (action === "play" && local) {
+      api.playFile(d.id, file.index).then((r) => onNotice(t(r.streaming ? "detail.streaming" : "detail.playing")), onError);
+    } else if (action === "play") {
+      // Another device: hand over a link to paste into a player there.
+      api
+        .streamFile(d.id, file.index)
+        .then((path) => navigator.clipboard.writeText(`${location.origin}${path}`))
+        .then(() => onNotice(t("detail.streamCopied")), onError);
+    } else if (action === "open") api.openFile(d.id, file.index).catch(onError);
     else if (action === "reveal") api.revealFile(d.id, file.index).catch(onError);
     else if (action === "copyPath") {
       void navigator.clipboard.writeText(joinPath(d.savePath, file.path)).then(() => onNotice(t("detail.pathCopied")), onError);
@@ -262,7 +270,16 @@ export function FilesSection({ d, query, onQuery, onError, onNotice, focusFile =
         {switcher}
       </MiniFilterBar>
       {media ? (
-        <MediaView d={d} episodes={episodes!} shown={shownSet} query={query} actionButtons={actionButtons} />
+        <MediaView
+          d={d}
+          episodes={episodes!}
+          shown={shownSet}
+          query={query}
+          actionButtons={actionButtons}
+          canStream={!gate("stream")}
+          play={(file) => runAction("play", file)}
+          playHint={(done) => blockHint("play", done)}
+        />
       ) : (
         <>
           <TableHeader columns={columns} sort={ast ? sortKeys(ast)[0] : undefined} onSort={(field) => onQuery(clickSort(query, [], field, FILE_SCOPE))} lead={<span className="w-[15px] shrink-0" />} />
@@ -337,17 +354,22 @@ interface MediaViewProps {
   shown: Set<number>;
   query: string;
   actionButtons: (row: Pick<FileRow, "index" | "path" | "ext" | "done">) => ReactElement[];
+  canStream: boolean;
+  play: (file: FileInfo) => void;
+  playHint: (done: boolean) => string | undefined;
 }
 
 /** Files as episodes: season picker, a strip that mirrors the lens, and one row per episode. */
-function MediaView({ d, episodes, shown, query, actionButtons }: MediaViewProps) {
+function MediaView({ d, episodes, shown, query, actionButtons, canStream, play, playHint }: MediaViewProps) {
   const { t } = useUi();
   const seasons = [...new Set(episodes.map((e) => e.season))];
   const [season, setSeason] = useState(seasons[0]);
   const inSeason = episodes.filter((e) => e.season === season);
   const visible = inSeason.filter((e) => shown.has(e.file.index));
   const active = d.status === "downloading" || d.status === "seeding";
-  const featured = visible.find((e) => episodeState(e.file, active) === "ready");
+  // The first finished episode, else (when the engine streams) the first one still wanted.
+  const featured = visible.find((e) => episodeState(e.file, active) === "ready") ?? (canStream ? visible.find((e) => e.file.wanted) : undefined);
+  const featuredHint = featured && playHint(featured.file.progress >= 1);
   const lensText = query.replace(/\s*sort:\S+(\s+(asc|desc))?/gi, "").trim();
 
   return (
@@ -387,7 +409,7 @@ function MediaView({ d, episodes, shown, query, actionButtons }: MediaViewProps)
         {lensText && visible.length < inSeason.length && <span className="font-code text-[9px] text-ui-text-3">{t("detail.dashed", { lens: lensText })}</span>}
         <span className="flex-1" />
         {featured && (
-          <button disabled title={t("detail.block.notYet")} className="flex items-center gap-[6px] rounded-[8px] bg-ui-accent px-[12px] py-[7px] text-[12px] font-semibold text-ui-bg disabled:opacity-50">
+          <button disabled={!!featuredHint} title={featuredHint} onClick={() => play(featured.file)} className="flex items-center gap-[6px] rounded-[8px] bg-ui-accent px-[12px] py-[7px] text-[12px] font-semibold text-ui-bg disabled:opacity-50">
             <Play size={13} /> {t("detail.playEpisode", { code: episodeCode(featured) })}
           </button>
         )}

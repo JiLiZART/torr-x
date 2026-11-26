@@ -15,6 +15,8 @@ export interface Episode {
 }
 
 const CODE = /(?:^|[\s._\-[(])s(\d{1,2})[\s._-]?e(\d{1,3})(?:[\s._\-\])]|$)|(?:^|[\s._\-[(])(\d{1,2})x(\d{2,3})(?:[\s._\-\])]|$)/i;
+// Anime style, numbered within the show: `[Group] Show - 01 [1080p]`, `Show - 12v2.mkv`; read as season 1.
+const ABSOLUTE = /^(?:\[[^\]]*\]\s*)?(.+?)\s+-\s+(\d{1,3})(?:v\d)?(?=$|[\s.[(])/i;
 // Tokens shown as quality tags, and the ones that only end a title.
 const QUALITY: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^(2160|1080|720|576|480)[pi]$/i, (m) => `${m[1]}p`],
@@ -59,15 +61,15 @@ const stem = (fileName: string) => fileName.replace(/\.[a-z0-9]{2,4}$/i, "");
 export function parseEpisode(path: string): Episode | null {
   const base = stem(path.split("/").pop() ?? path);
   const m = CODE.exec(base);
-  if (!m) return null;
-  const season = Number(m[1] ?? m[3]);
-  const ep = Number(m[2] ?? m[4]);
-  const show = base
-    .slice(0, m.index)
+  const a = m ? null : ABSOLUTE.exec(base);
+  if (!m && !a) return null;
+  const season = m ? Number(m[1] ?? m[3]) : 1;
+  const ep = m ? Number(m[2] ?? m[4]) : Number(a![2]);
+  const show = (m ? base.slice(0, m.index) : a![1])
     .replace(/[\s._\-[(]+/g, " ")
     .trim()
     .toLowerCase();
-  const after = tokens(base.slice(m.index + m[0].length));
+  const after = tokens(m ? base.slice(m.index + m[0].length) : base.slice(a![0].length));
   const titleWords: string[] = [];
   for (const t of after) {
     if (/^[-–—:]+$/.test(t)) continue; // separators between code and title

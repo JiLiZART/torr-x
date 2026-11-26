@@ -578,6 +578,8 @@ async fn new_mutations_are_guarded() {
         (Method::POST, format!("/api/v1/torrents/{ZERO_ID}/web-seeds")),
         (Method::POST, format!("/api/v1/torrents/{ZERO_ID}/files/0/open")),
         (Method::POST, format!("/api/v1/torrents/{ZERO_ID}/files/0/reveal")),
+        (Method::POST, format!("/api/v1/torrents/{ZERO_ID}/files/0/stream")),
+        (Method::POST, format!("/api/v1/torrents/{ZERO_ID}/files/0/play")),
         (Method::PUT, format!("/api/v1/torrents/{ZERO_ID}/files")),
         (Method::PUT, format!("/api/v1/torrents/{ZERO_ID}/tags")),
         (Method::PUT, format!("/api/v1/torrents/{ZERO_ID}/category")),
@@ -604,10 +606,34 @@ async fn new_mutations_are_guarded() {
     for uri in ["/api/v1/tabs", "/api/v1/stats", "/api/v1/capabilities"] {
         assert_eq!(get(&s, uri).await.0, StatusCode::UNAUTHORIZED, "{uri}");
     }
-    for uri in [format!("/api/v1/torrents/{ZERO_ID}/reannounce"), format!("/api/v1/torrents/{ZERO_ID}/files/0/open"), "/api/v1/network/port-test".into()] {
+    for uri in [
+        format!("/api/v1/torrents/{ZERO_ID}/reannounce"),
+        format!("/api/v1/torrents/{ZERO_ID}/files/0/open"),
+        format!("/api/v1/torrents/{ZERO_ID}/files/0/stream"),
+        format!("/api/v1/torrents/{ZERO_ID}/files/0/play"),
+        "/api/v1/network/port-test".into(),
+    ] {
         let r = req(Method::POST, &uri).body(Body::empty()).unwrap();
         assert_eq!(call(&s, r).await.0, StatusCode::UNAUTHORIZED, "{uri}");
     }
+}
+
+#[tokio::test]
+async fn stream_links_need_a_live_token_not_a_login() {
+    let (s, _) = state("stream");
+    s.config.write().await.auth = config::AuthConfig {
+        enabled: true,
+        username: "a".into(),
+        password_hash: auth::hash_password("b"),
+    };
+    // An unknown token is 404, never 401: the token is the credential.
+    assert_eq!(get(&s, "/api/v1/stream/nope/x.mkv").await.0, StatusCode::NOT_FOUND);
+    // A live token passes auth and reaches the engine (503 here: no engine).
+    let token = s.sessions.create_stream(ZERO_ID, 0);
+    assert_eq!(get(&s, &format!("/api/v1/stream/{token}/x.mkv")).await.0, StatusCode::SERVICE_UNAVAILABLE);
+    // Logging everyone out also revokes stream links.
+    s.sessions.clear();
+    assert_eq!(get(&s, &format!("/api/v1/stream/{token}/x.mkv")).await.0, StatusCode::NOT_FOUND);
 }
 
 #[test]

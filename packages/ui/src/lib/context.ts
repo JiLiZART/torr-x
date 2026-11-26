@@ -23,6 +23,7 @@ export const DEFAULT_PREFS: Preferences = {
   showPieceMap: true,
   dateFormat: "relative",
   notifications: { enabled: false, onComplete: true, onAdd: false, sound: false },
+  player: "",
 };
 
 export function makeUi(prefs: Preferences, caps: Capabilities | null): Ui {

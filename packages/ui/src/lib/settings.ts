@@ -78,7 +78,7 @@ export interface RowDef {
 const rows = (section: SettingsSection, ids: string[]): RowDef[] => ids.map((id) => ({ id, section }));
 
 export const ROWS: RowDef[] = [
-  ...rows("general", ["startWithSystem", "startMinimized", "confirmExit", "checkForUpdates", "language"]),
+  ...rows("general", ["startWithSystem", "startMinimized", "confirmExit", "checkForUpdates", "language", "player"]),
   ...rows("engine", [
     "engineKind",
     "downloadDir",

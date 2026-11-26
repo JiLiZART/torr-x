@@ -11,6 +11,10 @@ use torrentx_transmission::TransmissionEngine;
 
 use crate::config::{EngineConfig, EngineKind};
 
+/// A file opened for streaming: seekable, and reads may wait for pieces still downloading.
+pub trait FileReader: tokio::io::AsyncRead + tokio::io::AsyncSeek + Send + Unpin {}
+impl<T: tokio::io::AsyncRead + tokio::io::AsyncSeek + Send + Unpin> FileReader for T {}
+
 pub enum Engine {
     Rqbit(RqbitEngine),
     Transmission(TransmissionEngine),
@@ -109,6 +113,21 @@ impl Engine {
 
     pub async fn add_tracker(&self, id: &str, url: &str) -> EngineResult<()> {
         dispatch!(self, e => e.add_tracker(id, url).await)
+    }
+
+    pub fn can_stream(&self) -> bool {
+        matches!(self, Engine::Rqbit(_))
+    }
+
+    /// Transmission has no streaming API.
+    pub async fn stream(&self, id: &str, index: u32) -> EngineResult<(u64, Box<dyn FileReader>)> {
+        match self {
+            Engine::Rqbit(e) => {
+                let (len, s) = e.stream(id, index).await?;
+                Ok((len, Box::new(s)))
+            }
+            Engine::Transmission(_) => Err(torrentx_core::EngineError::unsupported("transmission", "streaming")),
+        }
     }
 
     pub async fn reannounce(&self, id: &str) -> EngineResult<()> {

@@ -81,7 +81,12 @@ openspec/                   specs and change proposals
   built in `lib/detail.ts`); a section lens is in memory and cleared when the section changes. Files defaults to a folder tree (`fileTree` in `lib/detail.ts`, icons by `fileKind`) and offers a
   media view when `lib/media.ts` finds two or more episodes of one show; titles and quality come only from file
   names. Detail endpoints: `POST /torrents/{id}/reannounce`, `/web-seeds`, `/files/{index}/open|reveal`
-  (loopback only, like reveal); capability keys `reannounce`, `webSeeds`, `addWebSeed`, `openFile`.
+  (loopback only, like reveal); capability keys `reannounce`, `webSeeds`, `addWebSeed`, `openFile`, `stream`.
+- **Play / streaming**: `POST /torrents/{id}/files/{index}/play` (loopback) opens a finished file from disk, or opens a stream URL in
+  `preferences.player` (else the first of IINA/VLC/mpv found). `POST …/stream` returns `/api/v1/stream/<token>/<name>`: the
+  token (in memory, 6 h sliding, cleared with sessions) is the only credential, so external players need no login; the route
+  serves HTTP ranges from librqbit's `FileStream` (Transmission: unsupported). Issuing a link resumes the torrent and wants the file.
+  Remote browsers copy the link instead. The web UI never plays video itself: MKV/HEVC/FLAC need a real player.
 - **Engine slot** (`AppState.engine`) is `Result<Arc<Engine>, String>`; Err → API `engine_unavailable` (503).
   Settings changes to the engine restart it live; bind/port changes return `restartRequired`.
 - **Security**: `auth::guard` enforces a Host allowlist when bound to loopback (anti DNS-rebinding) and rejects
@@ -108,7 +113,7 @@ openspec/                   specs and change proposals
 pnpm install
 pnpm dev:server          # cargo run -p torrentx-server (127.0.0.1:9977)
 pnpm dev:web             # Vite on :1420, proxies /api → TORRENTX_SERVER (default 127.0.0.1:9977)
-pnpm dev:desktop         # tauri dev (TORRENTX_UI_DEV_URL=http://localhost:1420 for HMR in the window)
+pnpm dev:desktop         # tauri dev; starts Vite and loads the window from it (HMR, no build:web needed)
 pnpm build:web | build:server | build:desktop   # server/desktop builds fetch + embed the GeoIP DB
 pnpm lint                # i18n key check + ESLint over apps/web + packages, --max-warnings 0
 pnpm typecheck

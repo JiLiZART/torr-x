@@ -17,7 +17,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use torrentx_core::{
     AddOptions, AddSource, AdvancedSettings, Capabilities, DownloadSettings, EngineError,
-    FileHit, NetworkSettings, Peer, Preview, Priority, Status, Torrent, TorrentDetails, Via, parse_id,
+    FileHit, FileInfo, NetworkSettings, Peer, Preview, Priority, Status, Torrent, TorrentDetails, Via, parse_id,
 };
 
 use crate::config::{Config, EngineKind, Preferences};
@@ -106,6 +106,8 @@ pub fn router(state: Arc<AppState>) -> Router {
         .route("/torrents/{id}/web-seeds", post(add_web_seed))
         .route("/torrents/{id}/files/{index}/open", post(open_file))
         .route("/torrents/{id}/files/{index}/reveal", post(reveal_file))
+        .route("/torrents/{id}/files/{index}/stream", post(stream_link))
+        .route("/torrents/{id}/files/{index}/play", post(play_file))
         .route("/torrents/{id}/tab", put(set_tab_gone))
         .route("/torrents/{id}/tags", put(set_tags))
         .route("/torrents/{id}/category", put(set_category))
@@ -122,6 +124,8 @@ pub fn router(state: Arc<AppState>) -> Router {
         .route("/auth/login", post(auth::login))
         .route("/auth/logout", post(auth::logout))
         .route("/auth/handoff", get(auth::handoff))
+        // The token in the path is the credential: external players have no session cookie.
+        .route("/stream/{token}/{name}", get(stream_file))
         .merge(protected)
         .fallback(|| async { ApiError::not_found("no such endpoint") });
     Router::new()
@@ -457,7 +461,7 @@ fn is_loopback(req: &Request) -> bool {
         .is_some_and(|ConnectInfo(a)| a.ip().is_loopback())
 }
 
-async fn file_path(state: &AppState, id: &str, index: u32, local: bool) -> ApiResult<PathBuf> {
+async fn file_path(state: &AppState, id: &str, index: u32, local: bool) -> ApiResult<(PathBuf, FileInfo)> {
     if !local {
         return Err(ApiError::forbidden("opening files is only available on the machine running TorrentX"));
     }
@@ -470,7 +474,7 @@ async fn file_path(state: &AppState, id: &str, index: u32, local: bool) -> ApiRe
     if !stays_inside(&file.path) {
         return Err(ApiError::invalid("file path leaves the download folder"));
     }
-    Ok(PathBuf::from(&d.torrent.save_path).join(&file.path))
+    Ok((PathBuf::from(&d.torrent.save_path).join(&file.path), file.clone()))
 }
 
 /// Paths come from torrent metadata: only plain names may follow the save path. An absolute
@@ -487,7 +491,7 @@ async fn open_file(
     Path((id, index)): Path<(String, u32)>,
     req: Request,
 ) -> ApiResult<StatusCode> {
-    let path = file_path(&state, &id, index, is_loopback(&req)).await?;
+    let (path, _) = file_path(&state, &id, index, is_loopback(&req)).await?;
     if !path.exists() {
         return Err(ApiError::not_found(format!("{} is not on disk yet", path.display())));
     }
@@ -501,10 +505,183 @@ async fn reveal_file(
     Path((id, index)): Path<(String, u32)>,
     req: Request,
 ) -> ApiResult<StatusCode> {
-    let path = file_path(&state, &id, index, is_loopback(&req)).await?;
+    let (path, _) = file_path(&state, &id, index, is_loopback(&req)).await?;
     let dir = path.ancestors().skip(1).find(|p| p.is_dir()).map(PathBuf::from).unwrap_or(path);
     open::that_detached(&dir).map_err(|e| ApiError::internal(format!("cannot open {}: {e}", dir.display())))?;
     Ok(StatusCode::NO_CONTENT)
+}
+
+/// Readies one file for streaming (torrent running, file wanted) and issues its URL path:
+/// `/api/v1/stream/<token>/<file name>`; the name lets players show it and pick a demuxer.
+async fn issue_stream(state: &AppState, id: &str, file: &FileInfo) -> ApiResult<String> {
+    let engine = engine(state).await?;
+    if !engine.can_stream() {
+        return Err(EngineError::unsupported("transmission", "streaming").into());
+    }
+    if !file.wanted {
+        engine.set_files(id, &[file.index], Some(true), None).await?;
+    }
+    if engine.get(id).await?.torrent.status == Status::Paused {
+        engine.resume(id).await?;
+        let mut rec = state.store.policy(id);
+        rec.paused_by = None;
+        state.store.set_policy(id, rec).map_err(store_err)?;
+    }
+    let token = state.sessions.create_stream(id, file.index);
+    let name = file.path.rsplit('/').next().unwrap_or(&file.path);
+    Ok(format!("/api/v1/stream/{token}/{}", percent_encoding::utf8_percent_encode(name, URI_COMPONENT)))
+}
+
+/// A stream URL path for any client, e.g. to paste into a player on another device.
+async fn stream_link(
+    State(state): State<Arc<AppState>>,
+    Path((id, index)): Path<(String, u32)>,
+) -> ApiResult<Json<Value>> {
+    let id = parse_id(&id)?;
+    let d = engine(&state).await?.get(&id).await?;
+    let file = d
+        .files
+        .iter()
+        .find(|f| f.index == index)
+        .ok_or_else(|| ApiError::not_found(format!("torrent has no file {index}")))?;
+    Ok(Json(json!({ "path": issue_stream(&state, &id, file).await? })))
+}
+
+/// Plays a file on the server machine: a finished file opens from disk (in the chosen player, else
+/// the system default app); an unfinished one opens its stream URL in a video player.
+async fn play_file(
+    State(state): State<Arc<AppState>>,
+    Path((id, index)): Path<(String, u32)>,
+    req: Request,
+) -> ApiResult<Json<Value>> {
+    let id = parse_id(&id)?;
+    let (path, file) = file_path(&state, &id, index, is_loopback(&req)).await?;
+    let preferred = state.config.read().await.preferences.player.trim().to_string();
+    if file.progress >= 1.0 && path.exists() {
+        let opened = if preferred.is_empty() { open::that_detached(&path) } else { open::with_detached(&path, &preferred) };
+        opened.map_err(|e| ApiError::internal(format!("cannot open {}: {e}", path.display())))?;
+        return Ok(Json(json!({ "streaming": false })));
+    }
+    let player = find_player(&preferred).ok_or_else(|| {
+        ApiError::new(
+            StatusCode::CONFLICT,
+            "no_player",
+            "no video player found: install IINA, VLC or mpv, or name one in Settings → General",
+        )
+    })?;
+    let ip = match state.addr.ip() {
+        IpAddr::V4(ip) if ip.is_unspecified() => IpAddr::from([127, 0, 0, 1]),
+        IpAddr::V6(ip) if ip.is_unspecified() => IpAddr::from(std::net::Ipv6Addr::LOCALHOST),
+        ip => ip,
+    };
+    let url = format!("http://{}{}", SocketAddr::new(ip, state.addr.port()), issue_stream(&state, &id, &file).await?);
+    open::with_detached(&url, &player).map_err(|e| ApiError::internal(format!("cannot start {player}: {e}")))?;
+    Ok(Json(json!({ "streaming": true })))
+}
+
+/// The preferred player, else the first well-known one installed (they all accept http URLs).
+fn find_player(preferred: &str) -> Option<String> {
+    if !preferred.is_empty() {
+        return Some(preferred.to_string());
+    }
+    let exists = |p: &str| std::path::Path::new(p).exists();
+    #[cfg(target_os = "macos")]
+    {
+        let home = std::env::var("HOME").unwrap_or_default();
+        ["IINA", "VLC", "mpv"]
+            .into_iter()
+            .find(|app| exists(&format!("/Applications/{app}.app")) || exists(&format!("{home}/Applications/{app}.app")))
+            .map(String::from)
+    }
+    #[cfg(windows)]
+    {
+        [
+            r"C:\Program Files\VideoLAN\VLC\vlc.exe",
+            r"C:\Program Files (x86)\VideoLAN\VLC\vlc.exe",
+            r"C:\Program Files\MPC-HC\mpc-hc64.exe",
+        ]
+        .into_iter()
+        .find(|p| exists(p))
+        .map(String::from)
+    }
+    #[cfg(not(any(target_os = "macos", windows)))]
+    {
+        let _ = exists;
+        let path = std::env::var_os("PATH")?;
+        ["mpv", "vlc", "celluloid", "totem"]
+            .into_iter()
+            .find(|bin| std::env::split_paths(&path).any(|dir| dir.join(bin).is_file()))
+            .map(String::from)
+    }
+}
+
+/// `bytes=a-b`, `bytes=a-` or `bytes=-n` as a half-open `[start, end)`; None = not satisfiable.
+/// Only the first range of a list is served.
+fn byte_range(header: &str, len: u64) -> Option<(u64, u64)> {
+    let spec = header.strip_prefix("bytes=")?.split(',').next()?.trim();
+    let (a, b) = spec.split_once('-')?;
+    let (start, end) = if a.is_empty() {
+        (len.saturating_sub(b.parse::<u64>().ok()?), len)
+    } else {
+        let start = a.parse::<u64>().ok()?;
+        let end = if b.is_empty() { len } else { b.parse::<u64>().ok()?.saturating_add(1).min(len) };
+        (start, end)
+    };
+    (start < end).then_some((start, end))
+}
+
+fn video_mime(name: &str) -> &'static str {
+    match name.rsplit('.').next().unwrap_or_default().to_ascii_lowercase().as_str() {
+        "mkv" => "video/x-matroska",
+        "mp4" | "m4v" => "video/mp4",
+        "webm" => "video/webm",
+        "avi" => "video/x-msvideo",
+        "mov" => "video/quicktime",
+        "ts" | "m2ts" => "video/mp2t",
+        "mp3" => "audio/mpeg",
+        "flac" => "audio/flac",
+        _ => "application/octet-stream",
+    }
+}
+
+/// Serves a file by stream token with HTTP ranges; reads past the downloaded part wait for pieces.
+async fn stream_file(
+    State(state): State<Arc<AppState>>,
+    Path((token, name)): Path<(String, String)>,
+    headers: axum::http::HeaderMap,
+) -> ApiResult<Response> {
+    use tokio::io::{AsyncReadExt, AsyncSeekExt};
+    let (id, index) = state
+        .sessions
+        .check_stream(&token)
+        .ok_or_else(|| ApiError::not_found("this stream link has expired"))?;
+    let (len, mut reader) = engine(&state).await?.stream(&id, index).await?;
+    let range = headers.get(header::RANGE).and_then(|v| v.to_str().ok());
+    let (start, end) = match range {
+        None => (0, len),
+        Some(r) => match byte_range(r, len) {
+            Some(r) => r,
+            None => {
+                return Ok((StatusCode::RANGE_NOT_SATISFIABLE, [(header::CONTENT_RANGE, format!("bytes */{len}"))]).into_response());
+            }
+        },
+    };
+    reader
+        .seek(std::io::SeekFrom::Start(start))
+        .await
+        .map_err(|e| ApiError::internal(format!("cannot seek: {e}")))?;
+    let body = axum::body::Body::from_stream(tokio_util::io::ReaderStream::new(reader.take(end - start)));
+    let mut res = Response::new(body);
+    let h = res.headers_mut();
+    h.insert(header::CONTENT_TYPE, header::HeaderValue::from_static(video_mime(&name)));
+    h.insert(header::ACCEPT_RANGES, header::HeaderValue::from_static("bytes"));
+    h.insert(header::CONTENT_LENGTH, (end - start).into());
+    if range.is_some() {
+        let value = format!("bytes {start}-{}/{len}", end - 1);
+        h.insert(header::CONTENT_RANGE, header::HeaderValue::from_str(&value).map_err(|e| ApiError::internal(e.to_string()))?);
+        *res.status_mut() = StatusCode::PARTIAL_CONTENT;
+    }
+    Ok(res)
 }
 
 #[derive(Deserialize)]
@@ -957,7 +1134,19 @@ async fn test_transmission(
 
 #[cfg(test)]
 mod path_tests {
-    use super::stays_inside;
+    use super::{byte_range, stays_inside};
+
+    #[test]
+    fn byte_ranges_are_half_open_and_clamped() {
+        assert_eq!(byte_range("bytes=0-99", 1000), Some((0, 100)));
+        assert_eq!(byte_range("bytes=500-", 1000), Some((500, 1000)));
+        assert_eq!(byte_range("bytes=-100", 1000), Some((900, 1000)));
+        assert_eq!(byte_range("bytes=900-5000", 1000), Some((900, 1000)));
+        assert_eq!(byte_range("bytes=0-1, 5-9", 1000), Some((0, 2)));
+        assert_eq!(byte_range("bytes=1000-", 1000), None);
+        assert_eq!(byte_range("bytes=-0", 1000), None);
+        assert_eq!(byte_range("items=0-1", 1000), None);
+    }
 
     #[test]
     fn only_plain_relative_paths_stay_inside() {

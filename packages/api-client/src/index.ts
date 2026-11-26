@@ -232,6 +232,8 @@ export interface Preferences {
   showPieceMap: boolean;
   dateFormat: DateFormat;
   notifications: { enabled: boolean; onComplete: boolean; onAdd: boolean; sound: boolean };
+  /** Video player for Play: an app name (macOS) or command; empty = the first one found. */
+  player: string;
 }
 
 export interface Settings {
@@ -387,6 +389,10 @@ export const api = {
   addWebSeed: (id: string, url: string) => request<void>("POST", `/torrents/${enc(id)}/web-seeds`, { url }),
   /** Opens the file on the machine running TorrentX (loopback clients only). */
   openFile: (id: string, index: number) => request<void>("POST", `/torrents/${enc(id)}/files/${index}/open`),
+  /** Opens a finished file, or streams an unfinished one, in a video player on the server machine (loopback only). */
+  playFile: (id: string, index: number) => request<{ streaming: boolean }>("POST", `/torrents/${enc(id)}/files/${index}/play`),
+  /** A stream URL path (`/api/v1/stream/<token>/<name>`) any player can read without a login; valid for hours. */
+  streamFile: (id: string, index: number) => request<{ path: string }>("POST", `/torrents/${enc(id)}/files/${index}/stream`).then((r) => r.path),
   revealFile: (id: string, index: number) => request<void>("POST", `/torrents/${enc(id)}/files/${index}/reveal`),
   /** Replaces the torrent's tags. */
   setTags: (id: string, tags: string[]) => request<void>("PUT", `/torrents/${enc(id)}/tags`, tags),

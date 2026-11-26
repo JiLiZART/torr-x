@@ -17,6 +17,7 @@ pub const FEATURE_KEYS: &[&str] = &[
     "webSeeds",
     "addWebSeed",
     "openFile",
+    "stream",
     "trackerStatus",
     "peerList",
     "peerClient",

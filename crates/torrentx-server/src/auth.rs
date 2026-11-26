@@ -22,6 +22,7 @@ use crate::api::ApiError;
 pub const COOKIE: &str = "tx_session";
 const SESSION_TTL: Duration = Duration::from_secs(30 * 24 * 3600);
 const HANDOFF_TTL: Duration = Duration::from_secs(60);
+const STREAM_TTL: Duration = Duration::from_secs(6 * 3600);
 
 pub fn hash_password(password: &str) -> String {
     let salt = SaltString::generate(&mut OsRng);
@@ -52,6 +53,8 @@ fn random_token() -> String {
 pub struct Sessions {
     sessions: Mutex<HashMap<String, Instant>>,
     handoffs: Mutex<HashMap<String, Instant>>,
+    /// Stream URL tokens: torrent id, file index, expiry (sliding).
+    streams: Mutex<HashMap<String, (String, u32, Instant)>>,
 }
 
 impl Sessions {
@@ -84,6 +87,27 @@ impl Sessions {
 
     pub fn clear(&self) {
         self.sessions.lock().unwrap().clear();
+        self.streams.lock().unwrap().clear();
+    }
+
+    /// A token that lets one URL read one file without a login: external players have no cookie.
+    pub fn create_stream(&self, id: &str, index: u32) -> String {
+        let token = random_token();
+        let mut map = self.streams.lock().unwrap();
+        let now = Instant::now();
+        map.retain(|_, s| s.2 > now);
+        map.insert(token.clone(), (id.to_string(), index, now + STREAM_TTL));
+        token
+    }
+
+    /// The file a stream token reads; using it extends its life (players re-request ranges).
+    pub fn check_stream(&self, token: &str) -> Option<(String, u32)> {
+        let mut map = self.streams.lock().unwrap();
+        let now = Instant::now();
+        map.retain(|_, s| s.2 > now);
+        let s = map.get_mut(token)?;
+        s.2 = now + STREAM_TTL;
+        Some((s.0.clone(), s.1))
     }
 
     /// Single-use, short-lived token the desktop app exchanges for a session.
