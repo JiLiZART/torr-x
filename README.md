@@ -12,7 +12,9 @@ A torrent client with a terminal-style UI, built around one query language. One 
 Engines: the built-in **rqbit** engine (no external daemon), or an existing
 **Transmission** daemon over RPC. You pick one in Settings.
 
-![The torrent list: sidebar tabs, a lens of filter chips, and the list](pen/svg/active-tab.svg)
+![The torrent list: sidebar tabs, a lens of filter chips, and live rows](docs/images/list.webp)
+
+<sub>Screenshots show the real UI with a sample library.</sub>
 
 ## Features
 
@@ -34,7 +36,7 @@ Everything that filters or sorts the list is query text: `state:active tag:4k si
 
 ### Spotlight
 
-![Spotlight: jump to torrents and run actions](pen/svg/spotlight.svg)
+![Spotlight in query mode: tokens, create tab, matches, jump to, actions](docs/images/spotlight.webp)
 
 One panel (⌘T) for everything:
 
@@ -45,7 +47,7 @@ One panel (⌘T) for everything:
 
 ### Adding torrents
 
-![Adding a torrent: files, save path and options](pen/svg/add-torrent.svg)
+![Adding a torrent: resolved metadata, filtered files, save path and tags](docs/images/add-torrent.webp)
 
 Paste a magnet or URL, press ⌘O, or drop a `.torrent` file on the window. Metadata is resolved before you add,
 so you can pick files (with the same query language in a mini filter bar), choose the save folder, set tags,
@@ -63,13 +65,19 @@ and start now or paused.
 
 Sections Overview, Files, Peers, Trackers, Web seeds and Pieces, each with its own mini filter bar.
 
+![Torrent details: header, transfer figures and the Overview section](docs/images/details.webp)
+
 - **Files**: a folder tree with file-type icons, wanted / skip and priority per file or folder, plus a list view.
 - **Media view** for season packs: episodes by season with quality tags (2160p, HDR10, DV, Atmos…), parsed from
   file names (`S01E02`, `1x02`, or anime-style `Show - 02`).
 - **Play and stream**: a finished episode opens in your video player; an unfinished one streams into it while it
   downloads, pieces near the playhead first (IINA, VLC or mpv, or the player you set). From another device, Play
   copies a stream link to paste into a player there. Streaming needs the built-in engine.
+
+  ![Media view: episodes of a season pack with progress and Play](docs/images/media-view.webp)
 - Peers with client and country, tracker status, re-announce, web seeds, piece map, open or reveal files.
+
+  ![Peers: address, country, client, progress, speeds and flags](docs/images/peers.webp)
 
 ### Automation and server features
 
@@ -80,6 +88,9 @@ Sections Overview, Files, Peers, Trackers, Web seeds and Pieces, each with its o
 - Features an engine lacks are shown disabled with "not supported by <engine>", never faked.
 
 ### Everywhere else
+
+![Settings: grouped sections, search and per-engine capabilities](docs/images/settings.webp)
+
 
 - Settings page with search and deep links; changes to the engine apply live.
 - A built-in terminal (`list`, `status`, `add`, `pause`, `resume`, `remove`).
