@@ -12,6 +12,9 @@ export interface Ui {
   gate: (feature: string) => string | undefined;
   /** The opt-in online cover lookup is on (Settings → Appearance). */
   coverLookup: boolean;
+  /** The top bar's density and filter bar toggles; the torrent page follows them too. */
+  compact: boolean;
+  filterBar: boolean;
 }
 
 export const DEFAULT_PREFS: Preferences = {
@@ -28,13 +31,15 @@ export const DEFAULT_PREFS: Preferences = {
   player: "",
 };
 
-export function makeUi(prefs: Preferences, caps: Capabilities | null, coverLookup = false): Ui {
+export function makeUi(prefs: Preferences, caps: Capabilities | null, coverLookup = false, compact = false, filterBar = true): Ui {
   const t = makeT(prefs.language);
   return {
     t,
     prefs,
     caps,
     coverLookup,
+    compact,
+    filterBar,
     date: (secs) => formatDate(secs, prefs.dateFormat, prefs.language),
     gate: (feature) => {
       // Unknown capabilities (not loaded yet) never block a control; the server still rejects.

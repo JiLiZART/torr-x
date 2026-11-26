@@ -44,12 +44,12 @@ const action = "rounded-[8px] border p-[7px]";
 const off = "border-transparent text-ui-text-2 hover:bg-ui-surface-2";
 const on = "border-ui-accent-line bg-ui-accent-soft text-ui-accent";
 
-// data-tauri-drag-region only applies to the element carrying it, so the empty areas are tagged
-// and the controls are not.
+// `data-tauri-drag-region="deep"`: the whole bar, texts included, drags the window and a double click
+// maximizes it; Tauri leaves buttons and inputs alone.
 export function TopBar({ crumb, trailing, title, lensCount, sidebarCollapsed, onExpandSidebar, onCollapseSidebar, compact, onToggleDensity, filterBarOpen, onToggleFilterBar, terminalOpen, onToggleTerminal, onOpenSettings, onLogout }: TopBarProps) {
   const { t } = useUi();
   return (
-    <header data-tauri-drag-region className="flex h-[54px] select-none shrink-0 items-center gap-[10px] border-b border-ui-border px-[14px]">
+    <header data-tauri-drag-region="deep" className="flex h-[54px] select-none shrink-0 items-center gap-[10px] border-b border-ui-border px-[14px]">
       {sidebarCollapsed ? (
         <>
           <WindowDotsSpace />
@@ -69,7 +69,7 @@ export function TopBar({ crumb, trailing, title, lensCount, sidebarCollapsed, on
             <span className="max-w-[160px] truncate text-[12px] font-medium text-ui-text">{crumb.back}</span>
             <KeyCaps binding="Mod+[" tone="text-ui-text-3" />
           </button>
-          <span data-tauri-drag-region className="flex min-w-0 flex-1 items-center gap-[6px] text-[12px]">
+          <span className="flex min-w-0 flex-1 items-center gap-[6px] text-[12px]">
             <span className="shrink-0 text-ui-text-3">{crumb.root ?? crumb.back}</span>
             <span className="shrink-0 font-code text-ui-text-3">/</span>
             <span className="truncate font-semibold text-ui-text" title={crumb.name}>
@@ -89,7 +89,7 @@ export function TopBar({ crumb, trailing, title, lensCount, sidebarCollapsed, on
         </button>
       </div>
       <span className="h-[18px] w-px bg-ui-border" />
-      <h1 data-tauri-drag-region className="min-w-0 truncate text-[15px] font-semibold text-ui-text">
+      <h1 className="min-w-0 truncate text-[15px] font-semibold text-ui-text">
         {title}
       </h1>
       {lensCount !== null && (
@@ -100,7 +100,7 @@ export function TopBar({ crumb, trailing, title, lensCount, sidebarCollapsed, on
           <span className="shrink-0 font-code text-[10px] text-ui-text-3">{t("top.scoped")}</span>
         </>
       )}
-      <span data-tauri-drag-region className="flex-1 self-stretch" />
+      <span className="flex-1 self-stretch" />
         </>
       )}
       {trailing ?? (

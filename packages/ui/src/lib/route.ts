@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { isSection, type Section } from "./detail";
+import { isSection, SECTIONS, type Section } from "./detail";
 import { isSettingsSection, type SettingsSection } from "./settings";
 
 export const ALL_TAB = "all";
@@ -16,7 +16,7 @@ export type View =
 function read(): View {
   const torrent = /^#\/torrent\/([0-9a-fA-F]{40})(?:\/([a-z]+))?$/.exec(window.location.hash);
   if (torrent) {
-    const section = torrent[2] && isSection(torrent[2]) ? torrent[2] : "overview";
+    const section = torrent[2] && isSection(torrent[2]) ? torrent[2] : SECTIONS[0];
     return { kind: "torrent", id: torrent[1].toLowerCase(), section };
   }
   const settings = /^#\/settings(?:\/([a-z]+))?$/.exec(window.location.hash);
@@ -86,7 +86,7 @@ export function useRoute(): Route {
   }, [go]);
   const navigate = useCallback((tabId: string, replace = false) => go({ kind: "tab", tabId }, replace), [go]);
   const openTorrent = useCallback(
-    (id: string, section: Section = "overview", replace = false) => go({ kind: "torrent", id, section }, replace),
+    (id: string, section: Section = SECTIONS[0], replace = false) => go({ kind: "torrent", id, section }, replace),
     [go],
   );
   const openSettings = useCallback(

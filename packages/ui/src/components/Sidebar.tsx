@@ -314,9 +314,9 @@ export function Sidebar({ tabs, activeId, counts, errors, lensCount, stats, onCr
     <aside className="flex w-[248px] shrink-0 flex-col gap-[8px] border-r border-ui-border bg-ui-chrome px-[10px] py-[12px]">
       {/* Empty areas drag the window; Tauri toggles maximize on double-click of a drag region. */}
       {/* Same height as the top bar, so the pinned dots sit on one line in both layouts. */}
-      <div data-tauri-drag-region className="-mx-[10px] -mt-[12px] flex h-[54px] select-none shrink-0 items-center gap-[7px] px-[14px]">
+      <div data-tauri-drag-region="deep" className="-mx-[10px] -mt-[12px] flex h-[54px] select-none shrink-0 items-center gap-[7px] px-[14px]">
         <WindowDotsSpace />
-        <span data-tauri-drag-region className="flex-1 self-stretch" />
+        <span className="flex-1 self-stretch" />
       </div>
       <button data-command="palette.open" onClick={onTrigger} className="flex items-center gap-[8px] rounded-[10px] border border-ui-border bg-ui-surface-2 px-[10px] py-[9px] text-ui-text-3 hover:border-ui-border-strong">
         <Search size={14} className="shrink-0" />

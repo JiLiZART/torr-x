@@ -24,7 +24,7 @@ interface DetailPageProps {
   onFocused?: () => void;
 }
 
-const HISTORY = 44;
+const HISTORY = 96;
 
 function Item({ icon, label, value }: { icon: ReactNode; label: string; value: ReactNode }) {
   return (

@@ -15,7 +15,8 @@ interface HeroProps {
 
 const button = "flex items-center gap-[7px] rounded-[9px] border px-[13px] py-[9px] text-[12px] font-medium disabled:cursor-not-allowed disabled:opacity-40";
 const quiet = `${button} border-ui-border-strong bg-ui-surface-2 text-ui-text hover:border-ui-text-3`;
-const BARS = 44;
+/** As many as `HISTORY` in `DetailPage`. */
+const BARS = 96;
 const chip = "flex items-center gap-[4px] rounded-[6px] border border-ui-border bg-ui-surface-2 px-[7px] py-[2px] font-code text-[10px]";
 
 /** The torrent's state at a glance: what it is, what it is doing, and the actions that change that. */
@@ -35,11 +36,11 @@ export function Hero({ d, history, onAction }: HeroProps) {
     [percent(d.progress), t("detail.stat.progress"), "text-ui-accent"],
     [t("detail.transferred", { have: bytes(d.size * d.progress), total: bytes(d.size) }), t("detail.stat.transferred")],
     [d.progress >= 1 ? "—" : d.etaSecs == null ? "∞" : duration(d.etaSecs), t("detail.stat.eta")],
-    [`↓ ${rate(d.downloadRate).trim()}`, t("detail.stat.down")],
-    [`↑ ${rate(d.uploadRate).trim()}`, t("detail.stat.up")],
-    [of(d.seeds, known.seeds), t("detail.stat.seeds")],
-    [of(d.peers, known.leechers), t("detail.stat.peers")],
-    [d.ratio == null ? "—" : d.ratio.toFixed(2), t("detail.stat.ratio")],
+    [`↓ ${rate(d.downloadRate).trim()}`, t("detail.stat.down"), "text-ui-accent"],
+    [`↑ ${rate(d.uploadRate).trim()}`, t("detail.stat.up"), "text-ui-cyan"],
+    [of(d.seeds, known.seeds), t("detail.stat.seeds"), "text-ui-text-2"],
+    [of(d.peers, known.leechers), t("detail.stat.peers"), "text-ui-text-2"],
+    [d.ratio == null ? "—" : d.ratio.toFixed(2), t("detail.stat.ratio"), "text-ui-text-2"],
   ];
   const peak = Math.max(...history, 1);
   const bars = [...Array(Math.max(BARS - history.length, 0)).fill(0), ...history.slice(-BARS)];
@@ -49,8 +50,9 @@ export function Hero({ d, history, onAction }: HeroProps) {
     onAction(action);
   };
 
+  // `isolate` keeps the cover behind the content; with the menu open the hero rises over the sticky section tabs.
   return (
-    <section className="relative isolate flex shrink-0 flex-col gap-[14px] border-b border-ui-border bg-ui-surface px-[18px] py-[16px]">
+    <section className={`relative isolate flex shrink-0 flex-col gap-[14px] border-b border-ui-border bg-ui-surface px-[18px] py-[16px] ${menu ? "z-20" : ""}`}>
       {d.cover && (
         // The cover, dimmed with the surface token so text keeps its contrast in both themes.
         <div aria-hidden className="absolute inset-0 -z-10 overflow-hidden">
@@ -138,23 +140,26 @@ export function Hero({ d, history, onAction }: HeroProps) {
           </div>
         </div>
       </div>
-      <div className="flex items-center gap-[18px]">
-        <div className="flex min-w-0 flex-1 flex-col gap-[8px]">
-          <div className="h-[12px] w-full overflow-hidden rounded-[6px] bg-ui-surface-3">
-            <div className={`h-full ${style.dot}`} style={{ width: `${d.progress * 100}%` }} />
-          </div>
-          <div className="flex flex-wrap items-center gap-x-[16px] gap-y-[6px]">
-            {stats.map(([value, label, tone]) => (
-              <div key={label} className="flex flex-col gap-[3px]">
-                <span className={`whitespace-nowrap font-code text-[12px] font-medium tabular-nums ${tone ?? "text-ui-text"}`}>{value}</span>
-                <span className="font-code text-[9px] tracking-[0.8px] text-ui-text-3">{label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="hidden h-[52px] w-[300px] shrink-0 items-end gap-[2px] px-[2px] lg:flex" aria-label={t("detail.graph")} role="img">
+      {/* Progress and speed in one block: the bars are recent down rates, coloured up to the progress edge. */}
+      <div className="relative isolate flex min-h-[110px] items-end overflow-hidden px-[18px] py-[10px] -mx-[18px] -mb-[16px]">
+        <div className="absolute inset-0 -z-10 flex items-end gap-[2px]" aria-label={t("detail.graph")} role="img">
+          {/* With no traffic the bars are flat: a faint fill keeps the progress readable. */}
+          <span className={`absolute inset-y-0 left-0 opacity-10 ${style.dot}`} style={{ width: `${d.progress * 100}%` }} />
           {bars.map((v, i) => (
-            <span key={i} className="flex-1 rounded-[2px] bg-ui-accent-line" style={{ height: `${Math.max((v / peak) * 100, v > 0 ? 6 : 2)}%` }} />
+            <span
+              key={i}
+              className={`flex-1 rounded-t-[2px] ${(i + 0.5) / BARS <= d.progress ? `${style.dot} opacity-85` : "bg-ui-border-strong"}`}
+              style={{ height: `${Math.max((v / peak) * 76, v > 0 ? 6 : 2)}%` }}
+            />
+          ))}
+          <span className={`absolute inset-y-0 w-[2px] ${style.dot}`} style={{ left: `min(${d.progress * 100}%, calc(100% - 2px))` }} />
+        </div>
+        <div className="flex flex-wrap items-end gap-[8px]">
+          {stats.map(([value, label, tone], i) => (
+            <div key={label} className="flex flex-col gap-[2px] rounded-[8px] bg-ui-bg/85 px-[10px] py-[6px]">
+              <span className={`whitespace-nowrap font-code font-semibold tabular-nums ${i === 0 ? "text-[24px]" : "text-[14px]"} ${tone ?? "text-ui-text"}`}>{value}</span>
+              <span className="text-[11px] text-ui-text-2">{label}</span>
+            </div>
           ))}
         </div>
       </div>
