@@ -14,6 +14,16 @@ pub enum ProxyKind {
     Socks5,
 }
 
+/// Peer protocol encryption (MSE/PE).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum Encryption {
+    #[default]
+    Preferred,
+    Required,
+    Tolerated,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct ProxySettings {
@@ -53,6 +63,7 @@ pub struct NetworkSettings {
     /// 0 = engine default.
     pub listen_port: u16,
     pub upnp: bool,
+    pub encryption: Encryption,
     pub proxy: ProxySettings,
 }
 
@@ -64,6 +75,7 @@ impl Default for NetworkSettings {
             max_download_kbps: 0,
             listen_port: 0,
             upnp: true,
+            encryption: Encryption::Preferred,
             proxy: ProxySettings::default(),
         }
     }

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CheckCircle, Disc3, Edit3, Ellipsis, FileText, Film, FolderInput, FolderOpen, Link2, Pause, Play, Save, Tag, Trash, Trash2 } from "lucide-react";
+import { CheckCircle, Disc3, Edit3, Ellipsis, FileText, Film, Folder, FolderInput, FolderOpen, Link2, Pause, Play, Plus, Save, Tag, Trash, Trash2 } from "lucide-react";
 import type { TorrentDetails } from "@torrentx/api-client";
 import { useUi } from "../../lib/context";
 import { age, bytes, duration, percent, rate, rowState, STATE_STYLE } from "../../lib/format";
@@ -16,6 +16,7 @@ interface HeroProps {
 const button = "flex items-center gap-[7px] rounded-[9px] border px-[13px] py-[9px] text-[12px] font-medium disabled:cursor-not-allowed disabled:opacity-40";
 const quiet = `${button} border-ui-border-strong bg-ui-surface-2 text-ui-text hover:border-ui-text-3`;
 const BARS = 44;
+const chip = "flex items-center gap-[4px] rounded-[6px] border border-ui-border bg-ui-surface-2 px-[7px] py-[2px] font-code text-[10px]";
 
 /** The torrent's state at a glance: what it is, what it is doing, and the actions that change that. */
 export function Hero({ d, history, onAction }: HeroProps) {
@@ -70,6 +71,21 @@ export function Hero({ d, history, onAction }: HeroProps) {
             <span className="truncate" title={d.savePath}>
               {d.savePath}
             </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-[5px]">
+            {d.category && (
+              <button className={`${chip} text-ui-amber`} onClick={() => onAction("tags")}>
+                <Folder size={10} /> {d.category}
+              </button>
+            )}
+            {d.tags.map((tag) => (
+              <button key={tag} className={`${chip} text-ui-text-2`} onClick={() => onAction("tags")}>
+                <Tag size={10} /> {tag}
+              </button>
+            ))}
+            <button data-tags-anchor={d.id} data-command="sel.tags" className={`${chip} border-dashed text-ui-text-3 hover:text-ui-text-2`} onClick={() => onAction("tags")}>
+              <Plus size={10} /> {d.category || d.tags.length > 0 ? t("picker.edit") : t("action.tags")}
+            </button>
           </div>
           {d.error && <p className="font-code text-[11px] text-ui-red">{d.error}</p>}
         </div>

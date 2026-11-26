@@ -23,11 +23,16 @@ export interface Lens {
   fuzzy: string;
   /** Always parseable: only valid predicates are ever added. */
   query: string;
+  /**
+   * The tab query as edited in the filter bar (a tab chip removed or negated); absent = the tab as saved.
+   * Never written to the tab: clearing the lens or switching tabs brings the saved query back.
+   */
+  scope?: string;
 }
 
 export const NO_LENS: Lens = { fuzzy: "", query: "" };
 
-export const hasLens = (lens: Lens) => lens.fuzzy.trim() !== "" || lens.query.trim() !== "";
+export const hasLens = (lens: Lens) => lens.fuzzy.trim() !== "" || lens.query.trim() !== "" || lens.scope !== undefined;
 
 // Every helper takes the scope its query is written for: torrents, or a detail section.
 const items = (text: string, scope: Scope = TORRENT): Node[] => {
@@ -42,6 +47,35 @@ const quote = (value: string) => (/[\s()]/.test(value) ? `"${value}"` : value);
 export function fuzzyNode(fuzzy: string): Node | null {
   const text = fuzzy.trim().replace(/"/g, "");
   return text ? parse(`name:"*${text}*"`).ast : null;
+}
+
+/** The scope the lens narrows: its edited copy of the tab query, else the tab query itself. */
+export const scopeOf = (lens: Lens, tabQuery: string) => lens.scope ?? tabQuery;
+
+const isSort = (n: Node) => n.type === "sort";
+
+/** Tab scope then lens, as one query: what the filter builder edits. A lens sort replaces the tab's. */
+export function combinedQuery(lens: Lens, tabQuery: string): string {
+  const tab = items(scopeOf(lens, tabQuery));
+  const own = items(lens.query);
+  const sorts = own.some(isSort) ? own.filter(isSort) : tab.filter(isSort);
+  return join([...tab.filter((n) => !isSort(n)), ...own.filter((n) => !isSort(n)), ...sorts]);
+}
+
+/**
+ * Splits builder text back into scope and lens: when its filters still start with the saved tab query's
+ * filters, those stay the (unedited) tab scope and the rest is lens; otherwise the whole text becomes the
+ * edited scope.
+ */
+export function splitScope(tabQuery: string, text: string): Pick<Lens, "query" | "scope"> {
+  const tab = items(tabQuery);
+  const all = items(text);
+  const tabFilters = tab.filter((n) => !isSort(n)).map(format);
+  const filters = all.filter((n) => !isSort(n));
+  const sorts = all.filter(isSort);
+  if (!tabFilters.every((t, i) => filters[i] && format(filters[i]) === t)) return { query: "", scope: join(all) };
+  const sameSort = sorts.map(format).join() === tab.filter(isSort).map(format).join();
+  return { query: join([...filters.slice(tabFilters.length), ...(sameSort ? [] : sorts)]), scope: undefined };
 }
 
 /** Predicates in the lens, sort excluded: the funnel count and the top bar badge. */
@@ -207,4 +241,26 @@ export function toBuilder(query: string): Builder {
     else builder.raw.push(chips(item)[0].text);
   }
   return builder;
+}
+
+/** The icon a sidebar tab shows, by what it holds: built-ins and `state:` tabs by state, media words by kind. */
+export type TabIcon = "all" | "downloading" | "active" | "seeding" | "stalled" | "paused" | "checking" | "error" | "movies" | "shows" | "music" | "books" | "discs" | "adhoc" | "smart";
+
+const STATE_ICON: Record<string, TabIcon> = { downloading: "downloading", active: "active", seeding: "seeding", stalled: "stalled", paused: "paused", checking: "checking", error: "error" };
+const WORD_ICON: [RegExp, TabIcon][] = [
+  [/movie|film|cinema|kino/, "movies"],
+  [/show|series|tv|episode|anime|season/, "shows"],
+  [/music|audio|flac|mp3|album|soundtrack/, "music"],
+  [/book|epub|comic|manga|pdf/, "books"],
+  [/\biso\b|linux|distro|image/, "discs"],
+];
+
+export function tabIcon(tab: { id: string; name: string; query: string; group: string | null }): TabIcon {
+  if (tab.id === "all") return "all";
+  const state = /(?:^|\s)(?::state\s+|state:)([a-z]+)/i.exec(tab.query)?.[1]?.toLowerCase();
+  if (state && STATE_ICON[state]) return STATE_ICON[state];
+  const text = `${tab.name} ${tab.query}`.toLowerCase();
+  const word = WORD_ICON.find(([re]) => re.test(text));
+  if (word) return word[1];
+  return tab.name || tab.group ? "smart" : "adhoc";
 }

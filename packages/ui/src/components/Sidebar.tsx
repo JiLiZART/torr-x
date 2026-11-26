@@ -1,19 +1,63 @@
 import { useEffect, useState, type DragEvent, type KeyboardEvent } from "react";
-import { AlertTriangle, ArrowDown, ArrowUp, ChevronDown, ChevronRight, Ellipsis, Funnel, Hash, Pin, Plus, Save, Search } from "lucide-react";
+import {
+  Activity,
+  AlertTriangle,
+  ArrowDown,
+  ArrowDownToLine,
+  ArrowUp,
+  ArrowUpFromLine,
+  BookOpen,
+  ChevronDown,
+  ChevronRight,
+  CircleDashed,
+  CirclePause,
+  Clapperboard,
+  Disc3,
+  Ellipsis,
+  Funnel,
+  Globe,
+  Hash,
+  Music,
+  Pause,
+  Plus,
+  RefreshCw,
+  Save,
+  Search,
+  Tv,
+  type LucideIcon,
+} from "lucide-react";
 import type { Stats, Tab, TabPatch } from "@torrentx/api-client";
 import { useUi } from "../lib/context";
 import { bytes, rate } from "../lib/format";
-import { sections } from "../lib/lens";
+import { sections, tabIcon, type TabIcon } from "../lib/lens";
 import { ALL_TAB } from "../lib/route";
 import { closeWindow, isTauri, minimizeWindow, toggleMaximizeWindow } from "../lib/window";
 import { commandById } from "../lib/commands";
-import { usableKeys } from "../lib/keymap";
+import { IS_MAC, keyCaps, usableKeys } from "../lib/keymap";
 import { KeyCaps } from "./KeyCaps";
 
 /** The first binding of a command that works here (browsers reserve ⌘T). */
 const bindingOf = (id: string) => usableKeys(commandById(id)?.keys ?? [], isTauri())[0] ?? "";
 
 const TAB_DRAG_TYPE = "application/x-torrentx-tab";
+
+const TAB_ICONS: Record<TabIcon, LucideIcon> = {
+  all: Globe,
+  downloading: ArrowDownToLine,
+  active: Activity,
+  seeding: ArrowUpFromLine,
+  stalled: Pause,
+  paused: CirclePause,
+  checking: RefreshCw,
+  error: AlertTriangle,
+  movies: Clapperboard,
+  shows: Tv,
+  music: Music,
+  books: BookOpen,
+  discs: Disc3,
+  adhoc: CircleDashed,
+  smart: Hash,
+};
 
 /**
  * Desktop window only: close (hide to tray), minimize, maximize. Rendered once by the Shell, pinned to
@@ -144,7 +188,7 @@ function SidebarTab({ tab, active, count, error, lensCount, menuOpen, onMenu, re
     ? `bg-ui-surface ${lensCount !== null ? "border-ui-accent-line" : "border-ui-border"}`
     : "border-transparent hover:bg-ui-surface-2";
   const iconColor = error ? "text-ui-red" : active || tab.pinned ? "text-ui-accent" : "text-ui-text-3";
-  const Icon = error ? AlertTriangle : tab.pinned ? Pin : Hash;
+  const Icon = error ? AlertTriangle : TAB_ICONS[tabIcon(tab)];
   return (
     <div
       draggable
@@ -275,9 +319,9 @@ export function Sidebar({ tabs, activeId, counts, errors, lensCount, stats, onCr
         <span data-tauri-drag-region className="flex-1 self-stretch" />
       </div>
       <button data-command="palette.open" onClick={onTrigger} className="flex items-center gap-[8px] rounded-[10px] border border-ui-border bg-ui-surface-2 px-[10px] py-[9px] text-ui-text-3 hover:border-ui-border-strong">
-        <Search size={14} />
-        <span className="flex-1 text-left text-[12px]">{t("sidebar.trigger")}</span>
-        <KeyCaps binding={paletteKey} tone="text-ui-text-3" />
+        <Search size={14} className="shrink-0" />
+        <span className="min-w-0 flex-1 truncate whitespace-nowrap text-left text-[12px]">{t("sidebar.trigger")}</span>
+        {paletteKey && <span className="shrink-0 font-code text-[10px]">{keyCaps(paletteKey, IS_MAC).join(IS_MAC ? "" : "+")}</span>}
       </button>
       <nav className="-mx-[2px] flex min-h-0 flex-1 flex-col gap-[4px] overflow-y-auto px-[2px]" aria-label={t("sidebar.tabs")}>
         <div className={sectionLabel}>{t("sidebar.pinned")}</div>

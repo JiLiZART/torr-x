@@ -121,8 +121,13 @@ test("ext matches file rows only", () => {
   assert.ok(!matches("ext:mkv"), "torrents have no extension");
 });
 
+test("category matches the torrent's category, case-insensitively", () => {
+  assert.ok(matches("category:movies", { category: "Movies" }));
+  assert.ok(!matches("category:movies", { category: "TV" }));
+  assert.ok(!matches("category:movies"), "no category");
+});
+
 test("fields with no source in the model never match", () => {
-  assert.ok(!matches("category:movies"));
   assert.ok(!matches("done:<2025-01-01"));
 });
 
@@ -300,4 +305,24 @@ test("file-search scope: file fields plus the torrent name", async () => {
   assert.deepEqual(run("torrent:expanse ext:mkv"), ["e01.mkv"]);
   assert.deepEqual(run("e01"), ["e01.mkv", "e01.srt"], "a bare word searches the file name");
   assert.equal(parse("seeds:>5", FILE_SEARCH_SCOPE).error?.message, 'unknown field "seeds"', "torrent fields do not leak");
+});
+
+test("prefix form `:field value` equals `field:value`", () => {
+  const same = (a: string, b: string) => assert.equal(format(parse(a).ast!), format(parse(b).ast!));
+  same(":size >4GB", "size:>4GB");
+  same(":size>4GB", "size:>4GB");
+  same(":state active :tag 4k", "state:active tag:4k");
+  same("!:tag x", "!tag:x");
+  same(":sort ratio desc", "sort:ratio desc");
+  same('(:tag a OR :tag "b c")', '(tag:a OR tag:"b c")');
+  assert.equal(parse(":size").error?.message, 'missing value for "size"');
+  assert.match(parse(":statu active").error?.message ?? "", /unknown field "statu"/);
+});
+
+test("completion understands the prefix form", () => {
+  assert.deepEqual(complete(":si", 3).options, ["size"]);
+  assert.deepEqual(complete(":size ", 6).options, [">", "<", ">=", "<="]);
+  const state = complete("tag:x :state ac", 15);
+  assert.deepEqual(state.options, ["active"]);
+  assert.equal(state.from, 13);
 });

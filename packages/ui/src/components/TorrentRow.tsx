@@ -1,15 +1,17 @@
-import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
+import { cloneElement, useEffect, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent, type ReactElement, type ReactNode } from "react";
 import {
   ArrowDown,
   ArrowUp,
   CheckCircle,
   Edit3,
   FolderInput,
+  Folder,
   FolderOpen,
   Link2,
   MoreVertical,
   Pause,
   Play,
+  Plus,
   Save,
   Tag,
   Trash,
@@ -18,7 +20,7 @@ import {
 import type { Torrent } from "@torrentx/api-client";
 import { useUi } from "../lib/context";
 import { graphPaths, isActive, type Sample } from "../lib/activity";
-import { COLUMNS } from "../lib/columns";
+import { COLUMNS, type Column, type ColumnWidths } from "../lib/columns";
 import { age, bytes, percent, rate, rowState, STATE_STYLE } from "../lib/format";
 import { COMMAND_FOR_ACTION, type TorrentAction } from "../lib/commands";
 
@@ -34,6 +36,10 @@ interface TorrentProps {
   compact: boolean;
   /** Recent activity; drawn behind the row while downloading or seeding. */
   samples?: Sample[];
+  /** Column order, the same as the header's. */
+  order: Column[];
+  /** Dragged widths, the same as the header's. */
+  widths: ColumnWidths;
 }
 
 const itemClass = "w-full px-[10px] py-[6px] text-left text-[12px] flex items-center gap-[8px] disabled:opacity-40 disabled:cursor-not-allowed";
@@ -54,7 +60,7 @@ const MAX_TAGS = 2;
 const tagClass = "rounded-[5px] border border-ui-border bg-ui-surface-2 px-[6px] py-[2px] font-code text-[10px] text-ui-text-2";
 const idle = <span className="text-ui-text-3">—</span>;
 
-export function TorrentRow({ torrent, isSelected, isCursor, onClick, onDoubleClick, onAction, compact, samples }: TorrentProps) {
+export function TorrentRow({ torrent, isSelected, isCursor, onClick, onDoubleClick, onAction, compact, samples, order, widths }: TorrentProps) {
   const { t, gate } = useUi();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -91,6 +97,100 @@ export function TorrentRow({ torrent, isSelected, isCursor, onClick, onDoubleCli
   const done = torrent.progress >= 1;
   const moving = (n: number) => n > 0;
 
+  const cells: Record<Column, ReactElement<{ style?: CSSProperties }>> = {
+    name: (
+        <div key="name" className={`${COLUMNS.name} flex flex-col gap-[2px]`}>
+          <span className="truncate text-[13px] font-medium text-ui-text" title={torrent.name}>
+            {torrent.name}
+          </span>
+          {!compact && (
+            <span className={`truncate font-code text-[10px] ${torrent.status === "error" ? "text-ui-red" : "text-ui-text-3"}`} title={meta}>
+              {meta}
+            </span>
+          )}
+        </div>
+    ),
+    size: (
+        <div key="size" className={`${COLUMNS.size} font-code text-[11px] text-ui-text-2`}>{bytes(torrent.size)}</div>
+    ),
+    progress: (
+        <div key="progress" className={`${COLUMNS.progress} flex flex-col gap-[4px]`}>
+          <div className="h-[5px] w-full overflow-hidden rounded-[3px] bg-ui-surface-3">
+            <div className={`h-[5px] rounded-[3px] ${style.dot}`} style={{ width: `${torrent.progress * 100}%` }} />
+          </div>
+          {!compact && <span className="font-code text-[10px] text-ui-text-2">{done ? t("row.done") : percent(torrent.progress)}</span>}
+        </div>
+    ),
+    down: (
+        <div key="down" className={`${COLUMNS.down} flex items-center justify-end gap-[4px] font-code text-[11px]`}>
+          {moving(torrent.downloadRate) ? (
+            <>
+              <ArrowDown size={11} className="text-ui-accent" />
+              <span className="text-ui-text">{rate(torrent.downloadRate).trim()}</span>
+            </>
+          ) : (
+            idle
+          )}
+        </div>
+    ),
+    up: (
+        <div key="up" className={`${COLUMNS.up} flex items-center justify-end gap-[4px] font-code text-[11px]`}>
+          {moving(torrent.uploadRate) ? (
+            <>
+              <ArrowUp size={11} className="text-ui-cyan" />
+              <span className="text-ui-text-2">{rate(torrent.uploadRate).trim()}</span>
+            </>
+          ) : (
+            idle
+          )}
+        </div>
+    ),
+    peers: (
+        <div key="peers" className={`${COLUMNS.peers} font-code text-[11px] text-ui-text-2`}>{torrent.peers}</div>
+    ),
+    ratio: (
+        <div key="ratio" className={`${COLUMNS.ratio} font-code text-[11px] text-ui-text-2`}>{torrent.ratio == null ? "—" : torrent.ratio.toFixed(2)}</div>
+    ),
+    state: (
+        <div key="state" className={COLUMNS.state}>
+          <span className={`inline-block rounded-[6px] px-[7px] py-[3px] font-code text-[10px] ${style.badge}`}>{t(`state.${state}`)}</span>
+        </div>
+    ),
+    tags: (
+        <div key="tags"
+          data-tags-cell
+          className={`${COLUMNS.tags.replace("xl:block", "xl:flex")} group/tags cursor-pointer items-center gap-[4px] overflow-hidden whitespace-nowrap`}
+          title={[torrent.category, ...torrent.tags].filter(Boolean).join(", ") || t("action.tags")}
+          onClick={(e) => {
+            e.stopPropagation();
+            onAction("tags");
+          }}
+        >
+          {torrent.category && (
+            <span className={`${tagClass} flex items-center gap-[3px] !text-ui-amber`}>
+              <Folder size={9} /> {torrent.category}
+            </span>
+          )}
+          {torrent.category === null && torrent.tags.length === 0 && (
+            <span className="hidden items-center gap-[3px] font-code text-[10px] text-ui-text-3 group-hover/tags:flex">
+              <Plus size={10} /> {t("picker.add")}
+            </span>
+          )}
+          {torrent.tags.slice(0, MAX_TAGS).map((tag) => (
+            <span key={tag} className={tagClass}>
+              {tag}
+            </span>
+          ))}
+          {torrent.tags.length > MAX_TAGS && <span className={tagClass}>+{torrent.tags.length - MAX_TAGS}</span>}
+        </div>
+    ),
+    tracker: (
+        <div key="tracker" className={`${COLUMNS.tracker} truncate font-code text-[11px] text-ui-text-3`} title={torrent.tracker ?? undefined}>
+          {torrent.tracker ?? "—"}
+        </div>
+    ),
+  };
+
   return (
     <div
       data-row={torrent.id}
@@ -106,60 +206,8 @@ export function TorrentRow({ torrent, isSelected, isCursor, onClick, onDoubleCli
         </svg>
       )}
       <span className={`h-[7px] w-[7px] shrink-0 rounded-full ${style.dot}`} />
-      <div className={`${COLUMNS.name} flex flex-col gap-[2px]`}>
-        <span className="truncate text-[13px] font-medium text-ui-text" title={torrent.name}>
-          {torrent.name}
-        </span>
-        {!compact && (
-          <span className={`truncate font-code text-[10px] ${torrent.status === "error" ? "text-ui-red" : "text-ui-text-3"}`} title={meta}>
-            {meta}
-          </span>
-        )}
-      </div>
-      <div className={`${COLUMNS.size} font-code text-[11px] text-ui-text-2`}>{bytes(torrent.size)}</div>
-      <div className={`${COLUMNS.progress} flex flex-col gap-[4px]`}>
-        <div className="h-[5px] w-full overflow-hidden rounded-[3px] bg-ui-surface-3">
-          <div className={`h-[5px] rounded-[3px] ${style.dot}`} style={{ width: `${torrent.progress * 100}%` }} />
-        </div>
-        {!compact && <span className="font-code text-[10px] text-ui-text-2">{done ? t("row.done") : percent(torrent.progress)}</span>}
-      </div>
-      <div className={`${COLUMNS.down} flex items-center justify-end gap-[4px] font-code text-[11px]`}>
-        {moving(torrent.downloadRate) ? (
-          <>
-            <ArrowDown size={11} className="text-ui-accent" />
-            <span className="text-ui-text">{rate(torrent.downloadRate).trim()}</span>
-          </>
-        ) : (
-          idle
-        )}
-      </div>
-      <div className={`${COLUMNS.up} flex items-center justify-end gap-[4px] font-code text-[11px]`}>
-        {moving(torrent.uploadRate) ? (
-          <>
-            <ArrowUp size={11} className="text-ui-cyan" />
-            <span className="text-ui-text-2">{rate(torrent.uploadRate).trim()}</span>
-          </>
-        ) : (
-          idle
-        )}
-      </div>
-      <div className={`${COLUMNS.peers} font-code text-[11px] text-ui-text-2`}>{torrent.peers}</div>
-      <div className={`${COLUMNS.ratio} font-code text-[11px] text-ui-text-2`}>{torrent.ratio == null ? "—" : torrent.ratio.toFixed(2)}</div>
-      <div className={COLUMNS.state}>
-        <span className={`inline-block rounded-[6px] px-[7px] py-[3px] font-code text-[10px] ${style.badge}`}>{t(`state.${state}`)}</span>
-      </div>
-      <div className={`${COLUMNS.tags} flex items-center gap-[4px] overflow-hidden`} title={torrent.tags.join(", ")}>
-        {torrent.tags.slice(0, MAX_TAGS).map((tag) => (
-          <span key={tag} className={tagClass}>
-            {tag}
-          </span>
-        ))}
-        {torrent.tags.length > MAX_TAGS && <span className={tagClass}>+{torrent.tags.length - MAX_TAGS}</span>}
-      </div>
-      <div className={`${COLUMNS.tracker} truncate font-code text-[11px] text-ui-text-3`} title={torrent.tracker ?? undefined}>
-        {torrent.tracker ?? "—"}
-      </div>
-      {/* Quick actions float over the tags + tracker cells; data columns never move. */}
+      {order.map((column) => (widths[column] ? cloneElement(cells[column], { style: { width: widths[column], overflow: "hidden", textOverflow: "ellipsis" } }) : cells[column]))}
+      {/* Quick actions float over the row's right end; data columns never move. */}
       <div
         className={`${menuOpen ? "flex" : "hidden group-hover:flex"} absolute right-[10px] items-center gap-[2px] rounded-[8px] border border-ui-border bg-ui-surface px-[4px] py-[3px] shadow-lg`}
         onClick={(e) => e.stopPropagation()}

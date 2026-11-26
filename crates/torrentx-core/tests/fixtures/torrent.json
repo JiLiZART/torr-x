@@ -17,6 +17,7 @@
   "ratio": 0.0075,
   "wantedSize": 276134947,
   "tags": [],
+  "category": null,
   "tracker": "tracker.opentrackr.org",
   "priority": "normal",
   "pieceSize": 262144,

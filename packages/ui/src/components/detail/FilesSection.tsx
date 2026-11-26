@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState, type ReactElement } from "react";
-import { Cast, ClipboardCopy, Disc3, Eye, ExternalLink, File, Film, FolderOpen, HardDriveDownload, LayoutList, Library, Play, Tv } from "lucide-react";
+import { Cast, ChevronDown, ChevronRight, ClipboardCopy, Eye, ExternalLink, Film, Folder, FolderOpen, FolderTree, HardDriveDownload, LayoutList, Library, Play, Tv } from "lucide-react";
 import { api, type FileInfo, type TorrentDetails } from "@torrentx/api-client";
 import { compare, evaluate, FILE_PRIORITIES, FILE_SCOPE, parse, sortKeys } from "@torrentx/query";
 import { useUi } from "../../lib/context";
 import { bytes, trimMiddle } from "../../lib/format";
 import { clickSort } from "../../lib/lens";
-import { FILE_ACTIONS, fileActionBlock, fileClass, fileRow, joinPath, type FileAction, type FilePriorityWord, type FileRow } from "../../lib/detail";
+import { FILE_ACTIONS, fileActionBlock, fileClass, fileRow, fileTree, joinPath, treeLines, type FileAction, type FilePriorityWord, type FileRow, type TreeDir } from "../../lib/detail";
+import { FileIcon } from "./FileIcon";
 import { episodeCode, episodeState, mediaEpisodes, type EpisodeFile } from "../../lib/media";
 import { MiniFilterBar } from "./MiniFilterBar";
 import { MiniBar, SectionEmpty, TableHeader } from "./Table";
@@ -51,17 +52,22 @@ export function FilesSection({ d, query, onQuery, onError, onNotice, focusFile =
   }, [focusFile, onFocused]);
   const engine = caps?.engine ?? "";
   const rows = useMemo(() => d.files.map(fileRow), [d.files]);
+  const byIndex = useMemo(() => new Map(rows.map((r) => [r.index, r])), [rows]);
   const episodes = useMemo(() => mediaEpisodes(d.files), [d.files]);
-  const [view, setViewState] = useState<"list" | "media">(() => {
+  type View = "tree" | "list" | "media";
+  const [view, setViewState] = useState<View>(() => {
     try {
-      return localStorage.getItem(VIEW_KEY(d.id)) === "media" ? "media" : "list";
+      const saved = localStorage.getItem(VIEW_KEY(d.id));
+      return saved === "media" || saved === "list" ? saved : "tree";
     } catch {
-      return "list";
+      return "tree";
     }
   });
+  // Folders the user folded, by path; a file opened from the palette unfolds the folders above it.
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   // A file opened from the palette is shown in the list, where every file has a row.
   const media = view === "media" && episodes !== null && focusFile === null;
-  const setView = (next: "list" | "media") => {
+  const setView = (next: View) => {
     setViewState(next);
     try {
       localStorage.setItem(VIEW_KEY(d.id), next);
@@ -88,6 +94,17 @@ export function FilesSection({ d, query, onQuery, onError, onNotice, focusFile =
     api.setFiles(d.id, [row.index], change).catch(onError);
   };
   const toggleWanted = (row: FileRow) => api.setFiles(d.id, [row.index], { wanted: row.priority === "skip" }).catch(onError);
+  const setDirPriority = (dir: TreeDir, word: FilePriorityWord) => {
+    const change = word === "skip" ? { wanted: false } : { wanted: true, ...(priorityHint ? {} : { priority: word }) };
+    api.setFiles(d.id, dir.indices, change).catch(onError);
+  };
+  const toggleDir = (dir: TreeDir) => api.setFiles(d.id, dir.indices, { wanted: dir.wanted !== "all" }).catch(onError);
+  const fold = (path: string) =>
+    setCollapsed((current) => {
+      const next = new Set(current);
+      if (!next.delete(path)) next.add(path);
+      return next;
+    });
 
   const blockHint = (action: FileAction, done: boolean) => {
     const why = fileActionBlock(action, { openFile: gate("openFile"), local, done });
@@ -115,16 +132,114 @@ export function FilesSection({ d, query, onQuery, onError, onNotice, focusFile =
   const switcher = (
     <>
       <span className={`font-code text-[10px] ${media ? "text-ui-accent" : "text-ui-text-3"}`}>{t(media ? "detail.formatMedia" : hasVideo ? "detail.formatVideo" : "detail.formatGeneric")}</span>
-      {episodes && (
-        <button
-          onClick={() => setView(media ? "list" : "media")}
-          className={`flex items-center gap-[6px] rounded-[8px] border px-[9px] py-[6px] text-[11px] ${media ? "border-ui-accent-line bg-ui-accent-soft font-medium text-ui-accent" : "border-ui-border bg-ui-surface-2 text-ui-text-2"}`}
-        >
-          {media ? <Tv size={12} /> : <LayoutList size={12} />} {t(media ? "detail.mediaView" : "detail.listView")}
-        </button>
-      )}
+      {(
+        [
+          ["tree", FolderTree, "detail.treeView"],
+          ["list", LayoutList, "detail.listView"],
+          ...(episodes ? [["media", Tv, "detail.mediaView"] as const] : []),
+        ] as const
+      ).map(([mode, ModeIcon, label]) => {
+        const on = mode === "media" ? media : !media && view === mode;
+        return (
+          <button
+            key={mode}
+            onClick={() => setView(mode)}
+            aria-pressed={on}
+            className={`flex items-center gap-[6px] rounded-[8px] border px-[9px] py-[6px] text-[11px] ${on ? "border-ui-accent-line bg-ui-accent-soft font-medium text-ui-accent" : "border-ui-border bg-ui-surface-2 text-ui-text-2"}`}
+          >
+            <ModeIcon size={12} /> {t(label)}
+          </button>
+        );
+      })}
     </>
   );
+
+  const fileLine = (row: FileRow, depth?: number) => {
+    const focused = row.index === focusFile;
+    return (
+      <div
+        key={row.index}
+        id={`file-${row.index}`}
+        className={`flex items-center gap-[10px] rounded-[8px] px-[8px] py-[8px] hover:bg-ui-surface-2 ${focused ? "bg-ui-accent-soft ring-1 ring-ui-accent-line" : ""}`}
+      >
+        <input
+          type="checkbox"
+          className="h-[15px] w-[15px] shrink-0 accent-ui-accent"
+          checked={row.priority !== "skip"}
+          disabled={!!skipHint}
+          title={skipHint}
+          aria-label={t("detail.wanted", { name: row.name })}
+          onChange={() => void toggleWanted(row)}
+        />
+        <FileCells row={row} depth={depth} />
+        <select
+          className={`w-[104px] shrink-0 rounded-[6px] border border-ui-border bg-ui-surface-2 px-[7px] py-[4px] font-code text-[10px] focus:outline-none ${PRIORITY_TONE[row.priority]}`}
+          value={row.priority}
+          aria-label={t("detail.col.priority")}
+          onChange={(e) => setPriority(row, e.target.value as FilePriorityWord)}
+        >
+          {FILE_PRIORITIES.map((p) => (
+            <option key={p} value={p} disabled={p === "skip" ? !!skipHint : !!priorityHint && p !== row.priority}>
+              {t(`detail.priority.${p}`)}
+            </option>
+          ))}
+        </select>
+        <span className="flex w-[110px] shrink-0 items-center gap-[5px]">{actionButtons(row)}</span>
+      </div>
+    );
+  };
+  const dirLine = (dir: TreeDir, depth: number) => {
+    const folded = open.has(dir.path);
+    const priorities = new Set(dir.indices.map((i) => byIndex.get(i)!.priority));
+    const priority = priorities.size === 1 ? [...priorities][0] : "";
+    return (
+      <div key={`dir:${dir.path}`} className="flex items-center gap-[10px] rounded-[8px] px-[8px] py-[8px] hover:bg-ui-surface-2">
+        <input
+          type="checkbox"
+          className="h-[15px] w-[15px] shrink-0 accent-ui-accent"
+          checked={dir.wanted !== "none"}
+          ref={(el) => {
+            if (el) el.indeterminate = dir.wanted === "some";
+          }}
+          disabled={!!skipHint}
+          title={skipHint}
+          aria-label={t("detail.wanted", { name: dir.name })}
+          onChange={() => void toggleDir(dir)}
+        />
+        <button className="flex min-w-0 flex-1 items-center gap-[6px] text-left" style={{ paddingLeft: depth * 18 }} onClick={() => fold(dir.path)} aria-expanded={!folded}>
+          {folded ? <ChevronRight size={12} className="shrink-0 text-ui-text-3" /> : <ChevronDown size={12} className="shrink-0 text-ui-text-3" />}
+          {folded ? <Folder size={13} className="shrink-0 text-ui-amber" /> : <FolderOpen size={13} className="shrink-0 text-ui-amber" />}
+          <span className="min-w-0 truncate font-code text-[11px] font-medium text-ui-text" title={dir.path}>
+            {dir.name}
+          </span>
+          <span className="shrink-0 rounded-[5px] bg-ui-surface-3 px-[5px] font-code text-[9px] text-ui-text-3">{dir.indices.length}</span>
+        </button>
+        <span className="w-[80px] shrink-0 text-right font-code text-[11px] text-ui-text-2">{bytes(dir.size)}</span>
+        <span className="w-[130px] shrink-0">
+          <MiniBar value={dir.done} tone={dir.wanted === "none" ? "bg-ui-text-3" : "bg-ui-accent"} />
+        </span>
+        <select
+          className={`w-[104px] shrink-0 rounded-[6px] border border-ui-border bg-ui-surface-2 px-[7px] py-[4px] font-code text-[10px] focus:outline-none ${priority ? PRIORITY_TONE[priority] : "text-ui-text-3"}`}
+          value={priority}
+          aria-label={t("detail.col.priority")}
+          onChange={(e) => setDirPriority(dir, e.target.value as FilePriorityWord)}
+        >
+          {!priority && <option value="">{t("detail.priority.mixed")}</option>}
+          {FILE_PRIORITIES.map((p) => (
+            <option key={p} value={p} disabled={p === "skip" ? !!skipHint : !!priorityHint}>
+              {t(`detail.priority.${p}`)}
+            </option>
+          ))}
+        </select>
+        <span className="w-[110px] shrink-0" />
+      </div>
+    );
+  };
+  // The tree shows when chosen and the files have folders; a flat torrent reads the same as the list.
+  const tree = !media && view === "tree" && rows.some((r) => r.path.includes("/")) ? fileTree(shown) : null;
+  const focusPath = focusFile === null ? null : byIndex.get(focusFile)?.path;
+  // Folded folders, minus the ones above a file opened from the palette.
+  const open = focusPath ? new Set([...collapsed].filter((p) => !focusPath.startsWith(`${p}/`))) : collapsed;
 
   const columns = [
     { field: "name", label: t("detail.col.name"), className: "min-w-0 flex-1 text-left" },
@@ -153,40 +268,9 @@ export function FilesSection({ d, query, onQuery, onError, onNotice, focusFile =
           <TableHeader columns={columns} sort={ast ? sortKeys(ast)[0] : undefined} onSort={(field) => onQuery(clickSort(query, [], field, FILE_SCOPE))} lead={<span className="w-[15px] shrink-0" />} />
           <div className="flex flex-col gap-[1px] px-[14px] py-[8px]">
             {shown.length === 0 && <SectionEmpty>{rows.length === 0 ? t("detail.empty.files") : t("detail.empty.lens")}</SectionEmpty>}
-            {shown.map((row) => {
-              const focused = row.index === focusFile;
-              return (
-                <div
-                  key={row.index}
-                  id={`file-${row.index}`}
-                  className={`flex items-center gap-[10px] rounded-[8px] px-[8px] py-[8px] hover:bg-ui-surface-2 ${focused ? "bg-ui-accent-soft ring-1 ring-ui-accent-line" : ""}`}
-                >
-                  <input
-                    type="checkbox"
-                    className="h-[15px] w-[15px] shrink-0 accent-ui-accent"
-                    checked={row.priority !== "skip"}
-                    disabled={!!skipHint}
-                    title={skipHint}
-                    aria-label={t("detail.wanted", { name: row.name })}
-                    onChange={() => void toggleWanted(row)}
-                  />
-                  <FileCells row={row} />
-                  <select
-                    className={`w-[104px] shrink-0 rounded-[6px] border border-ui-border bg-ui-surface-2 px-[7px] py-[4px] font-code text-[10px] focus:outline-none ${PRIORITY_TONE[row.priority]}`}
-                    value={row.priority}
-                    aria-label={t("detail.col.priority")}
-                    onChange={(e) => setPriority(row, e.target.value as FilePriorityWord)}
-                  >
-                    {FILE_PRIORITIES.map((p) => (
-                      <option key={p} value={p} disabled={p === "skip" ? !!skipHint : !!priorityHint && p !== row.priority}>
-                        {t(`detail.priority.${p}`)}
-                      </option>
-                    ))}
-                  </select>
-                  <span className="flex w-[110px] shrink-0 items-center gap-[5px]">{actionButtons(row)}</span>
-                </div>
-              );
-            })}
+            {tree
+              ? treeLines(tree, open).map(({ node, depth }) => (node.kind === "dir" ? dirLine(node, depth) : fileLine(node.row, depth)))
+              : shown.map((row) => fileLine(row))}
           </div>
         </>
       )}
@@ -200,20 +284,22 @@ interface FileCellsProps {
   compact?: boolean;
   /** Compact only: shown when the search is not scoped to one torrent. */
   torrentName?: string;
+  /** Tree view: indent by depth and show the file name instead of the path. */
+  depth?: number;
 }
 
 /** The Files section's row cells: icon, name, size, done. Shared with the palette's file results. */
-export function FileCells({ row, compact = false, torrentName }: FileCellsProps) {
+export function FileCells({ row, compact = false, torrentName, depth }: FileCellsProps) {
   const { t } = useUi();
-  const cls = fileClass(row.ext);
-  const Icon = cls === "video" ? Film : cls === "disc" ? Disc3 : File;
   const done = <MiniBar value={row.done} tone={row.priority === "skip" ? "bg-ui-text-3" : "bg-ui-accent"} />;
   if (!compact) {
     return (
       <>
-        <Icon size={13} className="shrink-0 text-ui-text-3" />
-        <span className="min-w-0 flex-1 truncate font-code text-[11px] text-ui-text" title={row.path}>
-          {row.path}
+        <span className="flex min-w-0 flex-1 items-center gap-[6px]" style={depth === undefined ? undefined : { paddingLeft: depth * 18 + 18 }}>
+          <FileIcon ext={row.ext} />
+          <span className="min-w-0 truncate font-code text-[11px] text-ui-text" title={row.path}>
+            {depth === undefined ? row.path : row.name}
+          </span>
         </span>
         <span className="w-[80px] shrink-0 text-right font-code text-[11px] text-ui-text-2">{bytes(row.size)}</span>
         <span className="w-[130px] shrink-0">{done}</span>
@@ -223,7 +309,7 @@ export function FileCells({ row, compact = false, torrentName }: FileCellsProps)
   const where = torrentName ? `${torrentName} · ${row.path}` : row.path;
   return (
     <>
-      <Icon size={13} className="shrink-0 text-ui-text-3" />
+      <FileIcon ext={row.ext} />
       <span className="min-w-0 flex-1 overflow-hidden whitespace-nowrap font-code text-[11px] text-ui-text" title={where}>
         {trimMiddle(row.name, torrentName === undefined ? COMPACT_NAME_WIDE : COMPACT_NAME)}
       </span>

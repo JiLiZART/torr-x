@@ -1,5 +1,5 @@
 import type { DragEvent, KeyboardEvent, MouseEvent } from "react";
-import { ArrowDownUp, Braces, Hash, X } from "lucide-react";
+import { ArrowDownUp, Braces, Hash, X, type LucideIcon } from "lucide-react";
 import type { Chip as QueryChip } from "@torrentx/query";
 import { useUi } from "../lib/context";
 
@@ -7,6 +7,8 @@ interface ChipProps {
   chip: QueryChip;
   /** `default` = shown for reference, `active` = applied to the list. */
   status?: "default" | "active" | "dragging";
+  /** Replaces the lead icon of a filter chip (the zero-results breakdown: funnel for the tab, check for the lens). */
+  icon?: LucideIcon;
   onRemove?: () => void;
   /** ⌥-click. */
   onNegate?: () => void;
@@ -31,10 +33,10 @@ const chipSibling = (from: Element, step: "previousElementSibling" | "nextElemen
 };
 
 /** One query predicate, rendered the same wherever a query is shown. */
-export function Chip({ chip, status = "active", onRemove, onNegate, onDragStart, onDragEnd, onDrop }: ChipProps) {
+export function Chip({ chip, status = "active", icon, onRemove, onNegate, onDragStart, onDragEnd, onDrop }: ChipProps) {
   const { t } = useUi();
   const [box, keyColor] = status === "dragging" ? STYLE.dragging : chip.kind === "sort" ? STYLE.sort : STYLE[status];
-  const Lead = LEAD[chip.kind];
+  const Lead = (chip.kind === "filter" && icon) || LEAD[chip.kind];
   const interactive = !!onRemove;
 
   const handleClick = (e: MouseEvent) => {

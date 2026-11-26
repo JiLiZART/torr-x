@@ -226,6 +226,7 @@ impl RqbitEngine {
 
     pub async fn capabilities(&self) -> Capabilities {
         Capabilities::new(ENGINE)
+            .version(Some(librqbit::version().into()))
             .engine(&[
                 "fileSkip",
                 "addPreview",
@@ -333,6 +334,7 @@ impl RqbitEngine {
             ratio: (downloaded > 0).then(|| uploaded as f64 / downloaded as f64),
             wanted_size,
             tags: Vec::new(),
+            category: None,
             // Unordered set in librqbit: the smallest host keeps the answer stable.
             tracker: t.shared().trackers.iter().filter_map(|u| tracker_host(u.as_str())).min(),
             priority: Priority::Normal,
@@ -702,6 +704,10 @@ impl RqbitEngine {
         Err(unsupported("web seeds"))
     }
 
+    pub async fn port_test(&self) -> EngineResult<Option<bool>> {
+        Err(unsupported("testing the incoming port"))
+    }
+
     pub async fn set_files(
         &self,
         id: &str,
@@ -751,6 +757,12 @@ impl RqbitEngine {
         self.session.ratelimits.set_upload_bps(l.upload_bps);
         self.session.ratelimits.set_download_bps(l.download_bps);
         Ok(restart_key(tuning) != self.restart_key)
+    }
+
+    /// Nodes in the DHT routing tables (v4 + v6); None with DHT off.
+    pub async fn dht_nodes(&self) -> Option<u64> {
+        let s = self.session.get_dht()?.stats();
+        Some((s.routing_table_size + s.routing_table_size_v6) as u64)
     }
 
     pub async fn session_totals(&self) -> EngineResult<(u64, u64)> {

@@ -77,6 +77,7 @@ struct Data {
     tabs: Vec<Tab>,
     next_tab: u64,
     tags: BTreeMap<String, Vec<String>>,
+    categories: BTreeMap<String, String>,
     names: BTreeMap<String, String>,
     policy: BTreeMap<String, PolicyRec>,
 }
@@ -159,6 +160,7 @@ fn migrate(old: LegacyData) -> Data {
         tabs,
         next_tab: old.next_tab,
         tags,
+        categories: BTreeMap::new(),
         names: old.names,
         policy: old.policy,
     }
@@ -328,6 +330,26 @@ impl Store {
         data.tags.get(torrent).cloned().unwrap_or_default()
     }
 
+    /// Sets the torrent's category (trimmed, at most 64 characters); empty clears it.
+    pub fn set_category(&self, torrent: &str, category: &str) -> Result<(), String> {
+        let category = category.trim().to_string();
+        if category.chars().count() > MAX_TAG_CHARS {
+            return Err(format!("a category is at most {MAX_TAG_CHARS} characters"));
+        }
+        self.write(|d| {
+            if category.is_empty() {
+                d.categories.remove(torrent);
+            } else {
+                d.categories.insert(torrent.into(), category);
+            }
+            Ok(())
+        })
+    }
+
+    pub fn category_of(&self, torrent: &str) -> Option<String> {
+        self.data.lock().unwrap().categories.get(torrent).cloned()
+    }
+
     pub fn name_of(&self, torrent: &str) -> Option<String> {
         self.data.lock().unwrap().names.get(torrent).cloned()
     }
@@ -344,6 +366,7 @@ impl Store {
     pub fn forget(&self, torrent: &str) -> Result<(), String> {
         self.write(|d| {
             d.tags.remove(torrent);
+            d.categories.remove(torrent);
             d.names.remove(torrent);
             d.policy.remove(torrent);
             Ok(())
@@ -443,6 +466,11 @@ mod tests {
         assert_eq!(s.tags_of("aa"), ["4k", "movies"]);
         s.set_tags("aa", &[]).unwrap();
         assert!(s.tags_of("aa").is_empty());
+        s.set_category("aa", "  Movies ").unwrap();
+        assert_eq!(s.category_of("aa").as_deref(), Some("Movies"));
+        assert!(s.set_category("aa", &"x".repeat(65)).is_err());
+        s.set_category("aa", " ").unwrap();
+        assert_eq!(s.category_of("aa"), None);
         let _ = std::fs::remove_dir_all(d);
     }
 

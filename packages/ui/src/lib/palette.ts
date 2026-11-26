@@ -119,7 +119,7 @@ function leaves(node: Node): Node[] {
 }
 
 /** True when the item at `column` was typed as `field:…` (not a bare word). */
-const named = (text: string, column: number) => /^!?[A-Za-z]+:/.test(text.slice(column));
+const named = (text: string, column: number) => /^!?(?:[A-Za-z]+:|:[A-Za-z]+)/.test(text.slice(column));
 
 export interface TokenSpan {
   text: string;
@@ -138,7 +138,9 @@ export function tokenSpans(text: string): TokenSpan[] {
   for (const item of items.sort((a, b) => a.column - b.column)) {
     if (!named(text, item.column)) continue;
     const end = item.column + item.length;
-    const colon = text.indexOf(":", item.column) + 1;
+    // `field:` or the prefix form `:field ` (with the spaces before its value).
+    const head = /^!?(?:[A-Za-z]+:|:[A-Za-z]+\s*)/.exec(text.slice(item.column))![0];
+    const colon = item.column + head.length;
     plain(item.column);
     spans.push({ text: text.slice(item.column, colon), kind: "field" });
     if (end > colon) spans.push({ text: text.slice(colon, end), kind: "value" });
@@ -176,37 +178,29 @@ export function fileJumps(hits: FileHit[], words: string[], limit: number): File
     .map((x) => x.row);
 }
 
-/** The palette's `:` shortcut at the end of the input: `:`, `:si`, `state:active !:ta`. */
-const FIELD_SHORTCUT = /(?:^|[\s(])!?:([a-z]*)$/i;
+/** `:` / `:si` at the end of the input: the user is picking a field in the prefix form (`:size >4GB`). */
+const FIELD_PREFIX = /(?:^|[\s(])!?:([a-z]*)$/i;
 const isField = (name: string) => name.toLowerCase() in FIELDS || name.toLowerCase() === "sort";
 
-/** `:size ` + space becomes `size:`, so the language itself never sees the shortcut. */
-export function expandFieldShortcut(text: string): string {
-  return text.replace(/(^|[\s(])(!?):([a-z]+)\s$/i, (m, pre: string, neg: string, field: string) =>
-    isField(field) ? `${pre}${neg}${field.toLowerCase()}:` : m,
-  );
-}
-
-/** Draft mode completions: field names after `:`, else what the query language offers at the end of the text. */
+/** Draft mode completions: what the query language offers at the end of the text. */
 export function draftCompletion(text: string, values: Partial<Record<string, string[]>>): { from: number; options: string[] } {
-  const short = FIELD_SHORTCUT.exec(text);
-  if (short) return { from: text.length - short[1].length - 1, options: complete(short[1], short[1].length, values).options };
   // `size: ` still means "size needs a value": complete against the text before the trailing space.
-  const head = /:\s+$/.test(text) ? text.trimEnd() : text;
+  const head = /[a-z]:\s+$/i.test(text) ? text.trimEnd() : text;
   const { from, options } = complete(head, head.length, values);
-  return { from, options };
+  // A field picked in the prefix form gets its space, so the next suggestions are its values.
+  return { from, options: FIELD_PREFIX.test(text) ? options.map((o) => `${o} `) : options };
 }
 
 export function detectMode(input: string): Mode {
   const text = input.trim();
   if (text.startsWith(">")) return { kind: "command", text: text.slice(1).trim() };
-  if (FIELD_SHORTCUT.test(text)) return { kind: "draft", text, error: null };
+  if (FIELD_PREFIX.test(text)) return { kind: "draft", text, error: null };
   // A bare word parses too (`name:*word*`); only an explicit field makes it a query.
-  if (/(^|[\s(!])[a-z]+:/i.test(text)) {
+  if (/(^|[\s(!])(?:[a-z]+:|:[a-z]+)/i.test(text)) {
     const { ast, error } = parse(text);
     if (ast) return { kind: "query", text, ast };
     // An unknown field (`statu:`) is more likely a word than a query; a known one is a query being typed.
-    const known = [...text.matchAll(/(?:^|[\s(!])([a-z]+):/gi)].some(([, f]) => isField(f));
+    const known = [...text.matchAll(/(?:^|[\s(!])(?:([a-z]+):|:([a-z]+))/gi)].some(([, a, b]) => isField(a ?? b));
     if (error && known) return { kind: "draft", text, error };
   }
   return { kind: "jump", text };

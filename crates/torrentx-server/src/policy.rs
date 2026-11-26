@@ -207,6 +207,7 @@ mod tests {
             ratio: Some(0.0),
             wanted_size: 100,
             tags: Vec::new(),
+            category: None,
             tracker: None,
             priority: Priority::Normal,
         }

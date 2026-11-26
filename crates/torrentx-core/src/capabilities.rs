@@ -27,6 +27,8 @@ pub const FEATURE_KEYS: &[&str] = &[
     "maxConnectionsPerTorrent",
     "listenPort",
     "upnp",
+    "portTest",
+    "encryption",
     "proxyHttp",
     "proxySocks4",
     "proxySocks5",
@@ -63,6 +65,9 @@ pub struct Feature {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Capabilities {
     pub engine: String,
+    /// The engine's own version (librqbit crate, Transmission daemon); None when unknown.
+    #[serde(default)]
+    pub version: Option<String>,
     pub features: BTreeMap<String, Feature>,
 }
 
@@ -82,6 +87,7 @@ impl Capabilities {
             .collect();
         Self {
             engine: engine.into(),
+            version: None,
             features,
         }
     }
@@ -105,6 +111,11 @@ impl Capabilities {
 
     pub fn server(self, keys: &[&str]) -> Self {
         self.set(keys, Via::Server, None)
+    }
+
+    pub fn version(mut self, version: Option<String>) -> Self {
+        self.version = version;
+        self
     }
 
     pub fn note(mut self, key: &str, note: &str) -> Self {

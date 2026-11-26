@@ -12,3 +12,12 @@ and respond `{"open": true | false | null}`; when the active engine cannot test 
 #### Scenario: Port test unsupported
 - **WHEN** the active engine has no reachability test
 - **THEN** the response is 501 with error kind `unsupported`
+
+### Requirement: Encryption setting and DHT node count
+Settings SHALL include `network.encryption` (`preferred` | `required` | `tolerated`, default `preferred`), applied
+by engines that report the `encryption` capability. `GET /api/v1/stats` SHALL include `dhtNodes`, the number of
+nodes in the engine's DHT routing tables, or `null` when the engine does not report it or DHT is off.
+
+#### Scenario: DHT nodes on Transmission
+- **WHEN** the active engine is Transmission
+- **THEN** `dhtNodes` is `null`

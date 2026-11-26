@@ -34,6 +34,8 @@ export interface Torrent {
   wantedSize: number;
   /** Normalized (trimmed, lowercase, unique) user tags; stored by the server. */
   tags: string[];
+  /** User category, one per torrent; stored by the server. */
+  category: string | null;
   /** Host of the first tracker. */
   tracker: string | null;
   priority: Priority;
@@ -168,6 +170,8 @@ export interface Stats {
   diskTotal: number | null;
   cpuPercent: number;
   memoryBytes: number;
+  /** Nodes in the engine's DHT routing tables; null when the engine does not say or DHT is off. */
+  dhtNodes: number | null;
 }
 
 export interface Feature {
@@ -178,8 +182,12 @@ export interface Feature {
 
 export interface Capabilities {
   engine: EngineKind;
+  /** The engine's own version; null when unknown. */
+  version: string | null;
   features: Record<string, Feature>;
 }
+
+export type Encryption = "preferred" | "required" | "tolerated";
 
 export type EngineKind = "rqbit" | "transmission";
 
@@ -241,6 +249,7 @@ export interface Settings {
     maxDownloadKBps: number;
     listenPort: number;
     upnp: boolean;
+    encryption: Encryption;
     proxy: {
       type: ProxyKind;
       host: string;
@@ -381,6 +390,8 @@ export const api = {
   revealFile: (id: string, index: number) => request<void>("POST", `/torrents/${enc(id)}/files/${index}/reveal`),
   /** Replaces the torrent's tags. */
   setTags: (id: string, tags: string[]) => request<void>("PUT", `/torrents/${enc(id)}/tags`, tags),
+  /** Sets the torrent's category; null clears it. */
+  setCategory: (id: string, category: string | null) => request<void>("PUT", `/torrents/${enc(id)}/category`, { category }),
 
   tabs: () => request<TabList>("GET", "/tabs"),
   createTab: (tab: Pick<Tab, "query"> & Partial<Pick<Tab, "name" | "pinned" | "group">>) =>
@@ -392,6 +403,7 @@ export const api = {
   saveSettings: (settings: Settings) =>
     request<SaveSettingsResult>("PUT", "/settings", settings),
   testTransmission: (t: TransmissionSettings) => request<void>("POST", "/transmission/test", t),
+  portTest: () => request<{ open: boolean | null }>("POST", "/network/port-test"),
 
   login: (username: string, password: string) =>
     request<void>("POST", "/auth/login", { username, password }),

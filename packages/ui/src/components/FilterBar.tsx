@@ -3,7 +3,7 @@ import { ChevronsDownUp, ChevronsUpDown, Funnel, Plus, RotateCcw, Save, Search }
 import type { Torrent } from "@torrentx/api-client";
 import { chips, complete, parse, type Field } from "@torrentx/query";
 import { useUi } from "../lib/context";
-import { addChips, moveChip, negateChip, predicateCount, removeChip, type Lens } from "../lib/lens";
+import { addChips, combinedQuery, moveChip, negateChip, predicateCount, removeChip, scopeOf, splitScope, type Lens } from "../lib/lens";
 import { Chip } from "./Chip";
 import { FilterBuilder } from "./FilterBuilder";
 
@@ -16,6 +16,10 @@ export interface SaveDraft {
 
 interface FilterBarProps {
   lens: Lens;
+  /** The active tab's saved query: its chips lead the row and can be edited for this visit only. */
+  tabQuery: string;
+  /** A tab the user made: edits rewrite it, so there is no "Save as tab". */
+  ownTab: boolean;
   /** A chip-level change (undoable). */
   onLens: (lens: Lens) => void;
   /** Typing in the fuzzy input. */
@@ -76,13 +80,17 @@ function SaveAsTab({ save, onConfirm, onCancel, onGoTo }: { save: SaveDraft; onC
 
 /** The lens editor: fuzzy name input, funnel + builder, the always-visible chip row, save as tab. */
 export function FilterBar(props: FilterBarProps) {
-  const { lens, onLens, onFuzzy, snapshot, onRestore, tabName, all, values, builderOpen, onBuilder, save, onSaveOpen, onSaveConfirm, onSaveCancel, onGoTo, collapsed, onCollapse } = props;
+  const { lens, tabQuery, ownTab, onLens, onFuzzy, snapshot, onRestore, tabName, all, values, builderOpen, onBuilder, save, onSaveOpen, onSaveConfirm, onSaveCancel, onGoTo, collapsed, onCollapse } = props;
   const { t } = useUi();
   const [draft, setDraft] = useState<string | null>(null);
   const [dragging, setDragging] = useState<number | null>(null);
 
+  const scope = scopeOf(lens, tabQuery);
+  const tabList = chips(parse(scope).ast ?? { type: "and", items: [] });
   const list = chips(parse(lens.query).ast ?? { type: "and", items: [] });
-  const count = predicateCount(lens.query);
+  const count = predicateCount(scope) + predicateCount(lens.query);
+  const setScope = (next: string) => onLens({ ...lens, scope: next });
+  const [draggingTab, setDraggingTab] = useState<number | null>(null);
   const draftError = draft ? parse(draft).error : null;
   const setQuery = (query: string) => onLens({ ...lens, query });
   const errorText = draftError && `${draftError.message}${draftError.suggestion ? ` — ${t("filter.didYouMean", { suggestion: draftError.suggestion })}` : ""}`;
@@ -101,7 +109,7 @@ export function FilterBar(props: FilterBarProps) {
       : "border-ui-border bg-ui-surface-2 text-ui-text-3 hover:text-ui-text-2";
 
   const saveForm = save && <SaveAsTab key={save.query} save={save} onConfirm={onSaveConfirm} onCancel={onSaveCancel} onGoTo={onGoTo} />;
-  if (collapsed && list.length === 0 && !snapshot) return saveForm || null;
+  if (collapsed && list.length === 0 && tabList.length === 0 && !snapshot) return saveForm || null;
 
   return (
     <>
@@ -127,6 +135,22 @@ export function FilterBar(props: FilterBarProps) {
               <span className="h-[18px] w-px bg-ui-border" />
             </>
           )}
+          {tabList.map((chip, i) => (
+            <Chip
+              key={`tab:${i}:${chip.text}`}
+              chip={chip}
+              status={draggingTab === i ? "dragging" : "default"}
+              onRemove={() => setScope(removeChip(scope, i))}
+              onNegate={() => setScope(negateChip(scope, i))}
+              onDragStart={() => setDraggingTab(i)}
+              onDragEnd={() => setDraggingTab(null)}
+              onDrop={() => {
+                if (draggingTab !== null && draggingTab !== i) setScope(moveChip(scope, draggingTab, i));
+                setDraggingTab(null);
+              }}
+            />
+          ))}
+          {tabList.length > 0 && list.length > 0 && <span className="h-[14px] w-px bg-ui-border-strong" />}
           {list.map((chip, i) => (
             <Chip
               key={`${i}:${chip.text}`}
@@ -175,8 +199,8 @@ export function FilterBar(props: FilterBarProps) {
               </form>
             ))}
           <span className="flex-1" />
-          {!collapsed && (
-            <button type="button" data-command="tab.save" onClick={onSaveOpen} disabled={list.length === 0 && !lens.fuzzy.trim()} className={ghost}>
+          {!collapsed && !ownTab && (
+            <button type="button" data-command="tab.save" onClick={onSaveOpen} disabled={list.length === 0 && !lens.fuzzy.trim() && lens.scope === undefined} className={ghost}>
               <Save size={13} /> {t("filter.saveAsTab")}
             </button>
           )}
@@ -187,20 +211,24 @@ export function FilterBar(props: FilterBarProps) {
         {draftError && !collapsed && <p className="px-[14px] pb-[8px] font-code text-[10px] text-ui-red">{errorText}</p>}
         {builderOpen && !collapsed && (
           <FilterBuilder
-            query={lens.query}
+            query={combinedQuery(lens, tabQuery)}
             tabName={tabName}
             all={all}
             values={values}
             onClose={() => onBuilder(false)}
             onApply={(query) => {
-              setQuery(query);
+              onLens({ ...lens, ...(ownTab ? { query: "", scope: query } : splitScope(tabQuery, query)) });
               onBuilder(false);
             }}
-            onSaveAsTab={(query) => {
-              setQuery(query);
-              onBuilder(false);
-              onSaveOpen();
-            }}
+            onSaveAsTab={
+              ownTab
+                ? null
+                : (query) => {
+                    onLens({ ...lens, ...splitScope(tabQuery, query) });
+                    onBuilder(false);
+                    onSaveOpen();
+                  }
+            }
           />
         )}
       </div>

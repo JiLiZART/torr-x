@@ -8,13 +8,17 @@ import {
   clickSort,
   combine,
   fuzzyNode,
+  combinedQuery,
   hasLens,
+  scopeOf,
+  splitScope,
   moveChip,
   negateChip,
   predicateCount,
   removeChip,
   sections,
   toBuilder,
+  tabIcon,
 } from "./lens.ts";
 
 const GB = 1024 ** 3;
@@ -130,4 +134,25 @@ test("builder and text agree", () => {
   const odd = "!size:>4GB (tag:a OR tag:b c) sort:size desc,name asc";
   assert.equal(builderText(toBuilder(odd)), parse(odd).ast && builderText(toBuilder(builderText(toBuilder(odd)))));
   assert.equal(toBuilder(odd).rows.length, 0);
+});
+
+test("tab scope: builder text splits back into the saved tab query and the lens", () => {
+  const lens = { fuzzy: "", query: "tag:4k sort:ratio desc" };
+  assert.equal(combinedQuery(lens, "state:active"), "state:active tag:4k sort:ratio desc");
+  assert.deepEqual(splitScope("state:active", "state:active tag:4k size:>4GB"), { query: "tag:4k size:>4GB", scope: undefined });
+  assert.deepEqual(splitScope("state:active sort:name", "state:active sort:name"), { query: "", scope: undefined });
+  assert.deepEqual(splitScope("state:active", "tag:4k"), { query: "", scope: "tag:4k" });
+  assert.equal(hasLens({ fuzzy: "", query: "", scope: "" }), true, "a removed tab chip is a lens");
+  assert.equal(scopeOf({ fuzzy: "", query: "" }, "size:4mb"), "size:4mb");
+});
+
+test("tabIcon: built-ins by state, media tabs by words, unnamed tabs are ad-hoc", () => {
+  const tab = (id: string, name: string, query: string, group: string | null = null) => ({ id, name, query, group });
+  assert.equal(tabIcon(tab("all", "All", "")), "all");
+  assert.equal(tabIcon(tab("active", "Active", "state:active sort:added desc")), "active");
+  assert.equal(tabIcon(tab("t1", "", ":state seeding")), "seeding");
+  assert.equal(tabIcon(tab("t2", "4K Movies", "tag:4k tag:movies", "Media")), "movies");
+  assert.equal(tabIcon(tab("t3", "Shows", "tag:shows", "Media")), "shows");
+  assert.equal(tabIcon(tab("t4", "", "tracker:xyz added:<1d")), "adhoc");
+  assert.equal(tabIcon(tab("t5", "Big", "size:>10GB")), "smart");
 });

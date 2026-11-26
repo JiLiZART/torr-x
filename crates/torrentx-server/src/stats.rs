@@ -71,6 +71,7 @@ pub async fn collect(state: &AppState) -> Value {
 
     let (mut down, mut up, mut downloaded, mut uploaded, mut torrents, mut active) =
         (0, 0, 0, 0, 0, 0);
+    let mut dht_nodes = None;
     if let Ok(engine) = crate::api::engine(state).await {
         if let Ok(all) = engine.list().await {
             torrents = all.len();
@@ -86,6 +87,7 @@ pub async fn collect(state: &AppState) -> Value {
         if let Ok((d, u)) = engine.session_totals().await {
             (downloaded, uploaded) = (d, u);
         }
+        dht_nodes = engine.dht_nodes().await;
     }
 
     // Transmission's download dir lives on the daemon's host; only report
@@ -113,5 +115,6 @@ pub async fn collect(state: &AppState) -> Value {
         "diskTotal": disk.map(|d| d.1),
         "cpuPercent": cpu,
         "memoryBytes": memory,
+        "dhtNodes": dht_nodes,
     })
 }

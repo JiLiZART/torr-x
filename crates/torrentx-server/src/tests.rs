@@ -139,6 +139,8 @@ async fn torrent_errors_with_real_engine() {
     let seed = |url: &str| post(format!("/api/v1/torrents/{ZERO_ID}/web-seeds"), json!({ "url": url }));
     assert_eq!(call(&s, seed("https://mirror.example.org/x/")).await.0, StatusCode::NOT_IMPLEMENTED);
     assert_eq!(call(&s, seed("ftp://mirror.example.org/x/")).await.0, StatusCode::BAD_REQUEST);
+    let (status, _, body) = call(&s, post("/api/v1/network/port-test".into(), json!({}))).await;
+    assert_eq!((status, body["error"]["kind"].as_str()), (StatusCode::NOT_IMPLEMENTED, Some("unsupported")));
     // Files of an unknown torrent: 404 (from loopback; a remote peer gets 403 first).
     let file = |action: &str, ip: &str| {
         let mut r = req(Method::POST, &format!("/api/v1/torrents/{ZERO_ID}/files/99/{action}")).body(Body::empty()).unwrap();
@@ -154,6 +156,9 @@ async fn torrent_errors_with_real_engine() {
     assert_eq!((f["reannounce"]["supported"].as_bool(), f["webSeeds"]["supported"].as_bool()), (Some(false), Some(false)));
     assert_eq!((f["openFile"]["supported"].as_bool(), f["openFile"]["via"].as_str()), (Some(true), Some("server")));
     assert_eq!(f["addWebSeed"]["supported"], false);
+    assert_eq!(f["portTest"]["supported"], false);
+    assert_eq!(f["encryption"]["supported"], false);
+    assert!(caps["version"].as_str().is_some_and(|v| !v.is_empty()), "{caps}");
 
     s.engine.read().await.as_ref().unwrap().shutdown().await;
 }
@@ -517,6 +522,14 @@ async fn tags_endpoint() {
     let (status, _, body) = call(&s, old).await;
     assert_eq!(status, StatusCode::GONE);
     assert!(body["error"]["message"].as_str().unwrap().contains("/tags"));
+
+    let cat = |body: Value| json_req(Method::PUT, &format!("/api/v1/torrents/{id}/category"), &body);
+    assert_eq!(call(&s, cat(json!({ "category": " Movies " }))).await.0, StatusCode::NO_CONTENT);
+    assert_eq!(s.store.category_of(&id).as_deref(), Some("Movies"));
+    let (status, _, _) = call(&s, cat(json!({ "category": "x".repeat(65) }))).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+    assert_eq!(call(&s, cat(json!({ "category": null }))).await.0, StatusCode::NO_CONTENT);
+    assert_eq!(s.store.category_of(&id), None);
 }
 
 #[tokio::test]
@@ -530,6 +543,7 @@ async fn stats_without_engine() {
     assert!(body["diskTotal"].as_u64().unwrap() >= body["diskFree"].as_u64().unwrap());
     assert!(body["memoryBytes"].as_u64().unwrap() > 0, "{body}");
     assert!(body["cpuPercent"].is_number());
+    assert_eq!(body["dhtNodes"], Value::Null);
     // Capabilities need an engine.
     assert_eq!(get(&s, "/api/v1/capabilities").await.0, StatusCode::SERVICE_UNAVAILABLE);
 }
@@ -566,10 +580,12 @@ async fn new_mutations_are_guarded() {
         (Method::POST, format!("/api/v1/torrents/{ZERO_ID}/files/0/reveal")),
         (Method::PUT, format!("/api/v1/torrents/{ZERO_ID}/files")),
         (Method::PUT, format!("/api/v1/torrents/{ZERO_ID}/tags")),
+        (Method::PUT, format!("/api/v1/torrents/{ZERO_ID}/category")),
         (Method::PATCH, "/api/v1/tabs/t1".to_string()),
         (Method::POST, "/api/v1/tabs".to_string()),
         (Method::POST, "/api/v1/torrents/preview".to_string()),
         (Method::POST, "/api/v1/transmission/test".to_string()),
+        (Method::POST, "/api/v1/network/port-test".to_string()),
     ];
     for (m, uri) in token_free {
         let r = req(m.clone(), &uri)
@@ -588,7 +604,7 @@ async fn new_mutations_are_guarded() {
     for uri in ["/api/v1/tabs", "/api/v1/stats", "/api/v1/capabilities"] {
         assert_eq!(get(&s, uri).await.0, StatusCode::UNAUTHORIZED, "{uri}");
     }
-    for uri in [format!("/api/v1/torrents/{ZERO_ID}/reannounce"), format!("/api/v1/torrents/{ZERO_ID}/files/0/open")] {
+    for uri in [format!("/api/v1/torrents/{ZERO_ID}/reannounce"), format!("/api/v1/torrents/{ZERO_ID}/files/0/open"), "/api/v1/network/port-test".into()] {
         let r = req(Method::POST, &uri).body(Body::empty()).unwrap();
         assert_eq!(call(&s, r).await.0, StatusCode::UNAUTHORIZED, "{uri}");
     }

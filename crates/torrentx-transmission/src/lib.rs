@@ -10,7 +10,7 @@ use serde::{Deserialize, de::DeserializeOwned};
 use serde_json::{Value, json};
 use tokio::sync::{Mutex, OnceCell};
 use torrentx_core::{
-    AddOptions, AddSource, Capabilities, DownloadSettings, EngineError, EngineResult, EngineTuning,
+    AddOptions, AddSource, Capabilities, DownloadSettings, Encryption, EngineError, EngineResult, EngineTuning,
     FileInfo, Peer, Pieces, Preview, PreviewFile, Priority, Status, Torrent, TorrentDetails,
     Tracker, TrackerKind, WebSeed, WebSeedKind, check_uri, parse_id, tracker_host,
 };
@@ -64,7 +64,8 @@ pub struct TransmissionEngine {
     url: String,
     auth: Option<(String, String)>,
     session_id: Mutex<Option<String>>,
-    rpc_version: OnceCell<i64>,
+    /// (`rpc-version`, daemon `version`), fetched once.
+    session_info: OnceCell<(i64, Option<String>)>,
     /// Last applied download settings; `add` needs the move-completed target.
     downloads: std::sync::Mutex<DownloadSettings>,
 }
@@ -248,6 +249,8 @@ pub fn capabilities_for(rpc: i64) -> Capabilities {
             "maxConnectionsPerTorrent",
             "listenPort",
             "upnp",
+            "portTest",
+            "encryption",
             "queue",
             "seedLimits",
             "moveCompleted",
@@ -341,6 +344,7 @@ impl RawTorrent {
             ratio: (self.upload_ratio >= 0.0).then_some(self.upload_ratio),
             wanted_size: self.size_when_done,
             tags: Vec::new(),
+            category: None,
             tracker: self.trackers.iter().find_map(|t| tracker_host(&t.announce)),
             priority: map_priority(self.bandwidth_priority),
         }
@@ -466,6 +470,11 @@ fn session_args(t: &EngineTuning, rpc: i64) -> Value {
         "peer-limit-per-torrent": or(n.max_connections_per_torrent, 50),
         "peer-port": or(n.listen_port.into(), 51413),
         "port-forwarding-enabled": n.upnp,
+        "encryption": match n.encryption {
+            Encryption::Preferred => "preferred",
+            Encryption::Required => "required",
+            Encryption::Tolerated => "tolerated",
+        },
         "download-queue-enabled": d.max_active_downloads > 0,
         "seed-queue-enabled": seed_slots.is_some(),
         "seedRatioLimited": d.min_ratio > 0.0,
@@ -509,7 +518,7 @@ impl TransmissionEngine {
             url: url.to_string(),
             auth: (!username.is_empty()).then(|| (username.to_string(), password.to_string())),
             session_id: Mutex::new(None),
-            rpc_version: OnceCell::new(),
+            session_info: OnceCell::new(),
             downloads: std::sync::Mutex::new(DownloadSettings::default()),
         }
     }
@@ -581,20 +590,26 @@ impl TransmissionEngine {
     }
 
     /// Cached per engine instance; settings changes that swap the daemon recreate the engine.
-    async fn rpc_version(&self) -> EngineResult<i64> {
-        self.rpc_version
+    async fn session_info(&self) -> EngineResult<&(i64, Option<String>)> {
+        self.session_info
             .get_or_try_init(|| async {
                 let s = self
-                    .call("session-get", json!({ "fields": ["rpc-version"] }))
+                    .call("session-get", json!({ "fields": ["rpc-version", "version"] }))
                     .await?;
-                Ok(s["rpc-version"].as_i64().unwrap_or(0))
+                Ok((s["rpc-version"].as_i64().unwrap_or(0), s["version"].as_str().map(String::from)))
             })
             .await
-            .copied()
+    }
+
+    async fn rpc_version(&self) -> EngineResult<i64> {
+        Ok(self.session_info().await?.0)
     }
 
     pub async fn capabilities(&self) -> Capabilities {
-        capabilities_for(self.rpc_version().await.unwrap_or(0))
+        match self.session_info().await {
+            Ok((rpc, version)) => capabilities_for(*rpc).version(version.clone()),
+            Err(_) => capabilities_for(0),
+        }
     }
 
     async fn fetch<T: DeserializeOwned>(
@@ -845,6 +860,14 @@ impl TransmissionEngine {
         self.action("torrent-reannounce", id, json!({})).await
     }
 
+    /// Asks Transmission's port checker; None when the check itself failed.
+    pub async fn port_test(&self) -> EngineResult<Option<bool>> {
+        Ok(match self.rpc("port-test", json!({})).await? {
+            Ok(args) => args["port-is-open"].as_bool(),
+            Err(_) => None,
+        })
+    }
+
     /// The RPC has no way to change a torrent's url-list.
     pub async fn add_web_seed(&self, _id: &str, _url: &str) -> EngineResult<()> {
         Err(EngineError::unsupported(ENGINE, "adding web seeds"))
@@ -977,6 +1000,11 @@ impl TransmissionEngine {
             c["downloadedBytes"].as_u64().unwrap_or(0),
             c["uploadedBytes"].as_u64().unwrap_or(0),
         ))
+    }
+
+    /// The RPC does not report DHT routing-table size.
+    pub async fn dht_nodes(&self) -> Option<u64> {
+        None
     }
 
     /// Nothing to persist: the daemon owns all state.
@@ -1204,6 +1232,7 @@ mod tests {
         assert_eq!(s["speed-limit-down-enabled"], false);
         assert_eq!(s["seed-queue-enabled"], false);
         assert_eq!(s["incomplete-dir-enabled"], false);
+        assert_eq!(s["encryption"], "preferred");
         assert!(s.get("download-dir").is_none());
         assert!(s.get("sequential_download").is_none());
 
@@ -1215,7 +1244,9 @@ mod tests {
         t.downloads.move_completed_enabled = true;
         t.downloads.move_completed_path = "/done".into();
         t.advanced.sequential_download = true;
+        t.network.encryption = Encryption::Required;
         let s = session_args(&t, 18);
+        assert_eq!(s["encryption"], "required");
         assert_eq!(s["speed-limit-down"], 500);
         assert_eq!(s["speed-limit-down-enabled"], true);
         assert_eq!(s["download-queue-size"], 3);

@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent } from "react";
-import { Edit3, FolderInput, Tag, X } from "lucide-react";
+import { Edit3, FolderInput, X } from "lucide-react";
 import { api, ApiError, type Health, type Tab, type TabPatch, type Torrent } from "@torrentx/api-client";
 import { compare, evaluate, parse, sortKeys } from "@torrentx/query";
 import { DEFAULT_PREFS, makeUi, UiContext } from "../lib/context";
 import { useCapabilities, useSettings, useStats, useTabs, useTorrents } from "../lib/hooks";
-import { canonical, clickSort, combine, fuzzyNode, hasLens, NO_LENS, predicateCount, sections, type Lens } from "../lib/lens";
+import { canonical, clickSort, combine, combinedQuery, fuzzyNode, hasLens, NO_LENS, predicateCount, scopeOf, sections, type Lens } from "../lib/lens";
 import { COMMAND_FOR_ACTION, COMMANDS, type Handler, type Handlers, type TorrentAction } from "../lib/commands";
 import { commandFor, IS_MAC, useKeymap } from "../lib/keymap";
 import { useBrowserNotifications } from "../lib/notify";
-import { ALL_TAB, useRoute } from "../lib/route";
+import { COLUMN_ORDER, columnOrder, columnWidths, type Column, type ColumnWidths } from "../lib/columns";
+import { ALL_TAB, BUILT_IN_TABS, useRoute, type View } from "../lib/route";
+import type { SettingsSection } from "../lib/settings";
 import { useApplyPrefs } from "../lib/theme";
 import { useUpdateCheck } from "../lib/updates";
 import { usePoll } from "../lib/usePoll";
@@ -22,21 +24,24 @@ import { TorrentList } from "./TorrentList";
 import { DetailPage } from "./detail/DetailPage";
 import { Terminal } from "./Terminal";
 import { StatusBar } from "./StatusBar";
-import { Settings } from "./Settings";
+import { SettingsPage, SettingsSearch } from "./settings/SettingsPage";
 import { RemoveDialog } from "./RemoveDialog";
 import { PromptDialog } from "./Modal";
+import { TagPicker } from "./TagPicker";
 import { Login } from "./Login";
 import { Palette } from "./Palette";
 import { ShortcutSheet } from "./ShortcutSheet";
 
 const NO_TABS: Tab[] = [];
 const DENSITY_KEY = "tx-density";
+const COLUMNS_KEY = "tx-columns";
+const WIDTHS_KEY = "tx-column-widths";
 const FILTER_BAR_KEY = "tx-filter-bar";
 const UNDO_SAVE_MS = 6000;
 
 const isUnauthorized = (e: unknown) => e instanceof ApiError && e.kind === "unauthorized";
 
-type Prompt = { kind: "relocate" | "rename" | "tags"; torrents: Torrent[] };
+type Prompt = { kind: "relocate" | "rename"; torrents: Torrent[] };
 
 const LIST_KEYS = COMMANDS.filter((def) => def.local && def.group === "list");
 const DESKTOP = isTauri();
@@ -59,18 +64,58 @@ export function App() {
   const [health, setHealth] = useState<Health | null>(null);
   const [needsLogin, setNeedsLogin] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-  const { view, tabId, navigate, openTorrent } = useRoute();
+  const { view, tabId, navigate, openTorrent, openSettings, setLeaveGuard } = useRoute();
   const detailView = view.kind === "torrent" ? view : null;
+  const settingsView = view.kind === "settings" ? view : null;
+  // Torrent and settings pages hide the list (kept mounted, so back finds the same scroll and lens).
+  const pageView = detailView ?? settingsView;
+  // Where settings was opened from, for its back button; null when the app started on a settings address.
+  const settingsFrom = useRef<View | null>(null);
+  const [focusRow, setFocusRow] = useState<string | null>(null);
+  const clearFocusRow = useCallback(() => setFocusRow(null), []);
   const openedFromList = useRef(false);
-  // The lens: ephemeral, per tab, in memory. Only "Save as tab" ever writes it anywhere.
+  // The lens: ephemeral, per tab, in memory. On built-in tabs only "Save as tab" writes it anywhere.
   const [lens, setLensState] = useState<Lens>(NO_LENS);
-  const [undo, setUndo] = useState<Lens[]>([]);
+  // `tab`: the query a user tab had before a filter-bar edit rewrote it, so undo can put it back.
+  const [undo, setUndo] = useState<{ lens: Lens; tab?: { id: string; query: string } }[]>([]);
   const [snapshots, setSnapshots] = useState<Record<string, Lens>>({});
   const [saveOpen, setSaveOpen] = useState(false);
   const [builderOpen, setBuilderOpen] = useState(false);
   const [saved, setSaved] = useState<{ tab: Tab; from: string; lens: Lens } | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [compact, setCompact] = useState(() => localStorage.getItem(DENSITY_KEY) === "compact");
+  // Column order: a per-viewer convenience, so browser storage.
+  const [columns, setColumnsState] = useState<Column[]>(() => {
+    try {
+      return columnOrder(JSON.parse(localStorage.getItem(COLUMNS_KEY) ?? "null"));
+    } catch {
+      return COLUMN_ORDER;
+    }
+  });
+  const setColumns = (order: Column[]) => {
+    setColumnsState(order);
+    try {
+      localStorage.setItem(COLUMNS_KEY, JSON.stringify(order));
+    } catch {
+      // kept for this session only
+    }
+  };
+  const [widths, setWidthsState] = useState<ColumnWidths>(() => {
+    try {
+      return columnWidths(JSON.parse(localStorage.getItem(WIDTHS_KEY) ?? "null"));
+    } catch {
+      return {};
+    }
+  });
+  const setWidths = (next: ColumnWidths) => {
+    setWidthsState(next);
+    try {
+      localStorage.setItem(WIDTHS_KEY, JSON.stringify(next));
+    } catch {
+      // kept for this session only
+    }
+  };
+  const [columnsOpen, setColumnsOpen] = useState(false);
   const [filterCollapsed, setFilterCollapsedState] = useState(() => localStorage.getItem(FILTER_BAR_KEY) === "collapsed");
   const setFilterCollapsed = (collapsed: boolean) => {
     localStorage.setItem(FILTER_BAR_KEY, collapsed ? "collapsed" : "open");
@@ -86,12 +131,17 @@ export function App() {
   const [renameRequest, setRenameRequest] = useState(0);
   const [removing, setRemoving] = useState<{ torrents: Torrent[]; erase: boolean } | null>(null);
   const [prompt, setPrompt] = useState<Prompt | null>(null);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [picker, setPicker] = useState<{ torrents: Torrent[]; anchor: DOMRect | null } | null>(null);
   const [terminalOpen, setTerminalOpen] = useState(false);
 
   /** Polling failures: only 401 matters globally, the rest is shown where the data is used. */
+  // A poll sent while new credentials were being applied can come back 401 although the new session
+  // cookie is already set: ask once more before showing the login form.
   const onPollError = useCallback((e: unknown) => {
-    if (isUnauthorized(e)) setNeedsLogin(true);
+    if (!isUnauthorized(e)) return;
+    api.stats().catch((again: unknown) => {
+      if (isUnauthorized(again)) setNeedsLogin(true);
+    });
   }, []);
   /** Action failures: 401 → login form, everything else → notice. */
   const handleError = useCallback((e: unknown) => {
@@ -143,7 +193,9 @@ export function App() {
   // Until the tabs load, the list shows everything rather than an error.
   const everything = useMemo(() => parse(""), []);
   const tabParsed = (activeTab && parsed.get(activeTab.id)) || everything;
-  const tabAst = tabParsed.ast;
+  // The tab query as the filter bar shows it: saved, or edited for this visit (never written back).
+  const scopeParsed = useMemo(() => (lens.scope !== undefined ? parse(lens.scope) : null), [lens.scope]);
+  const tabAst = scopeParsed ? scopeParsed.ast : tabParsed.ast;
   const fuzzy = useMemo(() => fuzzyNode(lens.fuzzy), [lens.fuzzy]);
   const lensAst = useMemo(() => parse(lens.query).ast, [lens.query]);
   const order = useMemo(
@@ -157,26 +209,50 @@ export function App() {
     const nodes = [tabAst, fuzzy, lensAst].filter((node) => node !== null);
     return list.filter((row) => nodes.every((node) => evaluate(node, row, now))).sort(compare(order));
   }, [list, tabAst, fuzzy, lensAst, order]);
-  const lensCount = hasLens(lens) ? predicateCount(lens.query) : null;
+  const lensCount = hasLens(lens) ? predicateCount(scopeOf(lens, activeTab?.query ?? "")) + predicateCount(lens.query) : null;
   const inTab = (activeTab && counts[activeTab.id]) ?? list.length;
   const tabLabel = (tab: Tab) => tab.name || tab.query || t("tabs.untitled");
   const values = useMemo(
     () => ({
       tag: [...new Set(list.flatMap((row) => row.tags))].sort(),
+      category: [...new Set(list.flatMap((row) => row.category ?? []))].sort(),
       tracker: [...new Set(list.flatMap((row) => row.tracker ?? []))].sort(),
     }),
     [list],
   );
 
   /** A chip-level change: undoable with ⌘Z. */
+  // A tab the user made is edited in place: filter-bar edits (chips, builder, sort) rewrite its query.
+  // Built-in tabs keep the lens model. The fuzzy name input always stays a lens.
+  // A tab whose query does not parse stays a lens: folding would replace text we cannot read.
+  const ownTab = activeTab && !BUILT_IN_TABS.includes(activeTab.id) && tabParsed.ast ? activeTab : null;
+  const writeTabQuery = (id: string, query: string) =>
+    run(async () => {
+      await api.updateTab(id, { query });
+      await tabs.reload();
+      // The saved tab now says it: drop the interim copy unless something newer replaced it.
+      setLensState((current) => (current.scope === query ? { ...current, scope: undefined } : current));
+    });
   const setLens = (next: Lens) => {
-    setUndo((stack) => [...stack.slice(-49), lens]);
+    if (ownTab && (next.scope !== undefined || next.query.trim() !== "")) {
+      const query = combinedQuery(next, ownTab.query);
+      setUndo((stack) => [...stack.slice(-49), { lens, tab: { id: ownTab.id, query: ownTab.query } }]);
+      // Shown as the scope until the tab list reloads with the new query.
+      setLensState({ ...next, query: "", scope: query });
+      void writeTabQuery(ownTab.id, query);
+      return;
+    }
+    setUndo((stack) => [...stack.slice(-49), { lens }]);
     setLensState(next);
   };
   const undoLens = () => {
-    if (undo.length === 0) return;
-    setLensState(undo[undo.length - 1]);
+    const last = undo[undo.length - 1];
+    if (!last) return;
     setUndo(undo.slice(0, -1));
+    if (last.tab) {
+      setLensState({ ...last.lens, scope: last.tab.query });
+      void writeTabQuery(last.tab.id, last.tab.query);
+    } else setLensState(last.lens);
   };
 
   // Switching tabs (sidebar, back/forward, reload) clears the lens; the old tab keeps a session
@@ -303,11 +379,23 @@ export function App() {
     setSelection((current) => (extend ? [...new Set([...current, ...(cursor ? [cursor] : []), next])] : [next]));
     document.querySelector(`[data-row="${next}"]`)?.scrollIntoView({ block: "nearest" });
   };
-  // Enter / double-click opens the page; single click only selects.
+  // Enter or a plain click opens the page.
   const openDetails = (id: string | null) => {
     if (!id) return;
     openedFromList.current = !detailView;
     openTorrent(id, detailView?.section ?? "overview");
+  };
+  // The tag picker opens under the torrent's tags: the hero's tag line, else its list row's tags cell (or row).
+  const openPicker = (torrents: Torrent[]) => {
+    const one = torrents.length === 1 ? torrents[0].id : null;
+    const visibleBox = (el: Element | null) => {
+      const box = el?.getBoundingClientRect();
+      return box && box.width > 0 ? box : null;
+    };
+    const anchor = one
+      ? (visibleBox(document.querySelector(`[data-tags-anchor="${one}"]`)) ?? visibleBox(document.querySelector(`[data-row="${one}"] [data-tags-cell]`)) ?? visibleBox(document.querySelector(`[data-row="${one}"]`)))
+      : null;
+    setPicker({ torrents, anchor });
   };
   const pauseRows = (rows: Torrent[]) => run(() => Promise.all(rows.map((row) => api.pause(row.id))));
   const resumeRows = (rows: Torrent[]) => run(() => Promise.all(rows.map((row) => api.resume(row.id))));
@@ -325,7 +413,7 @@ export function App() {
       "sel.resume": { run: () => resumeRows(targets), disabled: none },
       "sel.remove": { run: () => setRemoving({ torrents: targets, erase: false }), disabled: none },
       "sel.erase": { run: () => setRemoving({ torrents: targets, erase: true }), disabled: none },
-      "sel.tags": { run: () => setPrompt({ kind: "tags", torrents: targets }), disabled: none },
+      "sel.tags": { run: () => openPicker(targets), disabled: none },
       "sel.verify": { run: () => run(() => Promise.all(targets.map((row) => api.verify(row.id)))), disabled: none ?? ui.gate("verify") ?? null },
       "sel.reveal": { run: () => run(() => api.reveal(single.id)), disabled: one },
       "sel.relocate": { run: () => setPrompt({ kind: "relocate", torrents: [single] }), disabled: gated("relocate") },
@@ -388,14 +476,15 @@ export function App() {
     "tab.resumeAll": handler(() => resumeRows(paused(visible))),
     "all.pause": handler(() => pauseRows(notPaused(list))),
     "all.resume": handler(() => resumeRows(paused(list))),
-    "nav.back": handler(() => (detailView ? backToList() : window.history.back())),
+    "nav.back": handler(() => (detailView ? backToList() : settingsView ? leaveSettings() : window.history.back())),
     "nav.forward": handler(() => window.history.forward()),
-    "settings.open": handler(() => setSettingsOpen(true)),
+    "settings.open": handler(() => openSettingsPage()),
     "terminal.toggle": handler(() => setTerminalOpen((open) => !open)),
     "density.toggle": handler(() => toggleDensity()),
+    "columns.edit": handler(() => setColumnsOpen(true)),
     "auth.logout": { run: () => void api.logout().finally(() => setNeedsLogin(true)), unavailable: !health?.authRequired },
   };
-  const dialogOpen = palette !== null || sheetOpen || settingsOpen || !!removing || !!prompt;
+  const dialogOpen = palette !== null || sheetOpen || !!removing || !!prompt;
   useKeymap(COMMANDS, handlers, !needsLogin && !dialogOpen, DESKTOP);
 
   const onListKey = (e: ReactKeyboardEvent) => {
@@ -413,7 +502,11 @@ export function App() {
       setSelection(visible.slice(a, b + 1).map((row) => row.id));
       return;
     } else {
+      // A plain click opens the page; ⌘-click and ⇧-click select for bulk actions.
       setSelection([id]);
+      setCursor(id);
+      openDetails(id);
+      return;
     }
     setCursor(id);
   };
@@ -432,6 +525,16 @@ export function App() {
     setCursor(id);
     openDetails(id);
   };
+  const openSettingsPage = (section: SettingsSection = "general") => {
+    if (!settingsView) settingsFrom.current = view;
+    openSettings(section);
+  };
+  // Back to where settings was opened from (sections replace each other in history), else the tab.
+  const leaveSettings = () => {
+    if (settingsFrom.current) window.history.back();
+    else navigate(tabId);
+  };
+  const settingsBack = settingsFrom.current?.kind === "torrent" ? (list.find((x) => x.id === (settingsFrom.current as { id: string }).id)?.name ?? "") : activeTab ? tabLabel(activeTab) : "";
   // Back to the list it came from: history when we pushed the page, else a fresh entry.
   const backToList = () => {
     if (openedFromList.current) window.history.back();
@@ -500,14 +603,30 @@ export function App() {
               onPatch={patchTab}
               onDelete={deleteTab}
               onTrigger={() => setPalette({ input: "" })}
-              onSaveLens={hasLens(lens) ? () => setSaveOpen(true) : null}
+              onSaveLens={hasLens(lens) && !ownTab ? () => setSaveOpen(true) : null}
               renameRequest={renameRequest}
             />
           )
         }
         top={
           <TopBar
-            crumb={detailView ? { back: activeTab ? tabLabel(activeTab) : "", name: detailTorrent?.name ?? "", onBack: backToList } : undefined}
+            crumb={
+              detailView
+                ? { back: activeTab ? tabLabel(activeTab) : "", name: detailTorrent?.name ?? "", onBack: backToList }
+                : settingsView
+                  ? { back: settingsBack, root: t("set.title"), name: t(`set.section.${settingsView.section}`), caption: t("set.autosave"), onBack: leaveSettings }
+                  : undefined
+            }
+            trailing={
+              settingsView ? (
+                <SettingsSearch
+                  onPick={(hit) => {
+                    openSettings(hit.section, true);
+                    setFocusRow(hit.id);
+                  }}
+                />
+              ) : undefined
+            }
             title={activeTab ? tabLabel(activeTab) : ""}
             lensCount={lensCount}
             sidebarCollapsed={sidebarCollapsed}
@@ -519,7 +638,7 @@ export function App() {
             onToggleFilterBar={() => setFilterCollapsed(!filterCollapsed)}
             terminalOpen={terminalOpen}
             onToggleTerminal={() => setTerminalOpen(!terminalOpen)}
-            onOpenSettings={() => setSettingsOpen(true)}
+            onOpenSettings={() => openSettingsPage()}
             onLogout={
               health?.authRequired ? () => void api.logout().finally(() => setNeedsLogin(true)) : undefined
             }
@@ -539,9 +658,11 @@ export function App() {
           />
         }
       >
-        <div className={detailView ? "hidden" : "contents"}>
+        <div className={pageView ? "hidden" : "contents"}>
         <FilterBar
           lens={lens}
+          tabQuery={activeTab?.query ?? ""}
+          ownTab={!!ownTab}
           onLens={setLens}
           onFuzzy={(text) => setLensState((current) => ({ ...current, fuzzy: text }))}
           snapshot={!hasLens(lens) ? (snapshots[tabId] ?? null) : null}
@@ -591,12 +712,12 @@ export function App() {
         )}
         <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
           {/* Hidden, not unmounted, while a torrent page is open: back finds the same scroll offset. */}
-          <div className={detailView ? "hidden" : "flex min-h-0 flex-1 flex-col"}>
+          <div className={pageView ? "hidden" : "flex min-h-0 flex-1 flex-col"}>
           <TorrentList
             torrents={visible}
             all={list}
             tabAst={tabAst}
-            tabError={tabParsed.error}
+            tabError={scopeParsed ? scopeParsed.error : tabParsed.error}
             tabQuery={activeTab?.query ?? ""}
             tabName={activeTab ? tabLabel(activeTab) : ""}
             onOpenBuilder={() => {
@@ -605,7 +726,7 @@ export function App() {
             }}
             onSearchAll={() => {
               // Same lens, whole library: the All tab.
-              onSwitch.current = { snapshot: true, next: lens };
+              onSwitch.current = { snapshot: true, next: { ...lens, scope: undefined } };
               navigate(ALL_TAB);
             }}
             fuzzy={fuzzy}
@@ -615,6 +736,12 @@ export function App() {
             sort={order[0]}
             onSort={(field) => setLens({ ...lens, query: clickSort(lens.query, tabAst ? sortKeys(tabAst) : [], field) })}
             compact={compact}
+            columns={columns}
+            onColumns={setColumns}
+            widths={widths}
+            onWidths={setWidths}
+            columnsOpen={columnsOpen}
+            onColumnsOpen={setColumnsOpen}
             selection={selectedSet}
             cursor={cursor}
             onRowClick={onRowClick}
@@ -622,7 +749,7 @@ export function App() {
             onListKey={onListKey}
             onAction={onAction}
             engineError={engineError}
-            onOpenSettings={() => setSettingsOpen(true)}
+            onOpenSettings={() => openSettingsPage("engine")}
           />
           </div>
           {detailView && (
@@ -638,20 +765,28 @@ export function App() {
               onFocused={clearFocus}
             />
           )}
+          {settingsView && (
+            <SettingsPage
+              section={settingsView.section}
+              onSection={(section) => openSettings(section, true)}
+              focusRow={focusRow}
+              onFocused={clearFocusRow}
+              setLeaveGuard={setLeaveGuard}
+              onSaved={onSettingsSaved}
+              onError={handleError}
+              onNotice={setNotice}
+              engineError={engineError}
+              dhtNodes={stats.data?.dhtNodes ?? null}
+              grammarVersion={tabs.data?.grammarVersion ?? null}
+              tabCount={tabList.length}
+              version={health?.version}
+              checkUpdates={updates.checkNow}
+            />
+          )}
           {terminalOpen && (
             <Terminal onClose={() => setTerminalOpen(false)} onChanged={refresh} />
           )}
         </main>
-        {settingsOpen && (
-          <Settings
-            onClose={() => setSettingsOpen(false)}
-            onSaved={onSettingsSaved}
-            onError={handleError}
-            engineError={engineError}
-            version={health?.version}
-            checkUpdates={updates.checkNow}
-          />
-        )}
         {palette !== null && (
           <Palette
             initial={palette.input}
@@ -673,12 +808,13 @@ export function App() {
             onApply={applyFromPalette}
             onJumpTab={navigate}
             onJumpTorrent={jumpTorrent}
+            onOpenSettings={(section) => openSettingsPage(section)}
             here={detailView ? { id: detailView.id, name: list.find((row) => row.id === detailView.id)?.name ?? detailView.id } : null}
             onOpenFile={openFile}
             onError={handleError}
             onCreateTab={(query, name) => void createFromPalette(query, name)}
             onPauseMatches={(rows) => void pauseRows(notPaused(rows))}
-            onTagMatches={(rows) => setPrompt({ kind: "tags", torrents: rows })}
+            onTagMatches={(rows) => openPicker(rows)}
             onSheet={() => {
               setPalette(null);
               setSheetOpen(true);
@@ -719,32 +855,31 @@ export function App() {
                 <>
                   <FolderInput size={16} className="mr-2" /> {t("action.relocate")}
                 </>
-              ) : prompt.kind === "rename" ? (
+              ) : (
                 <>
                   <Edit3 size={16} className="mr-2" /> {t("action.rename")}
                 </>
-              ) : (
-                <>
-                  <Tag size={16} className="mr-2" /> {t("action.tags")}
-                </>
               )
             }
-            label={t(prompt.kind === "relocate" ? "prompt.newPath" : prompt.kind === "rename" ? "prompt.newName" : "prompt.tags")}
-            initial={
-              prompt.kind === "relocate"
-                ? prompt.torrents[0].savePath
-                : prompt.kind === "rename"
-                  ? prompt.torrents[0].name
-                  : [...new Set(prompt.torrents.flatMap((row) => row.tags))].join(", ")
-            }
-            allowEmpty={prompt.kind === "tags"}
+            label={t(prompt.kind === "relocate" ? "prompt.newPath" : "prompt.newName")}
+            initial={prompt.kind === "relocate" ? prompt.torrents[0].savePath : prompt.torrents[0].name}
             onClose={() => setPrompt(null)}
             onSubmit={async (value) => {
               if (prompt.kind === "relocate") await api.relocate(prompt.torrents[0].id, value);
-              else if (prompt.kind === "rename") await api.rename(prompt.torrents[0].id, value);
-              else for (const row of prompt.torrents) await api.setTags(row.id, value.split(","));
+              else await api.rename(prompt.torrents[0].id, value);
               refresh();
             }}
+          />
+        )}
+        {picker && (
+          <TagPicker
+            torrents={picker.torrents}
+            tags={values.tag}
+            categories={values.category}
+            anchor={picker.anchor}
+            onClose={() => setPicker(null)}
+            onChanged={refresh}
+            onError={handleError}
           />
         )}
       </Shell>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent, type ReactNode } from "react";
-import { BookmarkPlus, CornerDownLeft, File as FileIcon, FilePlus, Files, Funnel, Globe, Hash, Link2, ListFilter, Pause, Pencil, Pin, Search, Tag } from "lucide-react";
+import { BookmarkPlus, CornerDownLeft, File as FileIcon, FilePlus, Files, Funnel, Globe, Hash, Link2, ListFilter, Pause, Pencil, Pin, Search, Settings as Cog, Tag } from "lucide-react";
 import { api, type FileHit, type Settings, type Tab, type Torrent } from "@torrentx/api-client";
 import { chips, evaluate } from "@torrentx/query";
 import { useUi } from "../lib/context";
@@ -9,7 +9,6 @@ import { canonical, NO_LENS, type Lens } from "../lib/lens";
 import {
   draftCompletion,
   dropChip,
-  expandFieldShortcut,
   fileJumps,
   fileResults,
   paletteMode,
@@ -24,6 +23,7 @@ import {
   type PaletteInput,
   type TorrentRef,
 } from "../lib/palette";
+import { deepLink, parseDeepLink, type SettingsSection } from "../lib/settings";
 import { bytes, percent, rate, rowState, STATE_STYLE, trimMiddle } from "../lib/format";
 import { HTTP_URL, isTorrentLink, type AddSource } from "../lib/addFlow";
 import { usePreview } from "../lib/preview";
@@ -50,6 +50,8 @@ interface PaletteProps {
   onApply: (lens: Lens, inAll: boolean) => void;
   onJumpTab: (id: string) => void;
   onJumpTorrent: (id: string) => void;
+  /** A pasted `tx://settings/<section>` link. */
+  onOpenSettings: (section: SettingsSection) => void;
   /** Creates the tab without activating it; an empty name means "named by its query". */
   onCreateTab: (query: string, name: string) => void;
   /** Query mode: pause every matching torrent that is not paused. */
@@ -107,7 +109,7 @@ const iconBox = (node: ReactNode, tone = "bg-ui-surface-2 text-ui-text-2") => (
 
 /** ⌘T: one surface to jump, filter and act. `>` switches to commands only. */
 export function Palette(props: PaletteProps) {
-  const { initial, tabs, counts, activeTab, tabLabel, all, values, handlers, desktop, onApply, onJumpTab, onJumpTorrent, onCreateTab, onPauseMatches, onTagMatches, onSheet, initialAdd, settings, diskFree, onAdded, here = null, onOpenFile, onError, onClose } = props;
+  const { initial, tabs, counts, activeTab, tabLabel, all, values, handlers, desktop, onApply, onJumpTab, onJumpTorrent, onOpenSettings, onCreateTab, onPauseMatches, onTagMatches, onSheet, initialAdd, settings, diskFree, onAdded, here = null, onOpenFile, onError, onClose } = props;
   const { t, gate } = useUi();
   // Add mode: the same panel grows downward into the add flow; Escape returns to the input.
   const [addSource, setAddSource] = useState<AddSource | null>(initialAdd ?? null);
@@ -323,7 +325,24 @@ export function Palette(props: PaletteProps) {
       const needle = mode.text;
       const jumpTabs = rank(tabs, needle, (tab) => [tabLabel(tab), tab.query], (tab) => (tab.pinned ? 1 : 0)).slice(0, MAX_TABS);
       const jumpTorrents = needle ? rank(all, needle, (row) => [row.name]).slice(0, MAX_TORRENTS) : [];
-      const jumps = [...jumpTabs.map(tabRow), ...jumpTorrents.map(torrentRow)];
+      const link = parseDeepLink(needle);
+      const settingsRow: Row[] = link
+        ? [
+            {
+              key: "settings-link",
+              kind: "jump",
+              icon: iconBox(<Cog size={14} />, "bg-ui-surface-2 text-ui-accent"),
+              title: `${t("set.title")} / ${t(`set.section.${link}`)}`,
+              sub: deepLink(link),
+              binding: "Enter",
+              run: () => {
+                onClose();
+                onOpenSettings(link);
+              },
+            },
+          ]
+        : [];
+      const jumps = [...settingsRow, ...jumpTabs.map(tabRow), ...jumpTorrents.map(torrentRow)];
       const filter: Row[] = needle
         ? [
             {
@@ -627,7 +646,7 @@ export function Palette(props: PaletteProps) {
               if (plain && isTorrentLink(value.trim())) {
                 setText(value);
                 setAddSource({ kind: "uri", uri: value.trim() });
-              } else setInput(typeInto(input, plain ? expandFieldShortcut(value) : value, here));
+              } else setInput(typeInto(input, value, here));
             }}
             onKeyDown={handleKeyDown}
             placeholder={

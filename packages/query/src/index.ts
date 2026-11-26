@@ -60,6 +60,7 @@ export interface Row {
   name: string;
   status: string;
   tags: string[];
+  category?: string | null;
   tracker: string | null;
   size: number;
   /** 0..1 */
@@ -167,8 +168,9 @@ function read(field: Field, row: Row): string | number | string[] | null {
       return row.savePath;
     case "ext":
       return row.ext ?? null;
-    // shortcut: the model has no category or completion date, so these never match; read them here once it does.
     case "category":
+      return row.category ?? null;
+    // shortcut: the model has no completion date, so this never matches; read it here once it does.
     case "done":
       return null;
   }
@@ -341,7 +343,8 @@ export function parse(input: string, scope: Scope = TORRENT): ParseResult {
 
     let negated = !!eat(/!/y);
     const nameStart = i;
-    const named = eat(/([A-Za-z]+):/y);
+    // `field:value`, or the prefix form `:field value` (`:size >4GB`, `!:tag x`), which may have spaces before the value.
+    const named = eat(/([A-Za-z]+):/y) ?? eat(/:([A-Za-z]+)(?=[\s!<>="]|$)\s*/y);
     const field = named ? named[1].toLowerCase() : scope.defaultField;
     if (field === "sort") {
       if (negated) fail("sort cannot be negated", start, 1);
@@ -550,6 +553,18 @@ export function complete(
     to: caret,
     options: pool.filter((option) => option.startsWith(partial.toLowerCase())),
   });
+
+  // Prefix form: `:si` completes field names; `:size ` / `:size >4` complete like `size:` / `size:>4`.
+  const prefix = /(^|[\s(])(!?):([a-z]*)(\s*)([^\s()]*)$/i.exec(head);
+  if (prefix && (prefix[3] !== "" || (prefix[4] === "" && prefix[5] === ""))) {
+    const [, lead, neg, name, gap, rest] = prefix;
+    if (gap === "" && rest === "") return pick([...names, "sort"], name);
+    const start = prefix.index + lead.length;
+    const canon = `${head.slice(0, start)}${neg}${name}:${rest}`;
+    const found = complete(canon, canon.length, values, scope);
+    const shift = head.length - canon.length;
+    return { from: found.from + shift, to: caret, options: found.options };
+  }
 
   const sorting = /(?:^|[\s(])sort:([a-z, ]*)$/i.exec(head);
   if (sorting) {

@@ -143,8 +143,8 @@ export const STATE_STYLE: Record<RowState, { dot: string; badge: string }> = {
   downloading: { dot: "bg-ui-accent", badge: "bg-ui-accent-soft text-ui-accent" },
   seeding: { dot: "bg-ui-cyan", badge: "bg-ui-cyan-soft text-ui-cyan" },
   stalled: { dot: "bg-ui-amber", badge: "bg-ui-amber-soft text-ui-amber" },
-  checking: { dot: "bg-ui-violet", badge: "bg-ui-surface-2 text-ui-violet" },
-  paused: { dot: "bg-ui-text-2", badge: "bg-ui-surface-2 text-ui-text-2" },
-  queued: { dot: "bg-ui-text-3", badge: "bg-ui-surface-2 text-ui-text-3" },
+  checking: { dot: "bg-ui-violet", badge: "bg-ui-surface-3 text-ui-violet" },
+  paused: { dot: "bg-ui-text-2", badge: "bg-ui-surface-3 text-ui-text-2" },
+  queued: { dot: "bg-ui-text-3", badge: "bg-ui-surface-3 text-ui-text-3" },
   error: { dot: "bg-ui-red", badge: "bg-ui-red-soft text-ui-red" },
 };

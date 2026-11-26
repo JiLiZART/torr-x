@@ -86,6 +86,7 @@ export const COMMANDS: CommandDef[] = [
   def("settings.open", "navigation", "global", "Settings", ["Mod+,"]),
   def("terminal.toggle", "navigation", "global", "SquareTerminal", ["Ctrl+`"]),
   def("density.toggle", "navigation", "global", "Rows3"),
+  def("columns.edit", "navigation", "global", "Columns3Cog"),
   def("auth.logout", "navigation", "global", "LogOut"),
 ];
 

@@ -108,12 +108,14 @@ pub fn router(state: Arc<AppState>) -> Router {
         .route("/torrents/{id}/files/{index}/reveal", post(reveal_file))
         .route("/torrents/{id}/tab", put(set_tab_gone))
         .route("/torrents/{id}/tags", put(set_tags))
+        .route("/torrents/{id}/category", put(set_category))
         .route("/tabs", get(tabs).post(create_tab))
         .route("/tabs/{id}", axum::routing::patch(update_tab).delete(delete_tab))
         .route("/stats", get(stats))
         .route("/capabilities", get(capabilities))
         .route("/settings", get(get_settings).put(put_settings))
         .route("/transmission/test", post(test_transmission))
+        .route("/network/port-test", post(port_test))
         .route_layer(from_fn_with_state(state.clone(), auth::require_auth));
     let api = Router::new()
         .route("/health", get(health))
@@ -153,9 +155,10 @@ async fn health(State(state): State<Arc<AppState>>) -> Json<Value> {
     }))
 }
 
-/// Adds what only the server knows: tags, rename override, queued-by-policy.
+/// Adds what only the server knows: tags, category, rename override, queued-by-policy.
 fn decorate(state: &AppState, t: &mut Torrent) {
     t.tags = state.store.tags_of(&t.id);
+    t.category = state.store.category_of(&t.id);
     if let Some(name) = state.store.name_of(&t.id) {
         t.name = name;
     }
@@ -660,6 +663,23 @@ async fn set_tags(
     Ok(StatusCode::NO_CONTENT)
 }
 
+/// Body: `{"category": "Movies"}`; null or empty clears it.
+#[derive(Deserialize)]
+struct CategoryBody {
+    category: Option<String>,
+}
+
+async fn set_category(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<String>,
+    Json(body): Json<CategoryBody>,
+) -> ApiResult<StatusCode> {
+    let id = parse_id(&id)?;
+    let category = body.category.unwrap_or_default();
+    state.store.set_category(&id, &category).map_err(ApiError::invalid)?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
 /// Manual tab membership was replaced by tags.
 async fn set_tab_gone() -> ApiError {
     ApiError::new(
@@ -673,6 +693,11 @@ async fn set_tab_gone() -> ApiError {
 
 async fn stats(State(state): State<Arc<AppState>>) -> Json<Value> {
     Json(crate::stats::collect(&state).await)
+}
+
+async fn port_test(State(state): State<Arc<AppState>>) -> ApiResult<Json<Value>> {
+    let open = engine(&state).await?.port_test().await?;
+    Ok(Json(json!({ "open": open })))
 }
 
 async fn capabilities(State(state): State<Arc<AppState>>) -> ApiResult<Json<Capabilities>> {

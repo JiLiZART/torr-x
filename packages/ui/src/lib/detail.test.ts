@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { evaluate, FILE_SCOPE, parse, PEER_SCOPE, TRACKER_SCOPE } from "@torrentx/query";
-import { fileActionBlock, fileClass, FILE_ACTIONS, fileRow, joinPath, peerRow, swarm, trackerRow, trackerStatus, webSeedRow } from "./detail.ts";
+import { fileActionBlock, fileClass, FILE_ACTIONS, fileKind, fileRow, fileTree, treeLines, type FileRow, joinPath, peerRow, swarm, trackerRow, trackerStatus, webSeedRow } from "./detail.ts";
 import { episodeCode, episodeState, mediaEpisodes, parseEpisode, qualityTags } from "./media.ts";
 
 test("episodes: codes, quality tags, titles only when named", () => {
@@ -71,4 +71,32 @@ test("file actions follow the format and say why they cannot run", () => {
   assert.equal(fileActionBlock("copyPath", { ...ctx, local: false }), null);
   assert.equal(joinPath("/data/", "a/b.mkv"), "/data/a/b.mkv");
   assert.equal(joinPath("C:\\Downloads", "a/b.mkv"), "C:\\Downloads\\a\\b.mkv");
+});
+
+test("fileKind: extensions map to file-manager kinds", () => {
+  assert.equal(fileKind("txt"), "text");
+  assert.equal(fileKind("mkv"), "video");
+  assert.equal(fileKind("flac"), "audio");
+  assert.equal(fileKind("srt"), "subtitle");
+  assert.equal(fileKind("r07"), "archive");
+  assert.equal(fileKind(""), "other");
+});
+
+test("fileTree: folders first with totals, files keep their order, collapse hides children", () => {
+  const f = (index: number, path: string, size: number, done: number, priority: FileRow["priority"] = "normal"): FileRow => ({
+    index, path, name: path.split("/").pop()!, ext: "", size, done, priority, ep: null, season: null,
+  });
+  const tree = fileTree([f(0, "Show/readme.txt", 10, 100), f(1, "Show/S01/e2.mkv", 30, 0, "skip"), f(2, "Show/S01/e1.mkv", 60, 50), f(3, "top.nfo", 1, 0)]);
+  assert.deepEqual(tree.map((n) => (n.kind === "dir" ? n.path : n.row.path)), ["Show", "top.nfo"]);
+  const show = tree[0];
+  assert.ok(show.kind === "dir");
+  assert.equal(show.size, 100);
+  assert.equal(show.done, 40);
+  assert.equal(show.wanted, "some");
+  assert.deepEqual(show.children.map((n) => (n.kind === "dir" ? n.path : n.row.name)), ["Show/S01", "readme.txt"]);
+  const s01 = show.children[0];
+  assert.ok(s01.kind === "dir");
+  assert.deepEqual(s01.children.map((n) => (n.kind === "file" ? n.row.name : "")), ["e2.mkv", "e1.mkv"]);
+  assert.deepEqual(treeLines(tree, new Set()).map((l) => l.depth), [0, 1, 2, 2, 1, 0]);
+  assert.deepEqual(treeLines(tree, new Set(["Show/S01"])).length, 4);
 });

@@ -178,3 +178,86 @@ export function joinPath(dir: string, file: string): string {
   const sep = dir.includes("\\") && !dir.includes("/") ? "\\" : "/";
   return `${dir.replace(/[\\/]+$/, "")}${sep}${sep === "\\" ? file.replace(/\//g, "\\") : file}`;
 }
+
+// ---- file kinds and the file tree ---------------------------------------------------------------
+
+/** What a file is, by extension: picks its icon the way a file manager would. */
+export type FileKind = "video" | "audio" | "image" | "subtitle" | "text" | "document" | "sheet" | "code" | "data" | "archive" | "disc" | "font" | "executable" | "other";
+
+const KIND_EXT: [FileKind, string[]][] = [
+  ["video", [...VIDEO_EXT, "flv", "3gp", "vob", "ogv"]],
+  ["audio", ["mp3", "flac", "wav", "aac", "m4a", "ogg", "opus", "wma", "alac", "ape", "aiff", "dsf"]],
+  ["image", ["jpg", "jpeg", "png", "gif", "webp", "bmp", "tiff", "tif", "svg", "heic", "avif", "ico", "raw"]],
+  ["subtitle", ["srt", "ass", "ssa", "sub", "idx", "vtt", "sup"]],
+  ["text", ["txt", "nfo", "md", "log", "sfv", "rtf"]],
+  ["document", ["pdf", "epub", "mobi", "azw3", "djvu", "doc", "docx", "odt", "cbz", "cbr", "fb2"]],
+  ["sheet", ["xls", "xlsx", "ods", "csv", "tsv"]],
+  ["code", ["js", "ts", "py", "rs", "go", "c", "cpp", "h", "java", "sh", "html", "css", "php", "rb", "lua"]],
+  ["data", ["json", "xml", "yaml", "yml", "toml", "ini", "cfg", "conf", "db", "sqlite", "torrent"]],
+  ["archive", ["zip", "rar", "7z", "tar", "gz", "tgz", "bz2", "xz", "zst", "r00", "r01"]],
+  ["disc", ["iso", "img", "dmg", "bin", "cue", "mdf", "mds", "nrg", "vhd"]],
+  ["font", ["ttf", "otf", "woff", "woff2"]],
+  ["executable", ["exe", "msi", "app", "apk", "deb", "rpm", "pkg", "appimage", "bat", "cmd"]],
+];
+const KIND_OF = new Map(KIND_EXT.flatMap(([kind, exts]) => exts.map((ext) => [ext, kind] as const)));
+
+export const fileKind = (ext: string): FileKind => KIND_OF.get(ext) ?? (/^r\d\d$/.test(ext) ? "archive" : "other");
+
+export interface TreeDir {
+  kind: "dir";
+  name: string;
+  /** Folder path inside the torrent: the key that remembers it collapsed. */
+  path: string;
+  children: TreeNode[];
+  size: number;
+  /** 0–100, weighted by size. */
+  done: number;
+  /** Every file below, for folder-wide changes. */
+  indices: number[];
+  wanted: "all" | "some" | "none";
+}
+export type TreeNode = TreeDir | { kind: "file"; row: FileRow };
+
+/** Rows as folders and files: folders first (by name), files in the order given. */
+export function fileTree(rows: FileRow[]): TreeNode[] {
+  const root: TreeDir = { kind: "dir", name: "", path: "", children: [], size: 0, done: 0, indices: [], wanted: "none" };
+  for (const row of rows) {
+    const parts = row.path.split("/");
+    let dir = root;
+    for (const part of parts.slice(0, -1)) {
+      const path = dir.path ? `${dir.path}/${part}` : part;
+      let next = dir.children.find((c): c is TreeDir => c.kind === "dir" && c.path === path);
+      if (!next) {
+        next = { kind: "dir", name: part, path, children: [], size: 0, done: 0, indices: [], wanted: "none" };
+        dir.children.push(next);
+      }
+      dir = next;
+    }
+    dir.children.push({ kind: "file", row });
+  }
+  const byIndex = new Map(rows.map((r) => [r.index, r]));
+  const finish = (dir: TreeDir): TreeDir => {
+    const dirs = dir.children.filter((c): c is TreeDir => c.kind === "dir").map(finish).sort((a, b) => a.name.localeCompare(b.name));
+    const files = dir.children.filter((c) => c.kind === "file");
+    const leaves = [...dirs.flatMap((d) => d.indices.map((i) => byIndex.get(i)!)), ...files.map((f) => f.row)];
+    const size = leaves.reduce((n, r) => n + r.size, 0);
+    const wanted = leaves.filter((r) => r.priority !== "skip").length;
+    return {
+      ...dir,
+      children: [...dirs, ...files],
+      size,
+      done: size > 0 ? Math.round((leaves.reduce((n, r) => n + (r.size * r.done) / 100, 0) / size) * 1000) / 10 : 0,
+      indices: leaves.map((r) => r.index),
+      wanted: wanted === 0 ? "none" : wanted === leaves.length ? "all" : "some",
+    };
+  };
+  return finish(root).children;
+}
+
+/** The tree as visible lines: folders in `collapsed` hide what is inside them. */
+export function treeLines(nodes: TreeNode[], collapsed: Set<string>, depth = 0): { node: TreeNode; depth: number }[] {
+  return nodes.flatMap((node) => [
+    { node, depth },
+    ...(node.kind === "dir" && !collapsed.has(node.path) ? treeLines(node.children, collapsed, depth + 1) : []),
+  ]);
+}

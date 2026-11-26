@@ -50,6 +50,8 @@ pub struct Torrent {
     pub wanted_size: u64,
     /// User tags; engines leave it empty, the server fills it.
     pub tags: Vec<String>,
+    /// User category (one per torrent); engines leave it null, the server fills it.
+    pub category: Option<String>,
     /// Host of the torrent's first tracker; null when it has none (or is not known yet).
     pub tracker: Option<String>,
     pub priority: Priority,

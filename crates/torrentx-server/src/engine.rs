@@ -115,6 +115,11 @@ impl Engine {
         dispatch!(self, e => e.reannounce(id).await)
     }
 
+    /// Some(open) from the engine's reachability check; None when the check failed.
+    pub async fn port_test(&self) -> EngineResult<Option<bool>> {
+        dispatch!(self, e => e.port_test().await)
+    }
+
     pub async fn add_web_seed(&self, id: &str, url: &str) -> EngineResult<()> {
         dispatch!(self, e => e.add_web_seed(id, url).await)
     }
@@ -136,6 +141,10 @@ impl Engine {
     /// Ok(true) = restart the engine for the settings to take effect.
     pub async fn apply_settings(&self, tuning: &EngineTuning) -> EngineResult<bool> {
         dispatch!(self, e => e.apply_settings(tuning).await)
+    }
+
+    pub async fn dht_nodes(&self) -> Option<u64> {
+        dispatch!(self, e => e.dht_nodes().await)
     }
 
     pub async fn session_totals(&self) -> EngineResult<(u64, u64)> {

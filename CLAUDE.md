@@ -55,27 +55,30 @@ openspec/                   specs and change proposals
   `via: server`, plus added/completed `ServerEvent`s); decisions are a pure `plan()` with unit tests.
   rqbit verify/relocate = forget + re-add; rqbit rename = display-name override in `state.json`.
 - **Torrent id** = lowercase hex info-hash everywhere.
-- **One query language** (`packages/query`): `field:value`, `!`, `> < >= <=`, `a..b`, quoted phrases, `*`, implicit
+- **One query language** (`packages/query`): `field:value` (or the prefix form `:field value`), `!`, `> < >= <=`, `a..b`, quoted phrases, `*`, implicit
   AND, `AND`/`OR`, one level of `( )`, and `sort:` as a predicate. Tabs, the lens, the filter builder and column
   headers all produce query text; nothing else filters or orders the list. Parse errors carry
-  `{message, column, length, suggestion}`. `category:` and `done:` parse but match nothing (no source in the model).
+  `{message, column, length, suggestion}`. `done:` parses but matches nothing (no source in the model).
 - **Tabs are saved queries**: `{id, name, query, order, pinned, group}` in `state.json`, with `GRAMMAR_VERSION`. The
   server stores query text verbatim and never parses it; an unparseable tab shows an error badge and lists nothing.
   Built-in tabs (All, Downloading, Active, Seeding, Stalled) are seeded once; only `all` cannot be deleted. An empty
   `name` means "named by its query". Sidebar sections are derived in `lib/lens.ts` `sections()`: PINNED = `pinned`,
   AD-HOC = unnamed and ungrouped, SMART TABS = the rest.
 - **Tags** replace tab membership: `Torrent.tags` (trimmed, lowercase, unique; at most 32 of 64 chars), set with
-  `PUT /torrents/{id}/tags`, filled by the server in `decorate`. `Torrent.tracker` is the first tracker's host,
+  `PUT /torrents/{id}/tags`, filled by the server in `decorate`. `Torrent.category` (one, optional, case kept) works the same
+  via `PUT /torrents/{id}/category` `{category}`. Both are edited in `TagPicker` (row ⋯ menu, tags cell, hero tag line, ⌘L). `Torrent.tracker` is the first tracker's host,
   filled by the engines.
-- **Lens**: per-tab, in-memory query ANDed onto the tab query (`App.tsx` + `lib/lens.ts`). Switching tabs clears it
-  and keeps a session snapshot behind the `restore lens` pill. "Save as tab" is the only write path to the sidebar.
+- **Lens**: per-tab, in-memory query ANDed onto the tab query (`App.tsx` + `lib/lens.ts`). The filter bar shows the
+  tab query's chips first; editing them sets `Lens.scope` (an edited copy, never written to the tab). On a tab the user made (not
+  `BUILT_IN_TABS`), chip, builder and sort edits rewrite the tab query instead, ⌘Z restores it, and "Save as tab" is hidden. Switching tabs clears it
+  and keeps a session snapshot behind the `restore lens` pill. On built-in tabs "Save as tab" is the only write path to the sidebar.
 - **Addresses**: `#/tab/<id>` and `#/torrent/<id>/<section>` (`lib/route.ts`); browser back/forward move between
   views; an address never carries a lens; a stale tab or torrent address opens a tab with a notice.
-- **Detail page** (`components/detail/`): opened with Enter or double-click (a click only selects). The list and
+- **Detail page** (`components/detail/`): opened with Enter or a plain click (⌘-click / ⇧-click select). The list and
   its filter bar stay mounted but hidden, so ⌘[ / the breadcrumb return to the same scroll and lens. Sections
   Overview, Files, Peers, Trackers, Web seeds, Pieces each have a mini filter bar in the same query language
   with their own scope (`FILE_SCOPE`, `PEER_SCOPE`, `TRACKER_SCOPE`, `WEBSEED_SCOPE` in `packages/query`; rows
-  built in `lib/detail.ts`); a section lens is in memory and cleared when the section changes. Files offers a
+  built in `lib/detail.ts`); a section lens is in memory and cleared when the section changes. Files defaults to a folder tree (`fileTree` in `lib/detail.ts`, icons by `fileKind`) and offers a
   media view when `lib/media.ts` finds two or more episodes of one show; titles and quality come only from file
   names. Detail endpoints: `POST /torrents/{id}/reannounce`, `/web-seeds`, `/files/{index}/open|reveal`
   (loopback only, like reveal); capability keys `reannounce`, `webSeeds`, `addWebSeed`, `openFile`.
@@ -159,7 +162,7 @@ TORRENTX_TEST_TRANSMISSION=http://127.0.0.1:9091/transmission/rpc \
 
 ## Known Gaps
 
-- The query fields `category:` and `done:` have no data source yet.
+- The query field `done:` has no data source yet.
 - No list virtualization — fine for hundreds of torrents, revisit at thousands.
 - `GET /files` returns every file of every torrent in one response (~120 B per file); page it or index server-side if
   libraries reach tens of thousands of files.

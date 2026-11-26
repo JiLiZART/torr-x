@@ -15,7 +15,8 @@ interface FilterBuilderProps {
   values: Partial<Record<Field, string[]>>;
   onApply: (query: string) => void;
   /** Applies, then opens the save confirmation. */
-  onSaveAsTab: (query: string) => void;
+  /** Null on a tab the user made: Apply already saves it. */
+  onSaveAsTab: ((query: string) => void) | null;
   onClose: () => void;
 }
 
@@ -216,11 +217,13 @@ export function FilterBuilder({ query, tabName, all, values, onApply, onSaveAsTa
           {t("builder.reset")}
         </button>
         <span className="flex-1" />
+        {onSaveAsTab && (
         <button type="button" disabled={!!error || !text} onClick={() => onSaveAsTab(text)} className="flex items-center gap-[6px] rounded-[8px] border border-ui-border-strong px-[12px] py-[8px] text-[12px] font-medium text-ui-text-2 hover:text-ui-text disabled:opacity-40">
           <Save size={12} /> {t("filter.saveAsTab")}
         </button>
+        )}
         <button type="button" disabled={!!error} onClick={() => onApply(text)} className="flex items-center gap-[6px] rounded-[8px] bg-ui-accent px-[14px] py-[8px] text-[12px] font-semibold text-ui-bg hover:opacity-90 disabled:opacity-40">
-          {t("builder.apply")} <kbd className="font-code text-[10px] font-normal">⏎</kbd>
+          {onSaveAsTab ? t("builder.apply") : t("save.confirm")} <kbd className="font-code text-[10px] font-normal">⏎</kbd>
         </button>
       </div>
     </div>
