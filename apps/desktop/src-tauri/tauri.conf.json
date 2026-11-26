@@ -4,7 +4,8 @@
   "version": "0.1.0",
   "identifier": "org.torrenthx.app",
   "build": {
-    "frontendDist": "../src"
+    "frontendDist": "../src",
+    "beforeDevCommand": "pnpm --filter @torrentx/web dev"
   },
   "app": {
     "windows": [],

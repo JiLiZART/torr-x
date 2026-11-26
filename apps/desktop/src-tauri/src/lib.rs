@@ -105,9 +105,14 @@ async fn connect(app: &AppHandle, config_path: &Path) -> Result<(String, String)
 /// Transparent on macOS/Linux so the page can round its corners; Windows 11 rounds
 /// undecorated windows itself and transparency there drops the shadow.
 fn open_window(app: &AppHandle, url: &str, visible: bool) -> tauri::Result<()> {
+    #[allow(unused_mut)]
+    let mut url: tauri::Url = url.parse().expect("server URL is valid");
+    // Dev: load the UI from Vite (HMR; it proxies /api to the server) but keep the path, so a handoff login still works.
     #[cfg(debug_assertions)]
-    let url = std::env::var("TORRENTX_UI_DEV_URL").unwrap_or_else(|_| url.to_string());
-    let url = url.parse().expect("server URL is valid");
+    if let Some(dev) = std::env::var("TORRENTX_UI_DEV_URL").ok().and_then(|d| d.parse::<tauri::Url>().ok()) {
+        let _ = url.set_host(dev.host_str());
+        let _ = url.set_port(dev.port());
+    }
     let builder = WebviewWindowBuilder::new(app, WINDOW, WebviewUrl::External(url))
         .title("TorrentX")
         .decorations(false)

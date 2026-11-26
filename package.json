@@ -7,7 +7,7 @@
   "scripts": {
     "dev:web": "pnpm --filter @torrentx/web dev",
     "dev:server": "cargo run -p torrentx-server --",
-    "dev:desktop": "pnpm --filter @torrentx/desktop tauri dev",
+    "dev:desktop": "TORRENTX_UI_DEV_URL=http://localhost:1420 pnpm --filter @torrentx/desktop tauri dev",
     "build:web": "pnpm --filter @torrentx/web build",
     "build:server": "pnpm build:web && ./scripts/fetch-geoip.sh && cargo build --release -p torrentx-server --features geoip",
     "build:desktop": "pnpm build:web && ./scripts/fetch-geoip.sh && pnpm --filter @torrentx/desktop tauri build --features geoip",
