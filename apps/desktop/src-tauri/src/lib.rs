@@ -298,6 +298,12 @@ pub fn run() {
         .expect("error while building TorrentX");
 
     app.run(|app, event| {
+        // A click on the Dock icon: the window is only hidden when closed, so bring it back.
+        #[cfg(target_os = "macos")]
+        if let RunEvent::Reopen { .. } = event {
+            show_window(app);
+            return;
+        }
         // Cmd+Q / OS logout: stop the server gracefully before exiting.
         if let RunEvent::ExitRequested { api, .. } = event
             && app.state::<Server>().0.lock().unwrap().is_some()
