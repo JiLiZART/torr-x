@@ -29,8 +29,8 @@ crates/torrentx-core        shared model (Torrent, TorrentDetails, Peer, Preview
 crates/torrentx-rqbit       RqbitEngine (librqbit Session with JSON persistence + fastresume)
 crates/torrentx-transmission TransmissionEngine (RPC, 409 session-id retry, status mapping)
 crates/torrentx-server      lib: config (+v1 migration), Engine enum, api router, auth + guards, store
-                            (state.json v3: saved-query tabs, tags, renames, policy; migrates v2 membership
-                            tabs), policy loop, stats, geoip, ui; bin: torrentx-server
+                            (state.json v3: saved-query tabs, tags, renames, policy, covers; migrates v2
+                            membership tabs), policy loop, covers, stats, geoip, ui; bin: torrentx-server
 packages/api-client         @torrentx/api-client: TS types + fetch wrapper (mirrors Rust model)
 packages/query              @torrentx/query: the query language, pure TS with no runtime deps (parse, evaluate,
                             compare, format, chips, complete, ParseError)
@@ -80,13 +80,27 @@ openspec/                   specs and change proposals
   with their own scope (`FILE_SCOPE`, `PEER_SCOPE`, `TRACKER_SCOPE`, `WEBSEED_SCOPE` in `packages/query`; rows
   built in `lib/detail.ts`); a section lens is in memory and cleared when the section changes. Files defaults to a folder tree (`fileTree` in `lib/detail.ts`, icons by `fileKind`) and offers a
   media view when `lib/media.ts` finds two or more episodes of one show; titles and quality come only from file
-  names. Detail endpoints: `POST /torrents/{id}/reannounce`, `/web-seeds`, `/files/{index}/open|reveal`
+  names (the one exception is the opt-in cover lookup below, which fetches images, never titles). Detail endpoints: `POST /torrents/{id}/reannounce`, `/web-seeds`, `/files/{index}/open|reveal`
   (loopback only, like reveal); capability keys `reannounce`, `webSeeds`, `addWebSeed`, `openFile`, `stream`.
 - **Play / streaming**: `POST /torrents/{id}/files/{index}/play` (loopback) opens a finished file from disk, or opens a stream URL in
   `preferences.player` (else the first of IINA/VLC/mpv found). `POST …/stream` returns `/api/v1/stream/<token>/<name>`: the
   token (in memory, 6 h sliding, cleared with sessions) is the only credential, so external players need no login; the route
   serves HTTP ranges from librqbit's `FileStream` (Transmission: unsupported). Issuing a link resumes the torrent and wants the file.
   Remote browsers copy the link instead. The web UI never plays video itself: MKV/HEVC/FLAC need a real player.
+- **Covers** (`crates/torrentx-server/src/covers.rs`): `Torrent.cover` / `FileInfo.cover` are opaque version strings or
+  `null`; the UI asks for `/torrents/{id}/cover?v=<version>` (and `/files/{index}/cover`), answered with an immutable
+  cache header. Source order: an image file of the torrent (`pick_cover`, WebTorrent Desktop's rules: root `poster.*`,
+  album-art names for audio, largest image for image torrents; set by the policy tick once the file is complete) → an
+  online poster (only with the lookup on) → a video frame. Frames are captured in the browser (`lib/cover.ts`: hidden
+  `<video>` on the stream link at `min((duration || 600) * 0.03, 60)` s, never for a paused torrent or a skipped file; the hero,
+  on-screen list rows (`useRowCover`) and media view rows trigger it) and uploaded with
+  `PUT /torrents/{id}/files/{index}/cover` (JPEG/PNG/WebP, ≤ 512 KB); the server has no image or video decoder and only
+  checks leading bytes (`sniff`; SVG is never served). Records are in `state.json` `covers`, cached images in
+  `<data_dir>/covers/<id>/`; `DELETE` marks a cover removed so no automatic source sets it again. The lookup
+  (`POST /torrents/{id}/cover/lookup`, `[covers]` in the config, off by default, the user's own TMDB key, never
+  returned) sends only the title, year, season and episode the UI parsed (`parseTitle`), once per torrent or file.
+- **File paths** (`FileInfo.path`) are relative to `Torrent.save_path` on both engines (rqbit adds the torrent's
+  subfolder that `split_output` takes out of the save path).
 - **Engine slot** (`AppState.engine`) is `Result<Arc<Engine>, String>`; Err → API `engine_unavailable` (503).
   Settings changes to the engine restart it live; bind/port changes return `restartRequired`.
 - **Security**: `auth::guard` enforces a Host allowlist when bound to loopback (anti DNS-rebinding) and rejects

@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { CheckCircle, Disc3, Edit3, Ellipsis, FileText, Film, Folder, FolderInput, FolderOpen, Link2, Pause, Play, Plus, Save, Tag, Trash, Trash2 } from "lucide-react";
-import type { TorrentDetails } from "@torrentx/api-client";
+import { CheckCircle, Disc3, Edit3, Ellipsis, FileText, Film, Folder, FolderInput, FolderOpen, ImageOff, Link2, Pause, Play, Plus, Save, Tag, Trash, Trash2 } from "lucide-react";
+import { api, type TorrentDetails } from "@torrentx/api-client";
 import { useUi } from "../../lib/context";
 import { age, bytes, duration, percent, rate, rowState, STATE_STYLE } from "../../lib/format";
 import { COMMAND_FOR_ACTION, type TorrentAction } from "../../lib/commands";
@@ -50,7 +50,14 @@ export function Hero({ d, history, onAction }: HeroProps) {
   };
 
   return (
-    <section className="flex shrink-0 flex-col gap-[14px] border-b border-ui-border bg-ui-surface px-[18px] py-[16px]">
+    <section className="relative isolate flex shrink-0 flex-col gap-[14px] border-b border-ui-border bg-ui-surface px-[18px] py-[16px]">
+      {d.cover && (
+        // The cover, dimmed with the surface token so text keeps its contrast in both themes.
+        <div aria-hidden className="absolute inset-0 -z-10 overflow-hidden">
+          <img src={api.coverUrl(d.id, d.cover)} alt="" className="h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-r from-ui-surface via-ui-surface/90 to-ui-surface/75" />
+        </div>
+      )}
       <div className="flex items-center gap-[14px]">
         <span className="flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-[12px] border border-ui-border bg-ui-surface-2 text-ui-text-2">
           <Icon size={24} />
@@ -117,6 +124,7 @@ export function Hero({ d, history, onAction }: HeroProps) {
                       ["relocate", FolderInput, gate("relocate")],
                       ["torrentFile", Save, gate("torrentFile")],
                       ["magnet", Link2, undefined],
+                      ...(d.cover ? [["removeCover", ImageOff, undefined] as const] : []),
                       ["erase", Trash, undefined],
                     ] as const
                   ).map(([action, ItemIcon, hint]) => (

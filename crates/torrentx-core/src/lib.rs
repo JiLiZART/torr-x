@@ -55,6 +55,8 @@ pub struct Torrent {
     /// Host of the torrent's first tracker; null when it has none (or is not known yet).
     pub tracker: Option<String>,
     pub priority: Priority,
+    /// Cover version (opaque, changes with the image); engines leave it null, the server fills it.
+    pub cover: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -66,6 +68,8 @@ pub struct FileInfo {
     pub progress: f64,
     pub wanted: bool,
     pub priority: Priority,
+    /// Cover version, like `Torrent.cover`.
+    pub cover: Option<String>,
 }
 
 /// One file of one torrent, flattened for searching across torrents (`GET /files`).

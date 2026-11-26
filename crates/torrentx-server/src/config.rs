@@ -18,6 +18,24 @@ pub struct Config {
     pub downloads: DownloadSettings,
     pub advanced: AdvancedSettings,
     pub preferences: Preferences,
+    /// Left out of the file while unused, so an older binary still reads it.
+    #[serde(skip_serializing_if = "CoversConfig::is_default")]
+    pub covers: CoversConfig,
+}
+
+/// Online cover lookup (TMDB); off unless the user turns it on.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(default, deny_unknown_fields)]
+pub struct CoversConfig {
+    pub online_lookup: bool,
+    /// The user's own key, plaintext like the Transmission password (file mode 0600).
+    pub api_key: String,
+}
+
+impl CoversConfig {
+    fn is_default(&self) -> bool {
+        *self == Self::default()
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]

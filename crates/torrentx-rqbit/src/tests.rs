@@ -128,7 +128,9 @@ async fn fixture_fields_ops_relocate_verify() {
     assert_eq!(pieces.bitfield[0] & 0b1110_0000, 0b1110_0000);
 
     // File skip; priority is unsupported.
-    let b = d.files.iter().find(|f| f.path == "b.txt").unwrap().index;
+    // File paths are relative to the save path: joined, they are the files on disk.
+    assert!(d.files.iter().all(|f| Path::new(&d.torrent.save_path).join(&f.path).is_file()), "{:?}", d.files);
+    let b = d.files.iter().find(|f| f.path == "fx/b.txt").unwrap().index;
     e.set_files(&id, &[b], Some(false), None).await.unwrap();
     let d = e.get(&id).await.unwrap();
     assert!(!d.files[b as usize].wanted);

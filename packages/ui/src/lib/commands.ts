@@ -80,6 +80,7 @@ export const COMMANDS: CommandDef[] = [
   def("sel.rename", "list", "selection", "Edit3"),
   def("sel.torrentFile", "list", "selection", "Save"),
   def("sel.magnet", "list", "selection", "Link2"),
+  def("sel.removeCover", "list", "selection", "ImageOff"),
 
   def("nav.back", "navigation", "global", "ChevronLeft", ["Mod+["]),
   def("nav.forward", "navigation", "global", "ChevronRight", ["Mod+]"]),
@@ -106,7 +107,8 @@ export type TorrentAction =
   | "torrentFile"
   | "magnet"
   | "verify"
-  | "tags";
+  | "tags"
+  | "removeCover";
 
 /** Every row action is a registered selection command. */
 export const COMMAND_FOR_ACTION: Record<TorrentAction, string> = {
@@ -121,6 +123,7 @@ export const COMMAND_FOR_ACTION: Record<TorrentAction, string> = {
   magnet: "sel.magnet",
   verify: "sel.verify",
   tags: "sel.tags",
+  removeCover: "sel.removeCover",
 };
 
 /** What App supplies per command: how to run it, and why it cannot run right now. */

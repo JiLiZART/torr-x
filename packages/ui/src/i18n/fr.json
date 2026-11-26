@@ -778,5 +778,17 @@
   "columns.left": "Déplacer {column} à gauche",
   "columns.right": "Déplacer {column} à droite",
   "columns.hint": "Glissez pour réordonner, glissez une bordure d’en-tête pour redimensionner. Les fenêtres étroites masquent certaines colonnes.",
-  "columns.resize": "Glisser pour redimensionner · double-clic pour réinitialiser"
+  "columns.resize": "Glisser pour redimensionner · double-clic pour réinitialiser",
+  "action.removeCover": "Retirer la jaquette",
+  "cmd.sel.removeCover": "Retirer la jaquette du torrent sélectionné",
+  "cmd.needCover": "ce torrent n'a pas de jaquette",
+  "set.group.covers": "Jaquettes",
+  "set.group.coversCaption": "tirées des fichiers du torrent, sauf si vous activez la recherche",
+  "set.coverLookup": "Chercher les jaquettes en ligne",
+  "set.coverLookup.desc": "Envoie le titre, l'année, le numéro de saison et d'épisode à TMDB pour trouver une affiche. Les noms de torrents, les noms de fichiers et les info-hash ne sont jamais envoyés.",
+  "set.coverLookup.needKey": "Saisissez d'abord une clé API",
+  "set.coverApiKey": "Clé API TMDB",
+  "set.coverApiKey.desc": "Votre propre clé de themoviedb.org. Conservée sur le serveur et jamais réaffichée.",
+  "set.coverApiKey.stored": "(clé enregistrée)",
+  "set.coverAttribution": "Ce produit utilise l'API TMDB mais n'est ni approuvé ni certifié par TMDB."
 }

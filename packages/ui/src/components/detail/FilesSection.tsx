@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactElement } from "react";
-import { Cast, ChevronDown, ChevronRight, ClipboardCopy, Eye, ExternalLink, Film, Folder, FolderOpen, FolderTree, HardDriveDownload, LayoutList, Library, Play, Tv } from "lucide-react";
+import { Cast, ChevronDown, ChevronRight, ClipboardCopy, Eye, ExternalLink, Folder, FolderOpen, FolderTree, HardDriveDownload, LayoutList, Library, Play, Tv } from "lucide-react";
 import { api, type FileInfo, type TorrentDetails } from "@torrentx/api-client";
 import { compare, evaluate, FILE_PRIORITIES, FILE_SCOPE, parse, sortKeys } from "@torrentx/query";
 import { useUi } from "../../lib/context";
@@ -8,6 +8,7 @@ import { clickSort } from "../../lib/lens";
 import { FILE_ACTIONS, fileActionBlock, fileClass, fileRow, fileTree, joinPath, treeLines, type FileAction, type FilePriorityWord, type FileRow, type TreeDir } from "../../lib/detail";
 import { FileIcon } from "./FileIcon";
 import { episodeCode, episodeState, mediaEpisodes, type EpisodeFile } from "../../lib/media";
+import { EpisodeThumb } from "./covers";
 import { MiniFilterBar } from "./MiniFilterBar";
 import { MiniBar, SectionEmpty, TableHeader } from "./Table";
 
@@ -426,9 +427,7 @@ function MediaView({ d, episodes, shown, query, actionButtons, canStream, play, 
               id={`ep-${e.file.index}`}
               className={`flex items-center gap-[12px] rounded-[10px] border px-[10px] py-[9px] ${isFeatured ? "border-ui-accent-line bg-ui-surface-2" : "border-ui-border"}`}
             >
-              <span className="flex h-[44px] w-[76px] shrink-0 items-center justify-center rounded-[7px] bg-ui-surface-3 text-ui-text-3">
-                <Film size={18} />
-              </span>
+              <EpisodeThumb d={d} episode={e} />
               <div className="flex min-w-0 flex-1 flex-col gap-[4px]">
                 <div className="flex items-center gap-[8px]">
                   <span className="rounded-[5px] bg-ui-surface-3 px-[6px] py-[2px] font-code text-[10px] text-ui-text-2">{episodeCode(e)}</span>
