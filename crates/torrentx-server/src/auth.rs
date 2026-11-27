@@ -97,28 +97,34 @@ impl Sessions {
         }
     }
 
-    /// Seconds left while `ip` is locked out.
-    pub fn locked(&self, ip: IpAddr) -> Option<u64> {
-        let map = self.attempts.lock().unwrap();
-        let until = map.get(&ip)?.1?;
-        let left = until.saturating_duration_since(Instant::now());
-        (!left.is_zero()).then(|| left.as_secs().max(1))
-    }
-
-    /// Counts a failure; returns attempts left (0 = now locked out).
-    pub fn fail(&self, ip: IpAddr) -> u32 {
+    /// Reserves an attempt for `ip` before the (slow) password check, so parallel requests
+    /// cannot run more than `MAX_ATTEMPTS` checks; the last reservation starts the lockout.
+    /// Err = seconds left while locked out.
+    pub fn begin(&self, ip: IpAddr) -> Result<(), u64> {
         let mut map = self.attempts.lock().unwrap();
         let now = Instant::now();
+        if map.len() > 10_000 {
+            // Bounds memory under many source addresses; drops counts not yet at the limit.
+            map.retain(|_, e| e.1.is_some_and(|until| until > now));
+        }
         let e = map.entry(ip).or_insert((0, None));
-        if e.1.is_some_and(|until| until <= now) {
+        if let Some(until) = e.1 {
+            if until > now {
+                return Err(until.saturating_duration_since(now).as_secs().max(1));
+            }
             *e = (0, None);
         }
         e.0 += 1;
         if e.0 >= MAX_ATTEMPTS {
             e.1 = Some(now + LOCKOUT);
-            return 0;
         }
-        MAX_ATTEMPTS - e.0
+        Ok(())
+    }
+
+    /// The reserved attempt failed; returns attempts left (0 = locked out).
+    pub fn fail(&self, ip: IpAddr) -> u32 {
+        let map = self.attempts.lock().unwrap();
+        MAX_ATTEMPTS.saturating_sub(map.get(&ip).map_or(0, |e| e.0))
     }
 
     pub fn succeed(&self, ip: IpAddr) {
@@ -185,8 +191,13 @@ fn cookie_for(token: &str, remember: bool) -> HeaderValue {
 
 /// The client address; tests without `ConnectInfo` count as one unknown address.
 fn client_ip(ext: &axum::http::Extensions) -> IpAddr {
-    ext.get::<ConnectInfo<SocketAddr>>()
-        .map_or(IpAddr::V4(Ipv4Addr::UNSPECIFIED), |ConnectInfo(a)| a.ip())
+    let ip = ext.get::<ConnectInfo<SocketAddr>>().map_or(IpAddr::V4(Ipv4Addr::UNSPECIFIED), |ConnectInfo(a)| a.ip());
+    // One IPv6 host usually owns a whole /64: key the lockout by it so address rotation does not reset the count.
+    match ip {
+        IpAddr::V6(v6) if v6.to_ipv4_mapped().is_none() => IpAddr::V6((u128::from(v6) & !((1u128 << 64) - 1)).into()),
+        IpAddr::V6(v6) => IpAddr::V4(v6.to_ipv4_mapped().unwrap()),
+        v4 => v4,
+    }
 }
 
 fn locked_out(secs: u64) -> Response {
@@ -259,7 +270,7 @@ pub async fn require_auth(
     }
     if let Some((user, pass)) = basic_credentials(req.headers()) {
         let ip = client_ip(req.extensions());
-        if let Some(secs) = state.sessions.locked(ip) {
+        if let Err(secs) = state.sessions.begin(ip) {
             return locked_out(secs);
         }
         if credentials_ok(&state, Some(user), pass).await {
@@ -336,7 +347,7 @@ pub async fn login(State(state): State<Arc<AppState>>, ext: axum::http::Extensio
     }
     let ip = client_ip(&ext);
     // Locked out: the credentials are not even checked.
-    if let Some(secs) = state.sessions.locked(ip) {
+    if let Err(secs) = state.sessions.begin(ip) {
         return locked_out(secs);
     }
     if !credentials_ok(&state, body.username, body.password).await {
@@ -405,12 +416,16 @@ mod tests {
     fn five_failures_lock_one_address() {
         let s = Sessions::default();
         let (a, b): (IpAddr, IpAddr) = ("10.0.0.1".parse().unwrap(), "10.0.0.2".parse().unwrap());
-        assert_eq!((1..=5).map(|_| s.fail(a)).collect::<Vec<_>>(), [4, 3, 2, 1, 0]);
-        assert!(s.locked(a).is_some_and(|secs| secs <= 60));
-        assert_eq!(s.locked(b), None);
+        let tries: Vec<u32> = (1..=5).map(|_| s.begin(a).map(|()| s.fail(a)).unwrap()).collect();
+        assert_eq!(tries, [4, 3, 2, 1, 0]);
+        assert!(s.begin(a).is_err_and(|secs| secs <= 60));
+        assert_eq!(s.begin(b), Ok(()));
         s.succeed(a);
-        assert_eq!(s.locked(a), None);
-        assert_eq!(s.fail(a), 4);
+        assert_eq!(s.begin(a).map(|()| s.fail(a)), Ok(4));
+        // Checks still in flight count: a sixth parallel attempt is refused before any fails.
+        let c: IpAddr = "10.0.0.3".parse().unwrap();
+        assert!((1..=5).all(|_| s.begin(c).is_ok()));
+        assert!(s.begin(c).is_err());
     }
 
     #[test]
