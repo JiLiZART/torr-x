@@ -199,7 +199,7 @@ export function TorrentRow({ torrent, isSelected, isCursor, onClick, onDoubleCli
       ref={rowRef}
       data-row={torrent.id}
       aria-selected={isSelected}
-      className={`group relative isolate flex w-full cursor-pointer select-none items-center gap-[10px] rounded-[10px] border px-[10px] ${compact ? "py-[5px]" : "py-[9px]"} ${isSelected ? "bg-ui-surface-2" : "hover:bg-ui-surface"} ${isCursor ? "border-ui-border-strong" : isSelected ? "border-ui-border" : "border-transparent"}`}
+      className={`group relative isolate ${menuOpen ? "z-20" : ""} flex w-full cursor-pointer select-none items-center gap-[10px] rounded-[10px] border px-[10px] ${compact ? "py-[5px]" : "py-[9px]"} ${isSelected ? "bg-ui-surface-2" : "hover:bg-ui-surface"} ${isCursor ? "border-ui-border-strong" : isSelected ? "border-ui-border" : "border-transparent"}`}
       onClick={onClick}
       onDoubleClick={onDoubleClick}
     >
