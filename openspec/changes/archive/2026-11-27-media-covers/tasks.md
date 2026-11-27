@@ -56,7 +56,7 @@
       `pnpm test` and `cargo test -p torrentx-server` pass
 - [x] 6.2 `TorrentRow`: cover background dimmed with the row's state token; `useRowCover` gets a cover for
       on-screen rows; verify `pnpm lint`, `pnpm typecheck` pass
-- [ ] 6.3 Verify in `pnpm dev:web` that row text keeps its contrast in dark and light, plain, hovered and
+- [x] 6.3 Verify in `pnpm dev:web` that row text keeps its contrast in dark and light, plain, hovered and
       selected, and that a seeding MP4 torrent gets its row cover without opening it
 
 ## 7. Frames for files `<video>` rejects
@@ -66,4 +66,4 @@
 - [x] 7.2 `POST /torrents/{id}/files/{index}/cover/capture`: the server's own `ffmpeg` (found on `PATH` or the
       usual folders, never bundled) takes the frame of a complete file; `unsupported` without it; the UI uses
       it after the browser fails and for paused torrents
-- [ ] 7.3 Verify `decodeFrame` in the desktop window (WebKit) on MKV
+- [x] 7.3 Verify `decodeFrame` in the desktop window (WebKit) on MKV
