@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { isNewer } from "./format";
 
-export const RELEASES_URL = "https://api.github.com/repos/JiLiZART/torr-x/releases/latest";
+export const RELEASES_URL = "https://api.github.com/repos/torrentx/torrentx/releases/latest";
 
 const DAY_MS = 86_400_000;
 const CHECKED_AT = "tx.update.checkedAt";
