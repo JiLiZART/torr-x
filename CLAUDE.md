@@ -86,7 +86,10 @@ openspec/                   specs and change proposals
   `preferences.player` (else the first of IINA/VLC/mpv found). `POST …/stream` returns `/api/v1/stream/<token>/<name>`: the
   token (in memory, 6 h sliding, cleared with sessions) is the only credential, so external players need no login; the route
   serves HTTP ranges from librqbit's `FileStream` (Transmission: unsupported). Issuing a link resumes the torrent and wants the file.
-  Remote browsers copy the link instead. The web UI never plays video itself: MKV/HEVC/FLAC need a real player.
+  One flow (`detail/usePlayback.tsx`) serves the hero Play button (largest video file), the featured episode and the file
+  actions: mp4/m4v/webm/mov (`INLINE_EXT`) play in the built-in overlay (`detail/Player.tsx`, `<video>` on the stream link,
+  decode errors offer the link or the external player); other formats (MKV/HEVC/FLAC) go to the external player, or remote
+  browsers copy the link. An unfinished file can start once `headNeed` (2% or 8 MiB of the file) is in.
 - **Covers** (`crates/torrentx-server/src/covers.rs`): `Torrent.cover` / `FileInfo.cover` are opaque version strings or
   `null`; the UI asks for `/torrents/{id}/cover?v=<version>` (and `/files/{index}/cover`), answered with an immutable
   cache header. Source order: an image file of the torrent (`pick_cover`, WebTorrent Desktop's rules: root `poster.*`,
@@ -107,7 +110,10 @@ openspec/                   specs and change proposals
   Settings changes to the engine restart it live; bind/port changes return `restartRequired`.
 - **Security**: `auth::guard` enforces a Host allowlist when bound to loopback (anti DNS-rebinding) and rejects
   POST/PUT/DELETE whose `Origin` ≠ Host (anti CSRF), even with auth off. No CORS headers. Auth (off by default)
-  = session cookie (`tx_session`, in-memory) or HTTP Basic. Passwords never returned by `GET /settings`.
+  = session cookie (`tx_session`, in-memory) or HTTP Basic. Passwords never returned by `GET /settings`. Sign-in is
+  password only (`username` optional); "remember" = 30 d persistent cookie, else 12 h browser-session cookie. 5 failures
+  from one address → 60 s of 429 `locked_out` (`retryAfterSecs`) for login and Basic; valid cookies keep working.
+  Lost password: `torrentx-server auth reset` (refuses a non-loopback bind without `--force`).
 - **Desktop**: frameless window (`decorations(false)`); the window dots (sidebar head, or the top bar while the
   sidebar is collapsed) render and call `@tauri-apps/api/window` only when `window.__TAURI_INTERNALS__` exists, and `capabilities/window.json` grants just window ops (plus
   is-maximized/fullscreen and resize events) to the loopback server origin. Rounded corners: the window is

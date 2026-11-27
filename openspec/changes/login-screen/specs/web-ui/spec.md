@@ -45,7 +45,7 @@ Layout: a browser-chrome note above the card shows the origin and, over plain HT
 the warning "not encrypted — put it behind a reverse proxy for remote access". The card shows the logo, the
 title "Sign in", "This TorrentX instance requires a password for the web UI.", a password field with show/hide,
 the inline error line with a red field border, the remember checkbox, the Sign in action with ⏎, and the line
-"Lost the password? Reset it from the host: torrentx auth reset". The footer notes that the desktop app signs
+"Lost the password? Reset it from the host: torrentx-server auth reset". The footer notes that the desktop app signs
 itself in with a one-time handoff token and never shows this screen.
 
 #### Scenario: Plain HTTP notice

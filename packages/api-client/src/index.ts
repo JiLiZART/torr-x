@@ -317,6 +317,7 @@ export type ErrorKind =
   | "duplicate"
   | "engine_unavailable"
   | "unauthorized"
+  | "locked_out"
   | "forbidden"
   | "unsupported"
   | "internal"
@@ -327,6 +328,8 @@ export class ApiError extends Error {
     readonly kind: ErrorKind,
     message: string,
     readonly status: number,
+    /** Sign-in: wrong password → attempts left before a lockout; `locked_out` → seconds until it ends. */
+    readonly extra: { attemptsLeft?: number; retryAfterSecs?: number } = {},
   ) {
     super(message);
     this.name = "ApiError";
@@ -353,7 +356,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   const data = await res.json().catch(() => null);
   if (!res.ok) {
     const err = data?.error;
-    throw new ApiError(err?.kind ?? "internal", err?.message ?? res.statusText, res.status);
+    throw new ApiError(err?.kind ?? "internal", err?.message ?? res.statusText, res.status, { attemptsLeft: err?.attemptsLeft, retryAfterSecs: err?.retryAfterSecs });
   }
   return data as T;
 }
@@ -444,7 +447,7 @@ export const api = {
   testTransmission: (t: TransmissionSettings) => request<void>("POST", "/transmission/test", t),
   portTest: () => request<{ open: boolean | null }>("POST", "/network/port-test"),
 
-  login: (username: string, password: string) =>
-    request<void>("POST", "/auth/login", { username, password }),
+  /** The server has one user: the sign-in screen sends only the password. `remember` = a 30-day cookie. */
+  login: (password: string, remember: boolean) => request<void>("POST", "/auth/login", { password, remember }),
   logout: () => request<void>("POST", "/auth/logout"),
 };

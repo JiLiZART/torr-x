@@ -63,6 +63,13 @@ async function downloadTorrentFile(t: Torrent) {
 export function App() {
   const [health, setHealth] = useState<Health | null>(null);
   const [needsLogin, setNeedsLogin] = useState(false);
+  // Log out from this window: the sign-in screen then says nothing about an expired session.
+  const [loggedOut, setLoggedOut] = useState(false);
+  const signOut = () =>
+    void api.logout().finally(() => {
+      setLoggedOut(true);
+      setNeedsLogin(true);
+    });
   const [notice, setNotice] = useState<string | null>(null);
   const { view, tabId, navigate, openTorrent, openSettings, setLeaveGuard } = useRoute();
   const detailView = view.kind === "torrent" ? view : null;
@@ -485,7 +492,7 @@ export function App() {
     "terminal.toggle": handler(() => setTerminalOpen((open) => !open)),
     "density.toggle": handler(() => toggleDensity()),
     "columns.edit": handler(() => setColumnsOpen(true)),
-    "auth.logout": { run: () => void api.logout().finally(() => setNeedsLogin(true)), unavailable: !health?.authRequired },
+    "auth.logout": { run: () => signOut(), unavailable: !health?.authRequired },
   };
   const dialogOpen = palette !== null || sheetOpen || !!removing || !!prompt;
   useKeymap(COMMANDS, handlers, !needsLogin && !dialogOpen, DESKTOP);
@@ -574,7 +581,10 @@ export function App() {
     return (
       <UiContext.Provider value={ui}>
         <Login
+          expired={!loggedOut && torrents.data != null}
+          version={health?.version}
           onLoggedIn={() => {
+            setLoggedOut(false);
             setNeedsLogin(false);
             void refreshHealth();
           }}
@@ -643,7 +653,7 @@ export function App() {
             onToggleTerminal={() => setTerminalOpen(!terminalOpen)}
             onOpenSettings={() => openSettingsPage()}
             onLogout={
-              health?.authRequired ? () => void api.logout().finally(() => setNeedsLogin(true)) : undefined
+              health?.authRequired ? signOut : undefined
             }
           />
         }

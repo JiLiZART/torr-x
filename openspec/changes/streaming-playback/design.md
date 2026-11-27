@@ -1,54 +1,45 @@
 ## Context
 
-- HTML reference (HTML + Tailwind export of the canvas frames, in `pen/nodes/`): `detail-view-media-mode.html`
-  (10, files in media mode). Read it for layout, spacing and copy; each element carries its canvas name in
-  `data-pencil-name`. Colors there are resolved hex values: map them back to theme tokens, never copy the hex.
-- Boards: THE DAY stop 05, VERDICT 03 ("our engine makes streaming free"), STRUCTURE move 3 ("put the play
-  button on the progress bar"), REQUIREMENTS R6 (P2), UC6.
-- rqbit 9 serves seekable HTTP per file (`/ torrents/{id}/stream/{index}` style endpoint on its own HTTP
-  listener) and downloads sequentially by default — the head of the file arrives first, so early playback
-  works without any piece-order control.
-- `torrent-detail-screen` (pending) gives the hero a segmented progress bar, media mode with episode rows, and
-  format-aware file actions; `adopt-magic-patterns-ui` (pending) defines the capability matrix and the
-  "not supported by <engine>" hint.
-- Auth: session cookie or Basic on the server origin; the rqbit listener is a different port, loopback-only,
-  and must not be handed to the browser directly (remote users can't reach it, and it bypasses server auth).
+- HTML reference: `pen/nodes/detail-view-media-mode.html` (files in media mode).
+- Boards: THE DAY stop 05, VERDICT 03, STRUCTURE move 3 ("put the play button on the progress bar"),
+  REQUIREMENTS R6, UC6.
+- Shipped in `f905b64` (user decisions: external player; short-lived token in the URL): stream links, the
+  public range route over librqbit `ManagedTorrent::stream`, the loopback play endpoint, `preferences.player`
+  and capability key `stream`.
 
 ## Goals / Non-Goals
 
-**Goals:** start watching a partially downloaded episode from where the progress bar is, in both the browser
-and the desktop window, with seeking; honest disablement on engines without streaming.
+**Goals:** start a partially downloaded episode from where the progress is, in the browser and the desktop
+window; play browser-decodable files without leaving the app; say when an unfinished file can start; disable
+Play honestly on engines without streaming.
 
-**Non-Goals:** DLNA/UPnP surfacing; transcoding or audio/subtitle track selection beyond what `<video>` does
-natively; a system-player handoff with auth tokens; streaming on Transmission (sequential is not guaranteed,
-so no fake); piece-order controls (impossible on rqbit, per VERDICT).
+**Non-Goals:** DLNA/UPnP; transcoding; audio or subtitle track selection beyond what `<video>` does;
+streaming on Transmission; piece-order controls.
 
 ## Decisions
 
-1. **Proxy, don't redirect.** The server streams bytes itself: `GET /torrents/{id}/files/{index}/stream`
-   forwards the client's `Range` header to the engine's stream URL and relays status (200/206), `Content-Range`,
-   `Content-Length` and `Content-Type`. One origin, one auth story, works for remote users; the engine port
-   stays an internal detail. *Alt:* 302 to the engine URL — rejected: breaks remote access and auth.
-2. **Playability is derived, not stored.** A file is play-eligible when its extension is a video format
-   `<video>` can attempt (mkv/webm/mp4/m4v/avi…; the player surfaces a codec error honestly if the browser
-   can't decode it), the `streaming` capability is supported, and the downloaded bytes cover the file's head
-   (first ~2% or 8 MB, whichever is larger — a heuristic stated in the UI as "ready to play" only when met).
-   No new model fields; no invented durations or titles (media-mode rule).
-3. **Inline player overlay.** A modal overlay with `<video controls autoplay>` pointed at the stream URL;
-   Escape closes, playback position is per-session only. Works identically in browser and Tauri (the webview
-   is the player) — house rule "remote is the same product", zero IPC.
-4. **Copy stream URL** copies the absolute server-origin URL. With auth on, the UI notes that external
-   players need credentials (Basic in the URL is NOT auto-embedded — never leak the password into a
-   clipboard/URL by default).
-5. **Capability, not sniffing.** `streaming: {supported, via}` in `/capabilities`; rqbit fills the stream URL
-   builder, Transmission returns `Unsupported` → 501 → the UI hint. The play button renders disabled with the
-   engine name rather than disappearing (house rule 04).
+1. **Token links, not a proxy.** The server reads librqbit's `FileStream` itself and serves ranges on
+   `/api/v1/stream/<token>/<name>`. The token is the only credential, so VLC, IINA and mpv work with auth on.
+   *Alt:* an authenticated GET route. Rejected because external players cannot send the session cookie, and
+   Basic auth in a URL leaks the password.
+2. **Built-in player only where a browser can decode.** `INLINE_EXT` (mp4, m4v, webm, mov) opens the overlay;
+   everything else goes to the external player (loopback) or copies the link (another device). MKV, HEVC and
+   FLAC usually fail in `<video>`, so the external player stays their default. When the overlay hits a decode
+   error, it shows the browser's message and the two ways out.
+3. **Start check from the model.** `headNeed(file)` = max(2% of size, 8 MiB), capped at the size, minus the
+   file's downloaded bytes. The model has no per-file pieces, so all downloaded bytes of the file count
+   (marked as a shortcut in code). librqbit's stream fetches the head first anyway.
+4. **One Play flow.** `usePlayback` in `DetailPage` serves the hero button, the media view's featured episode
+   and the file action buttons, and renders the overlay. `fileActionBlock` gains `need` and returns `notReady`.
+5. **Hero button on the progress block.** The largest file, when it is a video. Its label is the reason while
+   an unfinished file cannot start yet ("starts once 12 MB more is downloaded", "not supported by
+   Transmission").
+6. **Link caveat.** The overlay footer says the link works without a login for a few hours and should only be
+   shared with trusted people. The link never embeds a password.
 
 ## Risks / Trade-offs
 
-- **mkv in `<video>`.** Browsers decode only some mkv codecs → the player shows the native decode error with
-  a "copy stream URL for an external player" fallback; no transcoding is attempted.
-- **Proxy cost.** Bytes pass through the server twice (engine → server → client); acceptable for a
-  single-user LAN app, and Range relaying keeps seeks cheap.
-- **Head heuristic is wrong sometimes.** "Ready to play" may still buffer; the player buffers honestly rather
-  than the UI promising playback.
+- **Head check counts any downloaded bytes**, so with rqbit's out-of-order pieces Play may enable before the
+  head is in. The player then buffers. Read the piece bitfield if this misleads users.
+- **Token in the URL** is a bearer credential for one file for up to 6 h of idle time. It is cleared with
+  sessions (logout or password change).

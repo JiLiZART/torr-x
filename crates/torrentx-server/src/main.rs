@@ -1,7 +1,7 @@
 use std::net::IpAddr;
 use std::path::PathBuf;
 
-use clap::Parser;
+use clap::{Parser, Subcommand};
 use torrentx_server::{ServerOptions, config};
 
 /// TorrentX headless torrent server: HTTP API + web UI.
@@ -18,6 +18,27 @@ struct Args {
     /// Override the port for this run (config file unchanged).
     #[arg(long)]
     port: Option<u16>,
+    #[command(subcommand)]
+    command: Option<Command>,
+}
+
+#[derive(Subcommand)]
+enum Command {
+    /// Password management.
+    Auth {
+        #[command(subcommand)]
+        action: AuthAction,
+    },
+}
+
+#[derive(Subcommand)]
+enum AuthAction {
+    /// Turn authentication off and remove the password (lost password). Restart the server afterwards.
+    Reset {
+        /// Also when the server binds to a non-loopback address (exposes the UI without a password).
+        #[arg(long)]
+        force: bool,
+    },
 }
 
 #[tokio::main]
@@ -30,6 +51,17 @@ async fn main() {
         .init();
 
     let args = Args::parse();
+    if let Some(Command::Auth { action: AuthAction::Reset { force } }) = args.command {
+        let path = args.config.unwrap_or_else(config::default_config_path);
+        match config::auth_reset(&path, force) {
+            Ok(msg) => println!("{msg}"),
+            Err(e) => {
+                eprintln!("torrentx-server: {e}");
+                std::process::exit(1);
+            }
+        }
+        return;
+    }
     let opts = ServerOptions {
         config_path: args.config.unwrap_or_else(config::default_config_path),
         data_dir: None,

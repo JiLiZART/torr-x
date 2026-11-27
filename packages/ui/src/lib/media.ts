@@ -2,6 +2,20 @@
 // that is not in the name is null.
 
 export const VIDEO_EXT = new Set(["mkv", "mp4", "m4v", "avi", "mov", "webm", "ts", "m2ts", "wmv", "mpg", "mpeg"]);
+/** Containers a browser `<video>` can usually play: these get the built-in player, the rest an external one. */
+export const INLINE_EXT = new Set(["mp4", "m4v", "webm", "mov"]);
+
+const HEAD_MIN = 8 * 1024 * 1024;
+
+/**
+ * Bytes still missing before playback can start: the head is 2% of the file or 8 MiB, whichever is larger.
+ * shortcut: counts all downloaded bytes of the file, not only its head (the model has no per-file pieces);
+ * librqbit's stream fetches the head first anyway. Read the piece bitfield if this misleads.
+ */
+export function headNeed(file: { size: number; progress: number }): number {
+  const head = Math.min(file.size, Math.max(file.size * 0.02, HEAD_MIN));
+  return Math.max(0, Math.ceil(head - file.size * file.progress));
+}
 
 export interface Episode {
   season: number;
@@ -114,7 +128,7 @@ export function mediaEpisodes<F extends MediaFile>(files: F[]): EpisodeFile<F>[]
 
 export type EpisodeState = "ready" | "downloading" | "queued" | "skipped";
 
-/** `ready` = fully downloaded; the head-of-file heuristic arrives with streaming. */
+/** `ready` = fully downloaded; whether an unfinished file can start streaming is `headNeed`. */
 export function episodeState(file: MediaFile, torrentActive: boolean): EpisodeState {
   if (!file.wanted) return "skipped";
   if (file.progress >= 1) return "ready";

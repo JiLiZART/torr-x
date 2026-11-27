@@ -3,7 +3,8 @@
 ### Requirement: Optional authentication
 Authentication SHALL be disabled by default. When enabled in settings with a username and password, every
 `/api/v1/*` endpoint except `health`, `auth/login`, and `auth/logout` SHALL require either a valid session cookie
-obtained from `POST /api/v1/auth/login` (`{"username","password","remember"?}`) or an HTTP Basic `Authorization`
+obtained from `POST /api/v1/auth/login` (`{"password","username"?,"remember"?}`; without `username` only the
+password is checked, since a server has one user) or an HTTP Basic `Authorization`
 header with the same credentials. Passwords SHALL be stored only as a salted slow hash. Enabling auth via
 `PUT /api/v1/settings` SHALL require the new password in the request; the caller's current session SHALL remain
 valid afterwards.

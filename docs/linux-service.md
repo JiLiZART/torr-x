@@ -48,6 +48,21 @@ By default the server listens on `127.0.0.1` only. To use it from another machin
 Without auth the server logs a warning when bound to a non-loopback address:
 anyone who can reach the port controls your torrents.
 
+Five wrong passwords in a row from one address lock that address out of sign-in (and HTTP Basic) for 60 s.
+Sessions that are already signed in keep working.
+
+### Lost password
+
+On the host, turn authentication off and remove the stored password, then restart:
+
+```bash
+sudo -u torrentx torrentx-server --config /etc/torrentx/config.toml auth reset
+sudo systemctl restart torrentx
+```
+
+Then set a new password in **Settings**. When the server binds to a non-loopback address the command refuses
+(the UI would be open to the network without a password); bind it to `127.0.0.1` first, or pass `--force`.
+
 Behind an HTTPS reverse proxy, forward the original `Host` header
 (`proxy_set_header Host $host;` in nginx); the server rejects writes whose
 `Origin` does not match `Host`.

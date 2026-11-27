@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { CheckCircle, Disc3, Edit3, Ellipsis, FileText, Film, Folder, FolderInput, FolderOpen, ImageOff, Link2, Pause, Play, Plus, Save, Tag, Trash, Trash2 } from "lucide-react";
-import { api, type TorrentDetails } from "@torrentx/api-client";
+import { api, type FileInfo, type TorrentDetails } from "@torrentx/api-client";
 import { useUi } from "../../lib/context";
 import { age, bytes, duration, percent, rate, rowState, STATE_STYLE } from "../../lib/format";
 import { COMMAND_FOR_ACTION, type TorrentAction } from "../../lib/commands";
@@ -11,6 +11,8 @@ interface HeroProps {
   /** Recent down rates, oldest first: the bar graph. */
   history: number[];
   onAction: (action: TorrentAction) => void;
+  play: (file: FileInfo) => void;
+  playHint: (file: FileInfo) => string | undefined;
 }
 
 const button = "flex items-center gap-[7px] rounded-[9px] border px-[13px] py-[9px] text-[12px] font-medium disabled:cursor-not-allowed disabled:opacity-40";
@@ -20,7 +22,7 @@ const BARS = 96;
 const chip = "flex items-center gap-[4px] rounded-[6px] border border-ui-border bg-ui-surface-2 px-[7px] py-[2px] font-code text-[10px]";
 
 /** The torrent's state at a glance: what it is, what it is doing, and the actions that change that. */
-export function Hero({ d, history, onAction }: HeroProps) {
+export function Hero({ d, history, onAction, play, playHint }: HeroProps) {
   const { t, gate } = useUi();
   const [menu, setMenu] = useState(false);
   const state = rowState(d);
@@ -31,6 +33,8 @@ export function Hero({ d, history, onAction }: HeroProps) {
   const largest = [...d.files].sort((a, b) => b.size - a.size)[0];
   const kind = largest ? fileClass(extOf(largest.path)) : "other";
   const Icon = kind === "video" ? Film : kind === "disc" ? Disc3 : FileText;
+  const playHere = kind === "video" ? largest : undefined;
+  const playWhy = playHere && playHint(playHere);
   const of = (have: number, total: number | null) => (total === null ? String(have) : t("detail.of", { n: have, m: total }));
   const stats: [string, string, string?][] = [
     [percent(d.progress), t("detail.stat.progress"), "text-ui-accent"],
@@ -155,6 +159,17 @@ export function Hero({ d, history, onAction }: HeroProps) {
           <span className={`absolute inset-y-0 w-[2px] ${style.dot}`} style={{ left: `min(${d.progress * 100}%, calc(100% - 2px))` }} />
         </div>
         <div className="flex flex-wrap items-end gap-[8px]">
+          {playHere && (
+            // Play sits on the progress: an unfinished file starts once its head is in.
+            <button
+              className={`${button} self-stretch border-ui-accent bg-ui-accent text-ui-bg hover:opacity-90`}
+              disabled={!!playWhy}
+              title={playWhy ?? playHere.path}
+              onClick={() => play(playHere)}
+            >
+              <Play size={14} /> {playWhy && playHere.progress < 1 ? playWhy : t(playHere.progress >= 1 ? "player.play" : "player.ready")}
+            </button>
+          )}
           {stats.map(([value, label, tone], i) => (
             <div key={label} className="flex flex-col gap-[2px] rounded-[8px] bg-ui-bg/85 px-[10px] py-[6px]">
               <span className={`whitespace-nowrap font-code font-semibold tabular-nums ${i === 0 ? "text-[24px]" : "text-[14px]"} ${tone ?? "text-ui-text"}`}>{value}</span>

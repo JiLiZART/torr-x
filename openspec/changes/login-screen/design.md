@@ -21,7 +21,12 @@
    invalid attempts.
 4. **Return path**: on any 401 the UI stores the current address, shows "Your session expired", and navigates
    back after login.
-5. **`auth reset`** edits the config file only, refuses non-loopback binds without `--force`.
+5. **`auth reset`** edits the config file only, refuses non-loopback binds without `--force`. The hint on the
+   screen names the real binary: `torrentx-server auth reset`.
+6. **Password only.** The screen asks only for the password, as drawn. `POST /auth/login` takes `username` as
+   optional; without it only the password is checked (one user per server). HTTP Basic still sends both.
+7. **Handoff and settings sessions are remembered** (30 d), like before this change; only the sign-in screen
+   offers the plain 12 h kind.
 
 ## Risks / Trade-offs
 

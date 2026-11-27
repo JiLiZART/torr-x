@@ -9,6 +9,7 @@ import type { TorrentAction } from "../../lib/commands";
 import { Hero } from "./Hero";
 import { useTorrentCover } from "./useCover";
 import { FilesSection } from "./FilesSection";
+import { usePlayback } from "./usePlayback";
 import { PeersSection, TrackersSection, WebSeedsSection } from "./SwarmSections";
 
 interface DetailPageProps {
@@ -45,6 +46,7 @@ export function DetailPage({ id, section, onSection, onAction, onError, onPollEr
   const { details, peers, pieces } = useDetails(id, want, { onError: onPollError });
   const d = details.data;
   useTorrentCover(d);
+  const playback = usePlayback(d, onNotice, onError);
   const [history, setHistory] = useState<{ id: string; down: number[] }>({ id, down: [] });
   // The section lens: in memory, per torrent + section, gone when the section changes.
   const [lens, setLens] = useState({ key: `${id}:${section}`, query: "" });
@@ -70,7 +72,8 @@ export function DetailPage({ id, section, onSection, onAction, onError, onPollEr
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-      <Hero d={d} history={history.down} onAction={(action) => onAction(d, action)} />
+      {playback.overlay}
+      <Hero d={d} history={history.down} onAction={(action) => onAction(d, action)} play={playback.play} playHint={playback.hint} />
       <nav className="sticky top-0 z-10 flex shrink-0 items-center gap-[4px] border-b border-ui-border bg-ui-chrome px-[14px] pt-[9px]" aria-label={t("detail.sections")}>
         {SECTIONS.map((s) => (
           <button
@@ -87,7 +90,7 @@ export function DetailPage({ id, section, onSection, onAction, onError, onPollEr
         <span className="hidden pb-[8px] font-code text-[9px] text-ui-text-3 xl:block">{t("detail.sectionNote")}</span>
       </nav>
       <div className="flex flex-col bg-ui-surface">
-        {section === "files" && <FilesSection d={d} query={query} onQuery={setQuery} onError={onError} onNotice={onNotice} focusFile={focusFile} onFocused={onFocused} />}
+        {section === "files" && <FilesSection d={d} query={query} onQuery={setQuery} onError={onError} onNotice={onNotice} focusFile={focusFile} onFocused={onFocused} play={playback.play} playHint={playback.hint} />}
         {section === "peers" && <PeersSection d={d} query={query} onQuery={setQuery} peers={peers.data} error={peers.error?.message ?? null} />}
         {section === "trackers" && <TrackersSection d={d} query={query} onQuery={setQuery} onError={onError} onReload={reload} />}
         {section === "webseeds" && <WebSeedsSection d={d} query={query} onQuery={setQuery} onReload={reload} />}

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { evaluate, FILE_SCOPE, parse, PEER_SCOPE, TRACKER_SCOPE } from "@torrentx/query";
 import { fileActionBlock, fileClass, FILE_ACTIONS, fileKind, fileRow, fileTree, treeLines, type FileRow, joinPath, peerRow, swarm, trackerRow, trackerStatus, webSeedRow } from "./detail.ts";
-import { episodeCode, episodeState, mediaEpisodes, parseEpisode, qualityTags } from "./media.ts";
+import { episodeCode, episodeState, headNeed, mediaEpisodes, parseEpisode, qualityTags } from "./media.ts";
 
 test("episodes: codes, quality tags, titles only when named", () => {
   const e = parseEpisode("Arcane.S02/Arcane.S02E04.2160p.NF.WEB-DL.DDP5.1.Atmos.DV.HDR10.H.265-FLUX.mkv")!;
@@ -61,6 +61,14 @@ test("section rows feed the section scopes", () => {
   assert.equal(webSeedRow({ url: "u", kind: "bep19", status: null, speed: null, downloaded: null, error: "HTTP 404" }).status, "failed");
 });
 
+test("streaming starts once 2% or 8 MiB of the file is in", () => {
+  const MiB = 1024 * 1024;
+  assert.equal(headNeed({ size: 100 * MiB, progress: 0 }), 8 * MiB);
+  assert.equal(headNeed({ size: 2000 * MiB, progress: 0.01 }), 20 * MiB);
+  assert.equal(headNeed({ size: 2000 * MiB, progress: 0.4 }), 0);
+  assert.equal(headNeed({ size: 4 * MiB, progress: 0.5 }), 2 * MiB);
+});
+
 test("file actions follow the format and say why they cannot run", () => {
   assert.deepEqual(FILE_ACTIONS[fileClass("mkv")], ["play", "library", "cast"]);
   assert.deepEqual(FILE_ACTIONS[fileClass("iso")], ["contents", "mount"]);
@@ -75,6 +83,8 @@ test("file actions follow the format and say why they cannot run", () => {
   assert.equal(fileActionBlock("play", { ...ctx, done: false, stream: "not supported by x" }), "engine");
   assert.equal(fileActionBlock("play", { ...ctx, local: false, stream: "not supported by x" }), "remote");
   assert.equal(fileActionBlock("play", { ...ctx, local: false, done: false }), null);
+  assert.equal(fileActionBlock("play", { ...ctx, done: false, need: 1024 }), "notReady");
+  assert.equal(fileActionBlock("play", { ...ctx, done: false, need: 0 }), null);
   assert.equal(fileActionBlock("library", ctx), "notYet");
   assert.equal(fileActionBlock("copyPath", { ...ctx, local: false }), null);
   assert.equal(joinPath("/data/", "a/b.mkv"), "/data/a/b.mkv");

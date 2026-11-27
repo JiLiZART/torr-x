@@ -1041,3 +1041,50 @@ async fn cover_lookup_never_replaces_a_local_or_removed_cover() {
     assert_eq!(torrent_cover(&s).await, Value::Null, "the tick does not bring it back either");
     assert!(seen.lock().unwrap().is_empty());
 }
+
+#[tokio::test]
+async fn login_lockout_and_session_kinds() {
+    let (s, _) = state("lockout");
+    {
+        let mut c = s.config.write().await;
+        c.auth = config::AuthConfig { enabled: true, username: "admin".into(), password_hash: auth::hash_password("pw") };
+    }
+    let from = |ip: &str, body: Value| {
+        let mut r = json_req(Method::POST, "/api/v1/auth/login", &body);
+        r.extensions_mut().insert(axum::extract::ConnectInfo(format!("{ip}:5555").parse::<SocketAddr>().unwrap()));
+        r
+    };
+    // The sign-in screen sends only the password; plain sessions get a browser-session cookie.
+    let (status, headers, _) = call(&s, from("10.0.0.1", json!({ "password": "pw" }))).await;
+    assert_eq!(status, StatusCode::NO_CONTENT);
+    assert!(!headers[header::SET_COOKIE].to_str().unwrap().contains("Max-Age"));
+    let own = cookie(&headers).unwrap();
+    let (_, headers, _) = call(&s, from("10.0.0.1", json!({ "password": "pw", "remember": true }))).await;
+    assert!(headers[header::SET_COOKIE].to_str().unwrap().contains("Max-Age=2592000"));
+
+    for left in [4, 3, 2, 1] {
+        let (status, headers, body) = call(&s, from("10.0.0.1", json!({ "password": "nope" }))).await;
+        assert_eq!((status, body["error"]["attemptsLeft"].as_u64()), (StatusCode::UNAUTHORIZED, Some(left)));
+        assert!(cookie(&headers).is_none());
+    }
+    let (status, _, body) = call(&s, from("10.0.0.1", json!({ "password": "nope" }))).await;
+    assert_eq!((status, body["error"]["kind"].as_str()), (StatusCode::TOO_MANY_REQUESTS, Some("locked_out")));
+    // Locked: even the right password is refused, with Retry-After; Basic from there too.
+    let (status, headers, body) = call(&s, from("10.0.0.1", json!({ "password": "pw" }))).await;
+    assert_eq!(status, StatusCode::TOO_MANY_REQUESTS);
+    assert!(cookie(&headers).is_none());
+    assert!(body["error"]["retryAfterSecs"].as_u64().is_some_and(|n| (1..=60).contains(&n)));
+    assert!(headers.contains_key(header::RETRY_AFTER));
+    use base64::Engine as _;
+    let mut basic = req(Method::GET, "/api/v1/settings")
+        .header(header::AUTHORIZATION, format!("Basic {}", base64::engine::general_purpose::STANDARD.encode("admin:pw")))
+        .body(Body::empty())
+        .unwrap();
+    basic.extensions_mut().insert(axum::extract::ConnectInfo("10.0.0.1:5555".parse::<SocketAddr>().unwrap()));
+    assert_eq!(call(&s, basic).await.0, StatusCode::TOO_MANY_REQUESTS);
+    // A valid cookie still works, and other addresses are not affected.
+    let mut with_cookie = req(Method::GET, "/api/v1/settings").header(header::COOKIE, &own).body(Body::empty()).unwrap();
+    with_cookie.extensions_mut().insert(axum::extract::ConnectInfo("10.0.0.1:5555".parse::<SocketAddr>().unwrap()));
+    assert_eq!(call(&s, with_cookie).await.0, StatusCode::OK);
+    assert_eq!(call(&s, from("10.0.0.2", json!({ "password": "pw" }))).await.0, StatusCode::NO_CONTENT);
+}

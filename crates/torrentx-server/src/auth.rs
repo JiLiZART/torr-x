@@ -2,6 +2,7 @@
 //! (Host allowlist, Origin check) that apply even when auth is off.
 
 use std::collections::HashMap;
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
@@ -9,7 +10,7 @@ use argon2::Argon2;
 use argon2::password_hash::rand_core::{OsRng, RngCore};
 use argon2::password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString};
 use axum::Json;
-use axum::extract::{Query, Request, State};
+use axum::extract::{ConnectInfo, Query, Request, State};
 use axum::http::{HeaderMap, HeaderValue, Method, StatusCode, header};
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Redirect, Response};
@@ -20,7 +21,13 @@ use crate::AppState;
 use crate::api::ApiError;
 
 pub const COOKIE: &str = "tx_session";
-const SESSION_TTL: Duration = Duration::from_secs(30 * 24 * 3600);
+/// "Remember this browser": 30 days of inactivity, persistent cookie.
+const REMEMBER_TTL: Duration = Duration::from_secs(30 * 24 * 3600);
+/// A plain login: 12 hours of inactivity, cookie ends with the browser session.
+const SESSION_TTL: Duration = Duration::from_secs(12 * 3600);
+/// Failed logins from one address before it is locked out, and for how long.
+pub const MAX_ATTEMPTS: u32 = 5;
+const LOCKOUT: Duration = Duration::from_secs(60);
 const HANDOFF_TTL: Duration = Duration::from_secs(60);
 const STREAM_TTL: Duration = Duration::from_secs(6 * 3600);
 
@@ -51,19 +58,28 @@ fn random_token() -> String {
 /// In-memory: sessions are lost on restart (users log in again).
 #[derive(Default)]
 pub struct Sessions {
-    sessions: Mutex<HashMap<String, Instant>>,
+    /// Token → (expiry, idle lifetime): the lifetime is the session kind.
+    sessions: Mutex<HashMap<String, (Instant, Duration)>>,
+    /// Client address → (consecutive failures, locked until).
+    attempts: Mutex<HashMap<IpAddr, (u32, Option<Instant>)>>,
     handoffs: Mutex<HashMap<String, Instant>>,
     /// Stream URL tokens: torrent id, file index, expiry (sliding).
     streams: Mutex<HashMap<String, (String, u32, Instant)>>,
 }
 
 impl Sessions {
+    /// A remembered session (30 d); desktop handoffs and settings changes use this kind.
     pub fn create(&self) -> String {
+        self.create_kind(true)
+    }
+
+    pub fn create_kind(&self, remember: bool) -> String {
         let token = random_token();
+        let ttl = if remember { REMEMBER_TTL } else { SESSION_TTL };
         self.sessions
             .lock()
             .unwrap()
-            .insert(token.clone(), Instant::now() + SESSION_TTL);
+            .insert(token.clone(), (Instant::now() + ttl, ttl));
         token
     }
 
@@ -71,14 +87,42 @@ impl Sessions {
     pub fn check(&self, token: &str) -> bool {
         let mut map = self.sessions.lock().unwrap();
         let now = Instant::now();
-        map.retain(|_, exp| *exp > now);
+        map.retain(|_, s| s.0 > now);
         match map.get_mut(token) {
-            Some(exp) => {
-                *exp = now + SESSION_TTL;
+            Some(s) => {
+                s.0 = now + s.1;
                 true
             }
             None => false,
         }
+    }
+
+    /// Seconds left while `ip` is locked out.
+    pub fn locked(&self, ip: IpAddr) -> Option<u64> {
+        let map = self.attempts.lock().unwrap();
+        let until = map.get(&ip)?.1?;
+        let left = until.saturating_duration_since(Instant::now());
+        (!left.is_zero()).then(|| left.as_secs().max(1))
+    }
+
+    /// Counts a failure; returns attempts left (0 = now locked out).
+    pub fn fail(&self, ip: IpAddr) -> u32 {
+        let mut map = self.attempts.lock().unwrap();
+        let now = Instant::now();
+        let e = map.entry(ip).or_insert((0, None));
+        if e.1.is_some_and(|until| until <= now) {
+            *e = (0, None);
+        }
+        e.0 += 1;
+        if e.0 >= MAX_ATTEMPTS {
+            e.1 = Some(now + LOCKOUT);
+            return 0;
+        }
+        MAX_ATTEMPTS - e.0
+    }
+
+    pub fn succeed(&self, ip: IpAddr) {
+        self.attempts.lock().unwrap().remove(&ip);
     }
 
     pub fn remove(&self, token: &str) {
@@ -130,11 +174,37 @@ impl Sessions {
 }
 
 pub fn session_cookie(token: &str) -> HeaderValue {
-    HeaderValue::from_str(&format!(
-        "{COOKIE}={token}; HttpOnly; SameSite=Strict; Path=/; Max-Age={}",
-        SESSION_TTL.as_secs()
-    ))
-    .expect("token is hex")
+    cookie_for(token, true)
+}
+
+/// Remembered: persists 30 days. Plain: no Max-Age, so it ends with the browser session.
+fn cookie_for(token: &str, remember: bool) -> HeaderValue {
+    let age = if remember { format!("; Max-Age={}", REMEMBER_TTL.as_secs()) } else { String::new() };
+    HeaderValue::from_str(&format!("{COOKIE}={token}; HttpOnly; SameSite=Strict; Path=/{age}")).expect("token is hex")
+}
+
+/// The client address; tests without `ConnectInfo` count as one unknown address.
+fn client_ip(ext: &axum::http::Extensions) -> IpAddr {
+    ext.get::<ConnectInfo<SocketAddr>>()
+        .map_or(IpAddr::V4(Ipv4Addr::UNSPECIFIED), |ConnectInfo(a)| a.ip())
+}
+
+fn locked_out(secs: u64) -> Response {
+    let body = serde_json::json!({ "error": { "kind": "locked_out", "message": format!("too many attempts: try again in {secs} s"), "retryAfterSecs": secs } });
+    (
+        StatusCode::TOO_MANY_REQUESTS,
+        [(header::RETRY_AFTER, HeaderValue::from(secs))],
+        Json(body),
+    )
+        .into_response()
+}
+
+fn wrong(left: u32) -> Response {
+    if left == 0 {
+        return locked_out(LOCKOUT.as_secs());
+    }
+    let body = serde_json::json!({ "error": { "kind": "unauthorized", "message": "wrong password", "attemptsLeft": left } });
+    (StatusCode::UNAUTHORIZED, Json(body)).into_response()
 }
 
 fn clear_cookie() -> HeaderValue {
@@ -160,8 +230,9 @@ fn basic_credentials(headers: &HeaderMap) -> Option<(String, String)> {
     Some((user.to_string(), pass.to_string()))
 }
 
-/// Argon2 is deliberately slow; keep it off the async workers.
-async fn credentials_ok(state: &AppState, username: String, password: String) -> bool {
+/// Argon2 is deliberately slow; keep it off the async workers. `None` = the sign-in screen, which asks only
+/// for the password (one user per server).
+async fn credentials_ok(state: &AppState, username: Option<String>, password: String) -> bool {
     let (want_user, hash) = {
         let cfg = state.config.read().await;
         (cfg.auth.username.clone(), cfg.auth.password_hash.clone())
@@ -169,7 +240,7 @@ async fn credentials_ok(state: &AppState, username: String, password: String) ->
     tokio::task::spawn_blocking(move || {
         // Always verify so wrong usernames take as long as wrong passwords.
         let pass_ok = verify_password(&hash, &password);
-        pass_ok && username == want_user
+        pass_ok && username.is_none_or(|u| u == want_user)
     })
     .await
     .unwrap_or(false)
@@ -186,10 +257,16 @@ pub async fn require_auth(
     if cookie_token(req.headers()).is_some_and(|t| state.sessions.check(t)) {
         return next.run(req).await;
     }
-    if let Some((user, pass)) = basic_credentials(req.headers())
-        && credentials_ok(&state, user, pass).await
-    {
-        return next.run(req).await;
+    if let Some((user, pass)) = basic_credentials(req.headers()) {
+        let ip = client_ip(req.extensions());
+        if let Some(secs) = state.sessions.locked(ip) {
+            return locked_out(secs);
+        }
+        if credentials_ok(&state, Some(user), pass).await {
+            state.sessions.succeed(ip);
+            return next.run(req).await;
+        }
+        return wrong(state.sessions.fail(ip));
     }
     ApiError::unauthorized().into_response()
 }
@@ -246,21 +323,30 @@ pub async fn guard(State(state): State<Arc<AppState>>, req: Request, next: Next)
 
 #[derive(Deserialize)]
 pub struct Login {
-    username: String,
+    #[serde(default)]
+    username: Option<String>,
     password: String,
+    #[serde(default)]
+    remember: bool,
 }
 
-pub async fn login(State(state): State<Arc<AppState>>, Json(body): Json<Login>) -> Response {
+pub async fn login(State(state): State<Arc<AppState>>, ext: axum::http::Extensions, Json(body): Json<Login>) -> Response {
     if !state.config.read().await.auth.enabled {
         return StatusCode::NO_CONTENT.into_response();
     }
-    if !credentials_ok(&state, body.username, body.password).await {
-        return ApiError::unauthorized_msg("wrong username or password").into_response();
+    let ip = client_ip(&ext);
+    // Locked out: the credentials are not even checked.
+    if let Some(secs) = state.sessions.locked(ip) {
+        return locked_out(secs);
     }
-    let token = state.sessions.create();
+    if !credentials_ok(&state, body.username, body.password).await {
+        return wrong(state.sessions.fail(ip));
+    }
+    state.sessions.succeed(ip);
+    let token = state.sessions.create_kind(body.remember);
     (
         StatusCode::NO_CONTENT,
-        [(header::SET_COOKIE, session_cookie(&token))],
+        [(header::SET_COOKIE, cookie_for(&token, body.remember))],
     )
         .into_response()
 }
@@ -313,6 +399,28 @@ mod tests {
         assert!(verify_password(&h, "hunter2"));
         assert!(!verify_password(&h, "hunter3"));
         assert!(!verify_password("garbage", "hunter2"));
+    }
+
+    #[test]
+    fn five_failures_lock_one_address() {
+        let s = Sessions::default();
+        let (a, b): (IpAddr, IpAddr) = ("10.0.0.1".parse().unwrap(), "10.0.0.2".parse().unwrap());
+        assert_eq!((1..=5).map(|_| s.fail(a)).collect::<Vec<_>>(), [4, 3, 2, 1, 0]);
+        assert!(s.locked(a).is_some_and(|secs| secs <= 60));
+        assert_eq!(s.locked(b), None);
+        s.succeed(a);
+        assert_eq!(s.locked(a), None);
+        assert_eq!(s.fail(a), 4);
+    }
+
+    #[test]
+    fn session_kinds() {
+        let s = Sessions::default();
+        let plain = s.create_kind(false);
+        assert!(s.check(&plain));
+        assert_eq!(s.sessions.lock().unwrap()[&plain].1, SESSION_TTL);
+        assert!(!cookie_for(&plain, false).to_str().unwrap().contains("Max-Age"));
+        assert!(cookie_for(&plain, true).to_str().unwrap().contains("Max-Age=2592000"));
     }
 
     #[test]

@@ -543,9 +543,56 @@ impl Config {
     }
 }
 
+/// `torrentx-server auth reset`: turns auth off in the config file and drops the password hash, for a lost
+/// password. Refuses a non-loopback bind without `force` (that would publish the UI without a password).
+/// Returns what to print; never starts the server.
+pub fn auth_reset(path: &Path, force: bool) -> Result<String, String> {
+    if !path.exists() {
+        return Ok(format!("{}: no config file, authentication is already off", path.display()));
+    }
+    let mut config = Config::load_or_create(path)?;
+    if !config.auth.enabled && config.auth.password_hash.is_empty() {
+        return Ok(format!("{}: authentication is already off, nothing changed", path.display()));
+    }
+    if !config.server.bind.is_loopback() && !force {
+        return Err(format!(
+            "{}: the server binds to {}, so turning authentication off would expose the UI without a password \
+             to the network. Bind it to 127.0.0.1 first, or pass --force.",
+            path.display(),
+            config.server.bind
+        ));
+    }
+    config.auth.enabled = false;
+    config.auth.password_hash.clear();
+    config.save(path)?;
+    Ok(format!(
+        "{}: authentication turned off and the password removed. Restart the server, then set a new password in Settings.",
+        path.display()
+    ))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn auth_reset_turns_auth_off_on_loopback_only() {
+        let path = tmp("auth-reset");
+        assert!(auth_reset(&path, false).unwrap().contains("already off"));
+        assert!(!path.exists());
+        let mut c = Config::default();
+        c.auth = AuthConfig { enabled: true, username: "admin".into(), password_hash: "$argon2id$x".into() };
+        c.server.bind = "0.0.0.0".parse().unwrap();
+        c.save(&path).unwrap();
+        let before = std::fs::read_to_string(&path).unwrap();
+        assert!(auth_reset(&path, false).unwrap_err().contains("--force"));
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), before);
+        assert!(auth_reset(&path, true).unwrap().contains("Restart"));
+        let after = Config::load_or_create(&path).unwrap();
+        assert!(!after.auth.enabled && after.auth.password_hash.is_empty());
+        assert_eq!(after.auth.username, "admin");
+        assert!(auth_reset(&path, false).unwrap().contains("nothing changed"));
+    }
 
     fn tmp(name: &str) -> PathBuf {
         let d = std::env::temp_dir().join(format!("torrentx-cfg-{name}-{}", std::process::id()));

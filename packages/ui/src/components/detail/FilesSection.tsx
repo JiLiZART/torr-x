@@ -8,7 +8,8 @@ import { clickSort } from "../../lib/lens";
 import { FILE_ACTIONS, fileActionBlock, fileClass, fileRow, fileTree, joinPath, treeLines, type FileAction, type FilePriorityWord, type FileRow, type TreeDir } from "../../lib/detail";
 import { FileIcon } from "./FileIcon";
 import { graphPaths, pushFileSample, type History } from "../../lib/activity";
-import { episodeCode, episodeState, mediaEpisodes, type EpisodeFile } from "../../lib/media";
+import { episodeCode, episodeState, headNeed, mediaEpisodes, type EpisodeFile } from "../../lib/media";
+import { isLocal } from "./usePlayback";
 import { EpisodeThumb } from "./covers";
 import { MiniFilterBar } from "./MiniFilterBar";
 import { MiniBar, SectionEmpty, TableHeader } from "./Table";
@@ -22,6 +23,9 @@ interface FilesSectionProps {
   /** A file opened from the palette: scrolled into view and highlighted briefly. */
   focusFile?: number | null;
   onFocused?: () => void;
+  /** Play, shared with the hero (`usePlayback`). */
+  play: (file: FileInfo) => void;
+  playHint: (file: FileInfo) => string | undefined;
 }
 
 const FOCUS_MS = 2000;
@@ -41,10 +45,8 @@ const STATE_TONE = { ready: "text-ui-accent", downloading: "text-ui-cyan", queue
 const VIEW_KEY = (id: string) => `tx-files-view:${id}`;
 const small = "rounded-[6px] border border-ui-border bg-ui-surface-2 p-[5px] text-ui-text-2 hover:text-ui-text disabled:cursor-not-allowed disabled:opacity-40";
 
-/** The browser runs on the machine that runs TorrentX: open / reveal can work. */
-const isLocal = () => ["localhost", "127.0.0.1", "[::1]", "::1"].includes(window.location.hostname) || "__TAURI_INTERNALS__" in window;
 
-export function FilesSection({ d, query, onQuery, onError, onNotice, focusFile = null, onFocused }: FilesSectionProps) {
+export function FilesSection({ d, query, onQuery, onError, onNotice, focusFile = null, onFocused, play, playHint }: FilesSectionProps) {
   const { t, gate, caps, compact } = useUi();
   useEffect(() => {
     if (focusFile === null) return;
@@ -114,14 +116,9 @@ export function FilesSection({ d, query, onQuery, onError, onNotice, focusFile =
     return why === "engine" ? t("caps.notSupported", { engine }) : t(`detail.block.${why}`);
   };
   const runAction = (action: FileAction, file: Pick<FileInfo, "index" | "path">) => {
-    if (action === "play" && local) {
-      api.playFile(d.id, file.index).then((r) => onNotice(t(r.streaming ? "detail.streaming" : "detail.playing")), onError);
-    } else if (action === "play") {
-      // Another device: hand over a link to paste into a player there.
-      api
-        .streamFile(d.id, file.index)
-        .then((path) => navigator.clipboard.writeText(`${location.origin}${path}`))
-        .then(() => onNotice(t("detail.streamCopied")), onError);
+    if (action === "play") {
+      const info = d.files.find((f) => f.index === file.index);
+      if (info) play(info);
     } else if (action === "open") api.openFile(d.id, file.index).catch(onError);
     else if (action === "reveal") api.revealFile(d.id, file.index).catch(onError);
     else if (action === "copyPath") {
@@ -131,7 +128,8 @@ export function FilesSection({ d, query, onQuery, onError, onNotice, focusFile =
   const actionButtons = (row: Pick<FileRow, "index" | "path" | "ext" | "done">) =>
     FILE_ACTIONS[fileClass(row.ext)].map((action) => {
       const Icon = ACTION_ICON[action];
-      const hint = blockHint(action, row.done >= 100);
+      const info = action === "play" ? d.files.find((f) => f.index === row.index) : undefined;
+      const hint = info ? playHint(info) : blockHint(action, row.done >= 100);
       return (
         <button key={action} className={small} disabled={!!hint} title={hint ?? t(`detail.action.${action}`)} aria-label={t(`detail.action.${action}`)} onClick={() => runAction(action, row)}>
           <Icon size={13} />
@@ -279,8 +277,8 @@ export function FilesSection({ d, query, onQuery, onError, onNotice, focusFile =
           query={query}
           actionButtons={actionButtons}
           canStream={!gate("stream")}
-          play={(file) => runAction("play", file)}
-          playHint={(done) => blockHint("play", done)}
+          play={play}
+          playHint={playHint}
         />
       ) : (
         <>
@@ -358,7 +356,7 @@ interface MediaViewProps {
   actionButtons: (row: Pick<FileRow, "index" | "path" | "ext" | "done">) => ReactElement[];
   canStream: boolean;
   play: (file: FileInfo) => void;
-  playHint: (done: boolean) => string | undefined;
+  playHint: (file: FileInfo) => string | undefined;
 }
 
 /** Files as episodes: season picker, a strip that mirrors the lens, and one row per episode. */
@@ -374,9 +372,11 @@ function MediaView({ d, episodes, shown, query, actionButtons, canStream, play, 
   useEffect(() => {
     setActivity((a) => ({ id: d.id, files: pushFileSample(a.id === d.id ? a.files : new Map(), d.files, active, Date.now()) }));
   }, [d, active]);
-  // The first finished episode, else (when the engine streams) the first one still wanted.
-  const featured = visible.find((e) => episodeState(e.file, active) === "ready") ?? (canStream ? visible.find((e) => e.file.wanted) : undefined);
-  const featuredHint = featured && playHint(featured.file.progress >= 1);
+  // The first finished episode, else (when the engine streams) the first one that can start, else the first wanted.
+  const featured =
+    visible.find((e) => episodeState(e.file, active) === "ready") ??
+    (canStream ? (visible.find((e) => e.file.wanted && headNeed(e.file) === 0) ?? visible.find((e) => e.file.wanted)) : undefined);
+  const featuredHint = featured && playHint(featured.file);
   const lensText = query.replace(/\s*sort:\S+(\s+(asc|desc))?/gi, "").trim();
 
   return (

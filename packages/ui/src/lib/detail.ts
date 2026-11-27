@@ -155,13 +155,17 @@ export const FILE_ACTIONS: Record<FileClass, FileAction[]> = {
  * Why an action cannot run here, or null when it can. `openFile` and `stream` come from the capability matrix;
  * `local` says the browser runs on the machine that runs TorrentX (the server refuses remote opens).
  * Play opens a finished file on that machine, streams an unfinished one, and from elsewhere copies a stream link.
+ * `need` = bytes still missing from the file's head (`headNeed`); streaming waits for them.
  */
-export function fileActionBlock(action: FileAction, ctx: { openFile: string | undefined; stream: string | undefined; local: boolean; done: boolean }): "notYet" | "engine" | "remote" | "notOnDisk" | null {
+export function fileActionBlock(
+  action: FileAction,
+  ctx: { openFile: string | undefined; stream: string | undefined; local: boolean; done: boolean; need?: number },
+): "notYet" | "engine" | "remote" | "notOnDisk" | "notReady" | null {
   switch (action) {
     case "play":
       if (ctx.done && ctx.local) return ctx.openFile ? "engine" : null;
       if (ctx.stream) return ctx.done ? "remote" : "engine";
-      return null;
+      return !ctx.done && (ctx.need ?? 0) > 0 ? "notReady" : null;
     case "library":
     case "cast":
     case "contents":
