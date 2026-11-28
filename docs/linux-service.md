@@ -147,7 +147,7 @@ Server state (saved-query tabs, tags, rename overrides, seeding bookkeeping) liv
 
 Release builds (`pnpm build:server`) embed DB-IP's free "IP to Country Lite"
 database, licensed CC BY 4.0 (https://db-ip.com). For other builds, run
-`scripts/fetch-geoip.sh` or place `dbip-country-lite.mmdb` in the data directory;
+`pnpm fetch:geoip` (`scripts/fetch-geoip.mjs`) or place `dbip-country-lite.mmdb` in the data directory;
 without it the country column stays empty.
 
 ## Scripting

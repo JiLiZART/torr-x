@@ -37,13 +37,14 @@ async fn probe(base: &str) -> Probe {
         .timeout(Duration::from_millis(800))
         .build()
         .expect("reqwest client");
+    // Only an HTTP answer proves the port is taken. Refused, reset or slow connections (Windows retries
+    // a closed loopback port for ~2 s) mean "try to start"; the bind then decides.
     match client.get(format!("{base}api/v1/health")).send().await {
         Ok(resp) => match resp.json::<serde_json::Value>().await {
             Ok(v) if v["app"] == "torrentx" => Probe::TorrentX,
             _ => Probe::Foreign,
         },
-        Err(e) if e.is_connect() => Probe::Nothing,
-        Err(_) => Probe::Foreign,
+        Err(_) => Probe::Nothing,
     }
 }
 
@@ -81,6 +82,13 @@ async fn connect(app: &AppHandle, config_path: &Path) -> Result<(String, String)
                 .await
                 .map_err(|e| match e {
                     StartError::AddrInUse(_) => port_taken(),
+                    StartError::Forbidden(_) => format!(
+                        "Port {port} is reserved by the system.\n\n\
+                         On Windows, check reserved ranges with\n\
+                         netsh interface ipv4 show excludedportrange protocol=tcp\n\n\
+                         Change `port` in {} to a port outside them, then start TorrentX again.",
+                        config_path.display()
+                    ),
                     e => e.to_string(),
                 })?;
             // Auth on: log the window in without asking for the password.

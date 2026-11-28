@@ -37,7 +37,7 @@ packages/query              @torrentx/query: the query language, pure TS with no
 packages/ui                 @torrentx/ui: shell (Sidebar, TopBar, FilterBar, StatusBar), list, dialogs, hooks,
                             Spotlight palette + add flow, command registry/keymap, i18n, theme tokens, Tailwind preset
 vendor/torrent-client-magic-patterns  original design mock (reference only, not built)
-scripts/fetch-geoip.sh      downloads the DB-IP country DB embedded by `--features geoip`
+scripts/fetch-geoip.mjs     downloads the DB-IP country DB embedded by `--features geoip` (`pnpm fetch:geoip`)
 packaging/systemd           torrentx.service
 docs/linux-service.md       service install guide
 openspec/                   specs and change proposals
@@ -137,6 +137,8 @@ pnpm dev:server          # cargo run -p torrentx-server (127.0.0.1:9977)
 pnpm dev:web             # Vite on :1420, proxies /api → TORRENTX_SERVER (default 127.0.0.1:9977)
 pnpm dev:desktop         # tauri dev; starts Vite and loads the window from it (HMR, no build:web needed)
 pnpm build:web | build:server | build:desktop   # server/desktop builds fetch + embed the GeoIP DB
+pnpm build:desktop:macos | :windows | :linux   # release bundles (universal dmg / msi+nsis / AppImage+deb)
+pnpm fetch:geoip         # DB-IP country DB for --features geoip (Node, any OS)
 pnpm lint                # i18n key check + ESLint over apps/web + packages, --max-warnings 0
 pnpm typecheck
 pnpm test                # node --test for packages/query and packages/ui pure logic
@@ -181,10 +183,14 @@ TORRENTX_TEST_TRANSMISSION=http://127.0.0.1:9091/transmission/rpc \
   `# Title`, body; `knope document-change`); tooling-only PRs may use conventional commits instead. The CI `changes`
   job enforces this (Knope CLI 0.23 in Actions; the Knope Bot app is not used).
 - `prepare-release.yml` runs `knope prepare-release` on pushes to `main` and keeps a `release` → `main` PR with all
-  versions bumped (`knope.toml` `versioned_files`) and `CHANGELOG.md`. Merging it runs `release.yml`: `build.yml`
-  binaries → `artifacts/` + `SHA256SUMS.txt` → `knope release` tags `vX.Y.Z` and publishes the release. Re-run via
-  workflow_dispatch with the tag to replace assets.
-- `nightly.yml`: every push to `main` replaces the `nightly` pre-release with fresh binaries.
+  versions bumped (`knope.toml` `versioned_files`) and `CHANGELOG.md`. Optional `RELEASE_TOKEN` secret: the PR is
+  opened with it so its CI runs without approval.
+- `release.yml` (one workflow, modelled on 2fau-app) on every push to `main`: if the commit's version has no tag (the
+  release PR was merged), `knope release` tags `vX.Y.Z` and publishes the release; otherwise the target is the rolling
+  `tip` pre-release (deleted and recreated). Then desktop installers via `tauri-apps/tauri-action` (macOS universal,
+  Windows x64 msi/nsis, Linux x64 AppImage/deb; `args` mirror `build:desktop:*`) and server tarballs (Linux x86_64,
+  aarch64) are uploaded, and `finalize` adds stable names (`releases/latest/download/TorrentX-…`) on versions plus
+  `SHA256SUMS.txt`. A pushed `v*` tag or workflow_dispatch with a tag rebuilds that release (`--clobber`).
 - Below 1.0, Knope bumps the patch for `minor` change files and the minor for `major` ones.
 
 ## Known Gaps

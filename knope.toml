@@ -2,8 +2,8 @@
 # - change files in .changeset/ accumulate on main (`knope document-change` creates one);
 # - .github/workflows/prepare-release.yml runs `knope prepare-release` on every push to main and keeps a
 #   `release` → `main` PR with the next version and changelog;
-# - merging it runs .github/workflows/release.yml: build binaries into artifacts/, then `knope release`
-#   tags vX.Y.Z and publishes the GitHub release with the changelog entry and the assets.
+# - merging it pushes to main; .github/workflows/release.yml then runs `knope release` (tags vX.Y.Z and publishes
+#   the GitHub release with the changelog entry) and attaches the binaries in the same run.
 [package]
 versioned_files = [
   "Cargo.toml",
@@ -20,7 +20,6 @@ versioned_files = [
   "apps/desktop/src-tauri/tauri.conf.json",
 ]
 changelog = "CHANGELOG.md"
-assets = "artifacts/*"
 
 [[workflows]]
 name = "document-change"

@@ -29,5 +29,5 @@ tauri-plugin-notification = "2"
 tokio.workspace = true
 
 [features]
-# Embed the GeoIP database (see scripts/fetch-geoip.sh).
+# Embed the GeoIP database (see `pnpm fetch:geoip`).
 geoip = ["torrentx-server/geoip"]

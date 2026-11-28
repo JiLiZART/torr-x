@@ -101,16 +101,21 @@ Sections Overview, Files, Peers, Trackers, Web seeds and Pieces, each with its o
 
 ## Download
 
-Grab a build from [Releases](https://github.com/torrentx/torrentx/releases):
+Grab a build from [Releases](https://github.com/torrentx/torrentx/releases), or use these links to the latest version:
 
-- `torrentx-server-<version>-linux-{x86_64,aarch64}.tar.gz`: headless server, systemd unit and install guide
-- `TorrentX_<version>_universal.dmg` (macOS), `_x64_en-US.msi` / `_x64-setup.exe` (Windows),
-  `_amd64.AppImage` / `_amd64.deb` (Linux): desktop app
+- Desktop app: [macOS (universal)](https://github.com/torrentx/torrentx/releases/latest/download/TorrentX-macos-universal.dmg),
+  [Windows MSI](https://github.com/torrentx/torrentx/releases/latest/download/TorrentX-windows-x64.msi) /
+  [setup.exe](https://github.com/torrentx/torrentx/releases/latest/download/TorrentX-windows-x64-setup.exe),
+  [Linux AppImage](https://github.com/torrentx/torrentx/releases/latest/download/TorrentX-linux-x86_64.AppImage) /
+  [.deb](https://github.com/torrentx/torrentx/releases/latest/download/TorrentX-linux-amd64.deb)
+- Headless server (binary, systemd unit and install guide):
+  [Linux x86_64](https://github.com/torrentx/torrentx/releases/latest/download/torrentx-server-linux-x86_64.tar.gz),
+  [Linux aarch64](https://github.com/torrentx/torrentx/releases/latest/download/torrentx-server-linux-aarch64.tar.gz)
 - `SHA256SUMS.txt`: verify with `sha256sum -c SHA256SUMS.txt`
 
 Builds are not code-signed yet. On macOS, right-click the app and choose **Open** the first time (or run
 `xattr -d com.apple.quarantine /Applications/TorrentX.app`); on Windows, choose **More info → Run anyway**.
-The [`nightly`](https://github.com/torrentx/torrentx/releases/tag/nightly) pre-release is rebuilt from every push to `main`.
+The [`tip`](https://github.com/torrentx/torrentx/releases/tag/tip) pre-release is rebuilt from every push to `main`.
 
 ## Quick start
 
@@ -120,7 +125,14 @@ pnpm install
 pnpm dev:desktop        # desktop app (in-process server + tray + window, UI hot-reloads)
 pnpm dev:server         # headless server on http://127.0.0.1:9977
 pnpm dev:web            # Vite dev UI on :1420, proxies /api to the server above
+
+pnpm build:desktop:macos     # or :windows / :linux; release bundles for that platform
+pnpm build:server            # headless server for this machine
 ```
+
+Every script runs the same from bash, zsh, PowerShell and `cmd`. On Windows, if a port is reported as reserved,
+`netsh interface ipv4 show excludedportrange protocol=tcp` lists the ranges Windows (Hyper-V, WinNAT) keeps for
+itself; pick a `port` outside them.
 
 If a TorrentX server is already running on the configured port (e.g. the
 system service), the desktop app attaches to it instead of starting its own.

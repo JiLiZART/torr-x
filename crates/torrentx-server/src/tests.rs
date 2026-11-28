@@ -1,4 +1,4 @@
-use std::net::{Ipv4Addr, SocketAddr};
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
 use axum::body::Body;
 use axum::http::{HeaderMap, Method, Request, StatusCode, header};
@@ -660,6 +660,24 @@ async fn start_reports_addr_in_use() {
         Err(StartError::AddrInUse(a)) => assert_eq!(a.port(), port),
         Err(e) => panic!("unexpected error {e}"),
         Ok(_) => panic!("started on a taken port"),
+    }
+}
+
+#[tokio::test]
+async fn start_reports_forbidden_port() {
+    let dir = tmpdir("forbidden");
+    let opts = ServerOptions {
+        config_path: dir.join("config.toml"),
+        data_dir: Some(dir.join("data")),
+        bind_override: Some(IpAddr::V4(Ipv4Addr::LOCALHOST)),
+        port_override: Some(1),
+    };
+    // Port 1 needs privileges on Linux (CI); macOS and root allow it, so only the error kind is checked.
+    match start(opts).await {
+        Err(StartError::Forbidden(a)) => assert_eq!(a.port(), 1),
+        Ok(server) => server.shutdown().await,
+        Err(StartError::AddrInUse(_)) => {}
+        Err(e) => panic!("unexpected error {e}"),
     }
 }
 

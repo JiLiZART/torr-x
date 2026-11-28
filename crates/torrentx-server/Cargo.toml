@@ -38,5 +38,5 @@ http-body-util = "0.1"
 tower = { version = "0.5", features = ["util"] }
 
 [features]
-# Embed the DB-IP country database (run scripts/fetch-geoip.sh first).
+# Embed the DB-IP country database (run `pnpm fetch:geoip` first).
 geoip = []

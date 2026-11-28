@@ -6,4 +6,4 @@ default: minor
 
 Every release now ships the headless `torrentx-server` for Linux (x86_64, aarch64) with its systemd unit, and the
 desktop app for macOS (universal `.dmg`), Windows (`.msi`, setup `.exe`) and Linux (`.AppImage`, `.deb`), plus
-`SHA256SUMS.txt`. A rolling `nightly` pre-release is rebuilt from every push to `main`.
+`SHA256SUMS.txt`. A rolling `tip` pre-release is rebuilt from every push to `main`.

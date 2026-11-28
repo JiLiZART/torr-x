@@ -1,3 +1,5 @@
+> Archived 2026-11-28. Open tasks 1.2, 2.5, 3.2, 3.4, 4.1 are superseded by `cross-platform-builds`.
+
 ## 1. CI pipeline
 
 - [x] 1.1 Add `.github/workflows/ci.yml` (`pull_request` + `push: main`, concurrency per ref): `js` job (pnpm install --frozen-lockfile, `pnpm lint`, `pnpm typecheck`, `pnpm test`) and `rust` job (ubuntu-22.04, Tauri Linux deps, `pnpm build:web`, `cargo test --workspace`, rust-cache); verify with `actionlint` locally and a green run on a test PR

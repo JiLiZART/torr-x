@@ -121,6 +121,9 @@ pub enum StartError {
     Config(String),
     #[error("address {0} is already in use")]
     AddrInUse(SocketAddr),
+    /// The OS refuses the port: a Windows reserved range, or below 1024 without privileges.
+    #[error("the system does not allow listening on {0}")]
+    Forbidden(SocketAddr),
     #[error("cannot listen on {0}: {1}")]
     Bind(SocketAddr, std::io::Error),
 }
@@ -144,6 +147,7 @@ pub async fn start(opts: ServerOptions) -> Result<ServerHandle, StartError> {
         .await
         .map_err(|e| match e.kind() {
             std::io::ErrorKind::AddrInUse => StartError::AddrInUse(addr),
+            std::io::ErrorKind::PermissionDenied => StartError::Forbidden(addr),
             _ => StartError::Bind(addr, e),
         })?;
     let addr = listener

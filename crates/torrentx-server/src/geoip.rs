@@ -1,6 +1,6 @@
 //! Peer country lookup from DB-IP "IP to Country Lite" (CC BY 4.0, https://db-ip.com).
 //! Release builds with the `geoip` feature embed the database fetched by
-//! `scripts/fetch-geoip.sh`; otherwise it is read from `<data_dir>/dbip-country-lite.mmdb`
+//! `pnpm fetch:geoip` (scripts/fetch-geoip.mjs); otherwise it is read from `<data_dir>/dbip-country-lite.mmdb`
 //! or the crate's `geoip/` folder. Without a database every country is null.
 
 use std::net::{IpAddr, SocketAddr};
@@ -67,7 +67,7 @@ mod tests {
     fn lookup_when_database_present() {
         let g = GeoIp::load(Path::new("/nonexistent"));
         if g.0.is_none() {
-            eprintln!("skipped: no GeoIP database (run scripts/fetch-geoip.sh)");
+            eprintln!("skipped: no GeoIP database (run pnpm fetch:geoip)");
             return;
         }
         // Google public DNS is registered in the US.
