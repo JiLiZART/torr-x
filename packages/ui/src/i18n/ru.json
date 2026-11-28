@@ -8,6 +8,7 @@
   "window.close": "Закрыть окно",
   "window.minimize": "Свернуть окно",
   "window.maximize": "Развернуть окно",
+  "window.restore": "Восстановить окно",
   "header.terminal": "Терминал",
   "header.settings": "Настройки",
   "header.logout": "Выйти",

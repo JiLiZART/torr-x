@@ -23,6 +23,15 @@ html[data-desktop] #root {
   overflow: hidden;
 }
 
+html[data-desktop][data-window="linux"] #root {
+  border-radius: 12px;
+}
+
+/* Windows 11 rounds the window itself. */
+html[data-desktop][data-window="windows"] #root {
+  border-radius: 0;
+}
+
 html[data-desktop][data-maximized] #root {
   border-radius: 0;
 }

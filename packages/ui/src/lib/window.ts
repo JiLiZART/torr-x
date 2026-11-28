@@ -3,6 +3,17 @@ import type { Window } from "@tauri-apps/api/window";
 /** True inside the Tauri desktop window (detection only, no IPC). */
 export const isTauri = () => typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
+export type WindowStyle = "mac" | "windows" | "linux";
+
+/** Window button style for a user agent; anything not macOS or Windows gets the Linux buttons. */
+export function windowStyle(ua: string): WindowStyle {
+  if (/Mac|iPhone|iPad/.test(ua)) return "mac";
+  if (/Windows/.test(ua)) return "windows";
+  return "linux";
+}
+
+export const WINDOW_STYLE: WindowStyle = windowStyle(typeof navigator === "undefined" ? "" : navigator.userAgent);
+
 // The Tauri module is imported lazily so plain browsers never load it.
 function call(fn: (w: Window) => Promise<void>) {
   if (!isTauri()) return;
@@ -20,6 +31,7 @@ export function initDesktopChrome(): () => void {
   if (!isTauri()) return () => {};
   const root = document.documentElement;
   root.dataset.desktop = "";
+  root.dataset.window = WINDOW_STYLE;
   let stopped = false;
   let unlisten: (() => void) | undefined;
   import("@tauri-apps/api/window")

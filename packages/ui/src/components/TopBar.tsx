@@ -13,7 +13,7 @@ import {
 import type { ReactNode } from "react";
 import { useUi } from "../lib/context";
 import { KeyCaps } from "./KeyCaps";
-import { WindowDotsSpace } from "./Sidebar";
+import { WindowControlsSpace } from "./WindowControls";
 
 interface TopBarProps {
   /**
@@ -52,7 +52,7 @@ export function TopBar({ crumb, trailing, title, lensCount, sidebarCollapsed, on
     <header data-tauri-drag-region="deep" className="flex h-[54px] select-none shrink-0 items-center gap-[10px] border-b border-ui-border px-[14px]">
       {sidebarCollapsed ? (
         <>
-          <WindowDotsSpace />
+          <WindowControlsSpace side="left" />
           <button data-command="sidebar.toggle" className={nav} onClick={onExpandSidebar} title={t("sidebar.expand")}>
             <PanelLeftOpen size={16} />
           </button>
@@ -124,6 +124,7 @@ export function TopBar({ crumb, trailing, title, lensCount, sidebarCollapsed, on
         )}
       </div>
       )}
+      <WindowControlsSpace side="right" />
     </header>
   );
 }

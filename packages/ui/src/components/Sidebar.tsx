@@ -31,7 +31,8 @@ import { useUi } from "../lib/context";
 import { bytes, rate } from "../lib/format";
 import { sections, tabIcon, type TabIcon } from "../lib/lens";
 import { ALL_TAB } from "../lib/route";
-import { closeWindow, isTauri, minimizeWindow, toggleMaximizeWindow } from "../lib/window";
+import { isTauri } from "../lib/window";
+import { WindowControlsSpace } from "./WindowControls";
 import { commandById } from "../lib/commands";
 import { IS_MAC, keyCaps, usableKeys } from "../lib/keymap";
 import { KeyCaps } from "./KeyCaps";
@@ -58,29 +59,6 @@ const TAB_ICONS: Record<TabIcon, LucideIcon> = {
   adhoc: CircleDashed,
   smart: Hash,
 };
-
-/**
- * Desktop window only: close (hide to tray), minimize, maximize. Rendered once by the Shell, pinned to
- * the window corner so it never moves when the sidebar collapses; the sidebar head and the top bar
- * reserve its width with `WindowDotsSpace`. The dot colors are the OS's, not the theme's.
- */
-export function WindowDots() {
-  const { t } = useUi();
-  if (!isTauri()) return null;
-  const dot = "h-[11px] w-[11px] rounded-full";
-  return (
-    <div className="absolute left-[14px] top-[21px] z-50 flex h-[12px] items-center gap-[7px]">
-      <button aria-label={t("window.close")} onClick={closeWindow} className={`${dot} bg-[#FF5F57]`} />
-      <button aria-label={t("window.minimize")} onClick={minimizeWindow} className={`${dot} bg-[#FEBC2E]`} />
-      <button aria-label={t("window.maximize")} onClick={toggleMaximizeWindow} className={`${dot} bg-[#28C840]`} />
-    </div>
-  );
-}
-
-/** Empty, draggable room for the pinned window dots (3 × 11px + 2 × 7px). */
-export function WindowDotsSpace() {
-  return isTauri() ? <span data-tauri-drag-region className="w-[47px] shrink-0 self-stretch" /> : null;
-}
 
 interface TabActions {
   onActivate: (id: string) => void;
@@ -315,7 +293,7 @@ export function Sidebar({ tabs, activeId, counts, errors, lensCount, stats, onCr
       {/* Empty areas drag the window; Tauri toggles maximize on double-click of a drag region. */}
       {/* Same height as the top bar, so the pinned dots sit on one line in both layouts. */}
       <div data-tauri-drag-region="deep" className="-mx-[10px] -mt-[12px] flex h-[54px] select-none shrink-0 items-center gap-[7px] px-[14px]">
-        <WindowDotsSpace />
+        <WindowControlsSpace side="left" />
         <span className="flex-1 self-stretch" />
       </div>
       <button data-command="palette.open" onClick={onTrigger} className="flex items-center gap-[8px] rounded-[10px] border border-ui-border bg-ui-surface-2 px-[10px] py-[9px] text-ui-text-3 hover:border-ui-border-strong">

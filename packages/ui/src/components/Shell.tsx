@@ -1,5 +1,5 @@
 import type { DragEvent, ReactNode } from "react";
-import { WindowDots } from "./Sidebar";
+import { WindowControls } from "./WindowControls";
 
 interface ShellProps {
   /** Null while collapsed. */
@@ -15,7 +15,7 @@ interface ShellProps {
 export function Shell({ sidebar, top, status, children, onDragOver, onDrop }: ShellProps) {
   return (
     <div className="relative flex h-full w-full bg-ui-bg font-ui text-ui-text" onDragOver={onDragOver} onDrop={onDrop}>
-      <WindowDots />
+      <WindowControls />
       {sidebar}
       <div className="flex min-w-0 flex-1 flex-col">
         {top}

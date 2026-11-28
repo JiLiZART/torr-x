@@ -8,6 +8,7 @@
   "window.close": "Fermer la fenêtre",
   "window.minimize": "Réduire la fenêtre",
   "window.maximize": "Agrandir la fenêtre",
+  "window.restore": "Restaurer la fenêtre",
   "header.terminal": "Terminal",
   "header.settings": "Paramètres",
   "header.logout": "Se déconnecter",
