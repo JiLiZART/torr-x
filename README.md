@@ -115,7 +115,7 @@ Grab a build from [Releases](https://github.com/torrentx/torrentx/releases), or 
 
 Builds are not code-signed yet. On macOS, right-click the app and choose **Open** the first time (or run
 `xattr -d com.apple.quarantine /Applications/TorrentX.app`); on Windows, choose **More info → Run anyway**.
-The [`tip`](https://github.com/torrentx/torrentx/releases/tag/tip) pre-release is rebuilt from every push to `main`.
+The [`nightly`](https://github.com/torrentx/torrentx/releases/tag/nightly) pre-release is rebuilt from every push to `main`.
 
 ## Quick start
 

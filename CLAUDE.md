@@ -187,12 +187,12 @@ TORRENTX_TEST_TRANSMISSION=http://127.0.0.1:9091/transmission/rpc \
 - `prepare-release.yml` runs `knope prepare-release` on pushes to `main` and keeps a `release` → `main` PR with all
   versions bumped (`knope.toml` `versioned_files`) and `CHANGELOG.md`. Optional `RELEASE_TOKEN` secret: the PR is
   opened with it so its CI runs without approval.
-- `release.yml` (one workflow, modelled on 2fau-app) on every push to `main`: if the commit's version has no tag (the
-  release PR was merged), `knope release` tags `vX.Y.Z` and publishes the release; otherwise the target is the rolling
-  `tip` pre-release (deleted and recreated). Then desktop installers via `tauri-apps/tauri-action` (macOS universal,
-  Windows x64 msi/nsis, Linux x64 AppImage/deb; `args` mirror `build:desktop:*`) and server tarballs (Linux x86_64,
-  aarch64) are uploaded, and `finalize` adds stable names (`releases/latest/download/TorrentX-…`) on versions plus
-  `SHA256SUMS.txt`. A pushed `v*` tag or workflow_dispatch with a tag rebuilds that release (`--clobber`).
+- `release.yml` (one workflow, modelled on 2fau-app) on every push to `main`: read-only build jobs run
+  `pnpm build:desktop:{macos,windows,linux}` and `build:server` (Linux x86_64, aarch64) and upload artifacts; `publish`,
+  the only job with write access, then either runs `knope release` (the commit's version has no tag: the release PR was
+  merged) and attaches the files with stable names (`releases/latest/download/TorrentX-…`), or replaces the rolling
+  `nightly` pre-release (assets named `…_nightly_…`); every path drafts, uploads, then publishes; both get `SHA256SUMS.txt`. A pushed `v*` tag or workflow_dispatch with a tag rebuilds that release
+  (`--clobber`).
 - Below 1.0, Knope bumps the patch for `minor` change files and the minor for `major` ones.
 
 ## Known Gaps

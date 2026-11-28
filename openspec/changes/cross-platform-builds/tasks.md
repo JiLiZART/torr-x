@@ -16,11 +16,11 @@
 
 ## 4. Release workflow
 
-- [x] 4.1 Rewrite `.github/workflows/release.yml` per design decision 5 (`knope-release`, `target`, `reset-tip`, `desktop` via SHA-pinned `tauri-apps/tauri-action`, `server`, `finalize` with stable names + `SHA256SUMS.txt`); delete `build.yml` and `nightly.yml`; drop `assets` from `knope.toml`; verify with `actionlint` and `knope --validate`
+- [x] 4.1 Rewrite `.github/workflows/release.yml` per design decision 5 (`target`, read-only `desktop` / `server` builds via the package scripts uploading artifacts, `publish` as the only write job: Knope release or `nightly`, stable names, `SHA256SUMS.txt`); delete `build.yml` and `nightly.yml`; drop `assets` from `knope.toml`; verify with `actionlint` and `knope --validate`
 - [ ] 4.2 Switch `ci.yml` to the new scripts where it builds (`pnpm fetch:geoip` not needed for tests; keep `pnpm build:web`); verify `actionlint` and a green CI run on the PR
-- [ ] 4.3 Verify on `main` after merge: a push produces the `tip` pre-release at that commit with five installers, two server tarballs and `SHA256SUMS.txt`, and "Latest" is unchanged; then delete the old `nightly` release and tag (`gh release delete nightly --cleanup-tag`)
+- [ ] 4.3 Verify on `main` after merge: a push replaces the `nightly` pre-release at that commit with five installers and two server tarballs named `nightly`, plus `SHA256SUMS.txt`, and "Latest" is unchanged; delete the interim `tip` release (`gh release delete tip --cleanup-tag`)
 - [ ] 4.4 Verify the versioned path by merging the release PR: tag `vX.Y.Z`, changelog notes, versioned and stable-named assets, `sha256sum -c SHA256SUMS.txt` passes, `releases/latest/download/TorrentX-windows-x64.msi` downloads; re-running via `workflow_dispatch` with the tag does not duplicate assets
 
 ## 5. Docs
 
-- [x] 5.1 Update `README.md` (download links to `tip` and `releases/latest/download/<name>`, Windows dev note), `CLAUDE.md` (layout: `fetch-geoip.mjs`; Commands: per-platform builds; CI and Releases: single `release.yml`, `tip`, `RELEASE_TOKEN`) and `docs/linux-service.md` (GeoIP script); add `.changeset/cross-platform-builds.md` (`default: patch`, Windows dev/port fix); verify links and commands match the workflows and `pnpm lint` passes
+- [x] 5.1 Update `README.md` (download links to `releases/latest/download/<name>`, Windows dev note), `CLAUDE.md` (layout: `fetch-geoip.mjs`; Commands: per-platform builds; CI and Releases: single `release.yml`, `nightly`, `RELEASE_TOKEN`) and `docs/linux-service.md` (GeoIP script); add `.changeset/cross-platform-builds.md` (`default: patch`, Windows dev/port fix); verify links and commands match the workflows and `pnpm lint` passes

@@ -24,24 +24,18 @@ All binaries SHALL embed the web UI and the GeoIP database. Each binary SHALL al
 - **WHEN** a user opens `https://github.com/torrentx/torrentx/releases/latest/download/TorrentX-windows-x64.msi`
 - **THEN** the MSI of the newest versioned release downloads
 
-## REMOVED Requirements
-
 ### Requirement: Rolling nightly pre-release
-**Reason**: Replaced by the rolling `tip` pre-release built by the single release workflow, following 2fau-app.
-**Migration**: Links to `releases/tag/nightly` move to `releases/tag/tip`. The `nightly` release and tag are deleted once the first `tip` exists.
-
-## ADDED Requirements
-
-### Requirement: Rolling tip pre-release
-Every push to `main` that does not publish a version SHALL rebuild the desktop installers and server tarballs and replace a single GitHub pre-release with tag `tip`, moved to that commit. The `tip` release SHALL be marked as a pre-release so it is never shown as the latest release, and its notes SHALL state the commit it was built from. A newer push SHALL supersede an in-progress `tip` build.
+Every push to `main` that does not publish a version SHALL rebuild the same set of binaries and replace the contents of a single GitHub pre-release with tag `nightly`, moved to that commit. The nightly release SHALL be marked as a pre-release so it is never shown as the latest release, its notes SHALL state the commit it was built from, and its asset names SHALL contain `nightly` instead of a version number. A newer push SHALL supersede an in-progress nightly build, but SHALL NOT cancel a build that publishes a version. The nightly and versioned releases SHALL only become visible with all their built assets attached.
 
 #### Scenario: Merge a feature
 - **WHEN** a feature pull request is merged into `main`
-- **THEN** after the build, the `tip` pre-release points at the merge commit and offers freshly built binaries
+- **THEN** after the build the `nightly` pre-release points at the merge commit and offers freshly built binaries named with `nightly`
 
 #### Scenario: Latest stays stable
-- **WHEN** both `v0.1.1` and a newer `tip` exist
+- **WHEN** both `v0.1.1` and a newer `nightly` exist
 - **THEN** the repository's "Latest" release is `v0.1.1`
+
+## ADDED Requirements
 
 ### Requirement: Release pull request runs CI
 When the repository provides a release token, the release pull request SHALL be opened with it, so the CI checks run on that pull request like on any other. Without the token, the release pull request SHALL still be opened and updated, and merging it SHALL still publish the release with all binaries; only its CI checks wait for manual approval.

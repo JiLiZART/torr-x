@@ -22,8 +22,10 @@ release workflow, and this change adopts that model.
 - **BREAKING (CI/release)**: replace `build.yml` + `nightly.yml` + `release.yml` with one `release.yml` modelled on
   2fau-app. It runs on push to `main`, on push of `v*` tags and on `workflow_dispatch`:
   - a `knope release` job on `main` creates the tag and the release when the release PR was merged;
-  - a rolling **`tip`** pre-release replaces `nightly` on every other push to `main`;
-  - desktop installers are built with `tauri-apps/tauri-action` (macOS universal, Windows x64, Linux x64);
+  - the rolling `nightly` pre-release is rebuilt on every other push to `main`;
+  - every release is drafted, filled and only then published;
+  - desktop installers are built with the `build:desktop:*` scripts (macOS universal, Windows x64, Linux x64), and
+    only a final publish job, which runs no builds, can write to releases;
   - Linux server tarballs (x86_64, aarch64) are built and uploaded to the same release;
   - tagged releases get stable asset names (`TorrentX-macos-universal.dmg`, …) for
     `releases/latest/download/<name>` links, plus `SHA256SUMS.txt`.
@@ -42,7 +44,7 @@ release workflow, and this change adopts that model.
 - `desktop-app`: "Attach to existing server" reports a taken port only on evidence (a non-TorrentX answer or a bind
   that fails as in use), never because of a slow or refused connection. Reserved Windows ports get a specific message.
 - `release-process`: "Versioned release" is built by the single release workflow with stable asset names, and
-  "Rolling nightly pre-release" is replaced by a rolling `tip` pre-release. This capability is introduced by the
+  "Rolling nightly pre-release" is rebuilt by the same workflow and never cancels a version build. This capability is introduced by the
   unarchived `ci-release-pipeline` change, which has to be archived (its spec synced) before this one.
 
 ## Impact
@@ -53,7 +55,7 @@ release workflow, and this change adopts that model.
   variant for a reserved or forbidden port).
 - `.github/workflows/`: `build.yml` and `nightly.yml` removed, `release.yml` rewritten, `ci.yml` and
   `prepare-release.yml` touched. `knope.toml` (`assets`).
-- Docs: `README.md` (download links: `tip`, `releases/latest/download/…`), `CLAUDE.md` (layout, CI and Releases),
+- Docs: `README.md` (download links: `releases/latest/download/…`), `CLAUDE.md` (layout, CI and Releases),
   `docs/linux-service.md` (GeoIP script name, Windows port note).
 - Repo secret `RELEASE_TOKEN` (fine-grained PAT, contents and pull-requests read/write) recommended. Adding it is
   the maintainer's decision.
