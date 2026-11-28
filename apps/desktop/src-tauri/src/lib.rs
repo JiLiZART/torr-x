@@ -91,6 +91,13 @@ async fn connect(app: &AppHandle, config_path: &Path) -> Result<(String, String)
                     ),
                     e => e.to_string(),
                 })?;
+            // The probe treats silence as free, so make sure the window URL reaches our own server
+            // (a socket bound to a more specific address could otherwise take loopback traffic) before
+            // handing it a login token.
+            if !matches!(probe(&base).await, Probe::TorrentX) {
+                server.shutdown().await;
+                return Err(port_taken());
+            }
             // Auth on: log the window in without asking for the password.
             let window_url = if config.auth.enabled {
                 format!(
